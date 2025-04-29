@@ -136,18 +136,6 @@ export default function DownloadPage() {
       <h1 className="text-3xl font-bold mb-6 text-center">添加 GitHub 仓库</h1>
       
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
-        {connected ? (
-          <div className="mb-2 text-sm text-green-600">
-            <span className="inline-block w-2 h-2 bg-green-600 rounded-full mr-2"></span>
-            WebSocket 已连接
-          </div>
-        ) : (
-          <div className="mb-2 text-sm text-red-600">
-            <span className="inline-block w-2 h-2 bg-red-600 rounded-full mr-2"></span>
-            WebSocket 未连接 (进度更新将不可用)
-          </div>
-        )}
-        
         <form onSubmit={handleSubmit}>
 
           <div className="mb-6">
@@ -227,7 +215,6 @@ export default function DownloadPage() {
           <ol className="list-decimal pl-5 space-y-2">
             <li>输入完整的 GitHub 仓库 URL</li>
             <li>点击“下载并索引”按钮</li>
-            <li>系统将自动从 URL 中提取组织和仓库名称，并以 “组织_仓库” 的格式生成向量表名称</li>
             <li>等待系统下载并处理仓库中的 Markdown 文件</li>
             <li>处理完成后，您可以在首页查看新添加的库</li>
             <li>点击库卡片或使用查询页面来搜索文档</li>

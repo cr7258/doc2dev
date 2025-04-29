@@ -39,8 +39,7 @@ def summarize_search_results(documents: List[Document], query: str) -> str:
     content = f"Search Query: {query}\n\n"
     
     for i, doc in enumerate(documents):
-        source = doc.metadata.get("source", "Unknown")
-        content += f"Document {i+1} (Source: {source}):\n{doc.page_content}\n\n"
+        content += f"Document {i+1}:\n{doc.page_content}\n\n"
     
     # Prepare the prompt for summarization
     prompt = f"""
@@ -51,7 +50,6 @@ Format your response as follows:
 
 TITLE: [A clear, concise title that captures the main topic]
 DESCRIPTION: [A brief description of the main content]
-SOURCE: [Source of the information]
 
 LANGUAGE: [Programming language if code is present]
 CODE:

@@ -530,6 +530,31 @@ async def download_repository(repo_request: RepositoryRequest):
                     "progress": 100,
                     "message": f"成功嵌入 {len(docs)} 个文档片段到表 '{table_name}'"
                 }, client_id)
+                
+            # 将仓库信息写入数据库
+            try:
+                # 从 URL 提取仓库名称
+                repo_name = repo.replace("-", " ").title()
+                repo_path = f"/{org}/{repo}"
+                repo_url = f"https://github.com/{org}/{repo}"
+                
+                # 添加到 repositories 表
+                add_repository(repo_name, "", repo_path, repo_url)
+                
+                if client_id:
+                    await manager.send_json({
+                        "type": "database",
+                        "status": "completed",
+                        "message": f"已将仓库信息添加到数据库"
+                    }, client_id)
+            except Exception as e:
+                logger.error(f"将仓库信息写入数据库时出错: {str(e)}")
+                if client_id:
+                    await manager.send_json({
+                        "type": "database",
+                        "status": "error",
+                        "message": f"将仓库信息写入数据库时出错: {str(e)}"
+                    }, client_id)
         except Exception as e:
             # 嵌入出错通知
             if client_id:

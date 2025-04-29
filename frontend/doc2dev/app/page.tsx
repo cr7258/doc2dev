@@ -158,10 +158,10 @@ export default function Home() {
     <div className="container mx-auto py-10 px-4">
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-bold tracking-tight mb-4">
-          Doc2Dev - 文档检索系统
+          Doc2Dev - 为 LLM 和 AI 编程助手提供实时文档
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-          欢迎使用 Doc2Dev 文档检索系统。我们索引了各种库的文档，帮助您快速找到所需的信息。
+          索引并查询任何 GitHub 仓库的最新文档，通过 MCP 轻松与 Cursor、Windsurf 等 AI 编程助手集成。拒绝代码幻觉，让 AI 编写更靠谱的代码。
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">

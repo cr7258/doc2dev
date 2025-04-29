@@ -53,8 +53,11 @@ async def search_library_id(libraryName: str) -> Dict[str, Any]:
                 # Format the results
                 libraries = []
                 for name, repo in results:
+                    # Create libraryID by replacing slash with underscore in repository path
+                    # First remove the leading slash, then replace remaining slashes with underscores
+                    libraryID = repo.lstrip('/').replace('/', '_')
                     libraries.append({
-                        "libraryID": name,
+                        "libraryID": libraryID,
                         "repository": repo,
                         "description": f"Table: {name}, Repository: {repo}"
                     })

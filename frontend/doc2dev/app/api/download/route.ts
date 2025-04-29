@@ -56,6 +56,9 @@ export async function POST(request: NextRequest) {
     // 生成向量表名称：org_repo
     const library_name = `${repoInfo.org}_${repoInfo.repo}`;
     
+    // 获取客户端 ID（如果有）
+    const client_id = body.client_id;
+    
     // 调用后端 API
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
     const response = await fetch(`${backendUrl}/download/`, {
@@ -66,6 +69,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         repo_url: repo_url,
         library_name: library_name,
+        client_id: client_id, // 传递客户端 ID 用于 WebSocket 连接
       }),
     });
     

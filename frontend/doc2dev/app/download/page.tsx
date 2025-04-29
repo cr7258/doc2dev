@@ -1,20 +1,98 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { Progress } from "@/components/ui/progress";
 
 export default function DownloadPage() {
   const [repoUrl, setRepoUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", content: "" });
   
+  // WebSocket 和进度状态
+  const [connected, setConnected] = useState(false);
+  const [clientId, setClientId] = useState("");
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadStatus, setDownloadStatus] = useState("");
+  const [downloadMessage, setDownloadMessage] = useState("");
+  const [embeddingProgress, setEmbeddingProgress] = useState(0);
+  const [embeddingStatus, setEmbeddingStatus] = useState("");
+  const [embeddingMessage, setEmbeddingMessage] = useState("");
+  
+  const wsRef = useRef<WebSocket | null>(null);
+  
+  // 生成随机客户端 ID
+  useEffect(() => {
+    const id = `client_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+    setClientId(id);
+  }, []);
+  
+  // 连接 WebSocket
+  useEffect(() => {
+    if (!clientId) return;
+    
+    // 获取当前域名和协议
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.hostname;
+    const port = process.env.NEXT_PUBLIC_BACKEND_PORT || '8000';
+    const wsUrl = `${protocol}//${host}:${port}/ws/${clientId}`;
+    
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      setConnected(true);
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('WebSocket message:', data);
+        
+        if (data.type === 'download') {
+          setDownloadStatus(data.status);
+          setDownloadProgress(data.progress);
+          setDownloadMessage(data.message);
+        } else if (data.type === 'embedding') {
+          setEmbeddingStatus(data.status);
+          setEmbeddingProgress(data.progress);
+          setEmbeddingMessage(data.message);
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+      setConnected(false);
+    };
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    wsRef.current = ws;
+    
+    return () => {
+      ws.close();
+    };
+  }, [clientId]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!repoUrl) return;
     
+    // 重置所有状态
     setLoading(true);
     setMessage({ type: "", content: "" });
+    setDownloadProgress(0);
+    setDownloadStatus("");
+    setDownloadMessage("");
+    setEmbeddingProgress(0);
+    setEmbeddingStatus("");
+    setEmbeddingMessage("");
     
     try {
       const response = await fetch("/api/download", {
@@ -24,6 +102,7 @@ export default function DownloadPage() {
         },
         body: JSON.stringify({
           repo_url: repoUrl,
+          client_id: clientId, // 传递客户端 ID 用于 WebSocket 连接
         }),
       });
       
@@ -57,6 +136,18 @@ export default function DownloadPage() {
       <h1 className="text-3xl font-bold mb-6 text-center">添加 GitHub 仓库</h1>
       
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
+        {connected ? (
+          <div className="mb-2 text-sm text-green-600">
+            <span className="inline-block w-2 h-2 bg-green-600 rounded-full mr-2"></span>
+            WebSocket 已连接
+          </div>
+        ) : (
+          <div className="mb-2 text-sm text-red-600">
+            <span className="inline-block w-2 h-2 bg-red-600 rounded-full mr-2"></span>
+            WebSocket 未连接 (进度更新将不可用)
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit}>
 
           <div className="mb-6">
@@ -86,6 +177,40 @@ export default function DownloadPage() {
           </button>
         </form>
       </div>
+      
+      {/* 下载进度 */}
+      {(downloadStatus || loading) && (
+        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-4">
+          <h3 className="text-lg font-semibold mb-2">下载进度</h3>
+          <Progress value={downloadProgress} className="mb-2" />
+          <p className="text-sm text-gray-600">
+            {downloadMessage || "正在准备下载..."}
+          </p>
+          {downloadStatus === "error" && (
+            <p className="text-sm text-red-600 mt-2">下载出错</p>
+          )}
+          {downloadStatus === "completed" && (
+            <p className="text-sm text-green-600 mt-2">下载完成</p>
+          )}
+        </div>
+      )}
+      
+      {/* 嵌入进度 */}
+      {(embeddingStatus || (downloadStatus === "completed" && loading)) && (
+        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-4">
+          <h3 className="text-lg font-semibold mb-2">嵌入进度</h3>
+          <Progress value={embeddingProgress} className="mb-2" />
+          <p className="text-sm text-gray-600">
+            {embeddingMessage || "等待嵌入开始..."}
+          </p>
+          {embeddingStatus === "error" && (
+            <p className="text-sm text-red-600 mt-2">嵌入出错</p>
+          )}
+          {embeddingStatus === "completed" && (
+            <p className="text-sm text-green-600 mt-2">嵌入完成</p>
+          )}
+        </div>
+      )}
       
       {message.content && (
         <div className={`max-w-2xl mx-auto p-4 rounded-md mb-8 ${

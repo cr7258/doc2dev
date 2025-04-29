@@ -30,44 +30,68 @@ DEFAULT_CONNECTION_ARGS = {
     "db_name": "doc2dev",
 }
 
-def load_markdown_files(directory: str) -> List[Document]:
+def load_markdown_files(path_or_paths) -> List[Document]:
     """
-    Load all Markdown files from a directory and its subdirectories.
+    Load Markdown files from a directory, file path, or list of file paths.
     
     Args:
-        directory: Directory containing Markdown files
+        path_or_paths: Directory containing Markdown files, a single file path, or a list of file paths
         
     Returns:
         List of Document objects
     """
-    print(f"Loading Markdown files from {directory}...")
     documents = []
+    md_files = []
     
-    # Find all .md files in the directory and its subdirectories
-    md_files = glob.glob(f"{directory}/**/*.md", recursive=True)
-    print(f"Found {len(md_files)} Markdown files")
+    # 处理不同类型的输入
+    if isinstance(path_or_paths, list):
+        # 如果输入是文件路径列表
+        print(f"Loading {len(path_or_paths)} Markdown files from provided list...")
+        md_files = path_or_paths
+    elif os.path.isdir(path_or_paths):
+        # 如果输入是目录
+        directory = path_or_paths
+        print(f"Loading Markdown files from directory: {directory}...")
+        # 查找目录及其子目录中的所有 .md 文件
+        md_files = glob.glob(f"{directory}/**/*.md", recursive=True)
+        print(f"Found {len(md_files)} Markdown files in directory")
+    elif os.path.isfile(path_or_paths) and path_or_paths.lower().endswith('.md'):
+        # 如果输入是单个文件
+        print(f"Loading single Markdown file: {path_or_paths}")
+        md_files = [path_or_paths]
+    else:
+        print(f"Warning: Invalid input to load_markdown_files: {path_or_paths}")
+        return []
     
+    # 处理找到的所有文件
     for file_path in md_files:
         try:
             # Read the file content
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # Create a relative path for the source
-            relative_path = os.path.relpath(file_path, directory)
+            # 创建源文件的路径
+            # 如果是文件列表，使用文件名作为源
+            # 如果是目录，创建相对路径
+            if isinstance(path_or_paths, list) or os.path.isfile(path_or_paths):
+                source_path = os.path.basename(file_path)
+            else:
+                # 假设是目录，创建相对路径
+                directory = path_or_paths if os.path.isdir(path_or_paths) else os.path.dirname(path_or_paths)
+                source_path = os.path.relpath(file_path, directory)
             
-            # Create a Document object
+            # 创建 Document 对象
             doc = Document(
                 page_content=content,
                 metadata={
-                    "source": relative_path,
+                    "source": source_path,
                     "file_path": file_path,
                     "file_name": os.path.basename(file_path),
                     "file_type": "markdown"
                 }
             )
             documents.append(doc)
-            print(f"Loaded: {relative_path}")
+            print(f"Loaded: {source_path}")
         except Exception as e:
             print(f"Error loading {file_path}: {str(e)}")
     

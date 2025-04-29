@@ -4,12 +4,26 @@ FastAPI server that receives GitHub repository URLs and downloads markdown files
 """
 
 import os
+import re
 import sys
-from typing import List, Optional, Dict
+import time
+import asyncio
+import logging
+import json
+import tempfile
+import shutil
+from typing import List, Optional, Dict, Any, Tuple
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 
-from fastapi import FastAPI, HTTPException
+# 配置日志记录
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +31,32 @@ from pydantic import BaseModel, HttpUrl
 from github import Github, Auth, GithubException
 from embed_and_store import load_markdown_files, split_documents, embed_and_store
 from query_oceanbase import search_documents, connect_to_vector_store
+
+# 添加带进度回调的 embed_and_store 函数
+async def embed_and_store_with_progress(documents, table_name, drop_old=False, progress_callback=None):
+    """
+    嵌入文档并存储到向量数据库，支持进度回调
+    """
+    total_docs = len(documents)
+    
+    # 调用原始的 embed_and_store 函数，但在过程中添加进度更新
+    try:
+        # 初始化进度
+        if progress_callback:
+            await progress_callback(0, total_docs, "开始嵌入文档...")
+        
+        # 创建向量存储
+        vector_store = embed_and_store(documents, table_name=table_name, drop_old=drop_old)
+        
+        # 完成进度
+        if progress_callback:
+            await progress_callback(total_docs, total_docs, "文档嵌入完成")
+            
+        return vector_store
+    except Exception as e:
+        if progress_callback:
+            await progress_callback(0, 1, f"嵌入文档时出错: {str(e)}")
+        raise e
 
 # Load environment variables from .env file
 load_dotenv()
@@ -30,6 +70,33 @@ app = FastAPI(
     description="A service that downloads markdown files from GitHub repositories",
     version="1.0.0"
 )
+
+# 创建一个连接管理器，用于管理 WebSocket 连接
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+
+    async def connect(self, websocket: WebSocket, client_id: str):
+        await websocket.accept()
+        self.active_connections[client_id] = websocket
+        print(f"Client {client_id} connected. Total connections: {len(self.active_connections)}")
+
+    def disconnect(self, client_id: str):
+        if client_id in self.active_connections:
+            del self.active_connections[client_id]
+            print(f"Client {client_id} disconnected. Total connections: {len(self.active_connections)}")
+
+    async def send_json(self, data: Dict[str, Any], client_id: str):
+        if client_id in self.active_connections:
+            await self.active_connections[client_id].send_json(data)
+        else:
+            print(f"Warning: Client {client_id} not found in active connections")
+
+    async def broadcast(self, data: Dict[str, Any]):
+        for connection in self.active_connections.values():
+            await connection.send_json(data)
+
+manager = ConnectionManager()
 
 # Add CORS middleware
 app.add_middleware(
@@ -46,6 +113,7 @@ class RepositoryRequest(BaseModel):
     """Request model for repository URL"""
     repo_url: HttpUrl
     library_name: Optional[str] = None  # 可选参数，如果前端没有提供，则自动从 URL 生成
+    client_id: Optional[str] = None  # 客户端 ID，用于 WebSocket 连接
 
 class DownloadResponse(BaseModel):
     """Response model for download status"""
@@ -69,21 +137,80 @@ def parse_github_url(url: str) -> str:
     Returns:
         Repository name in the format 'owner/repo'
     """
-    parsed_url = urlparse(url)
+    # 记录原始 URL 用于调试
+    logger.info(f"Parsing GitHub URL: {url}")
+    
+    # 移除 URL 中的空白字符
+    url = url.strip()
+    
+    # 移除末尾的 .git 后缀（如果存在）
+    if url.endswith(".git"):
+        url = url[:-4]
+    
+    # 处理不同的 URL 格式
+    try:
+        # 使用正则表达式匹配常见的 GitHub URL 格式
+        if re.search(r'github\.com[/:]([\w.-]+)/([\w.-]+)', url):
+            match = re.search(r'github\.com[/:]([\w.-]+)/([\w.-]+)', url)
+            if match:
+                owner, repo = match.groups()
+                logger.info(f"Extracted owner: {owner}, repo: {repo}")
+                return f"{owner}/{repo}"
+        
+        # 尝试解析 HTTPS URL 格式
+        if "github.com/" in url:
+            parts = url.split("github.com/")
+            if len(parts) > 1 and "/" in parts[1]:
+                repo_parts = parts[1].split("/")
+                if len(repo_parts) >= 2:
+                    owner, repo = repo_parts[0], repo_parts[1]
+                    logger.info(f"Extracted from HTTPS URL - owner: {owner}, repo: {repo}")
+                    return f"{owner}/{repo}"
+        
+        # 尝试解析 SSH URL 格式
+        if "git@github.com:" in url:
+            parts = url.split("git@github.com:")
+            if len(parts) > 1 and "/" in parts[1]:
+                repo_parts = parts[1].split("/")
+                if len(repo_parts) >= 2:
+                    owner, repo = repo_parts[0], repo_parts[1]
+                    logger.info(f"Extracted from SSH URL - owner: {owner}, repo: {repo}")
+                    return f"{owner}/{repo}"
+    
+        # 如果上述方法都失败，尝试直接从 URL 中提取最后两个路径组件
+        parsed_url = urlparse(url)
+        path_parts = [p for p in parsed_url.path.split("/") if p]
+        if len(path_parts) >= 2:
+            owner, repo = path_parts[-2], path_parts[-1]
+            logger.info(f"Extracted from URL path - owner: {owner}, repo: {repo}")
+            return f"{owner}/{repo}"
+            
+        raise ValueError(f"无法从 URL 中提取仓库信息")
+    except Exception as e:
+        logger.error(f"Error parsing GitHub URL: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise ValueError(f"解析 GitHub URL 时出错: {str(e)}")
+    
+    raise ValueError(f"无效的 GitHub URL 格式: {url}")
 
-    # Ensure it's a GitHub URL
-    if not parsed_url.netloc.endswith('github.com'):
-        raise ValueError("Not a valid GitHub URL")
+def extract_org_repo(url: str) -> Tuple[str, str]:
+    """
+    从 GitHub URL 中提取组织和仓库名称
 
-    # Extract path parts
-    path_parts = parsed_url.path.strip('/').split('/')
+    Args:
+        url: GitHub 仓库 URL
 
-    # Ensure we have at least owner and repo
-    if len(path_parts) < 2:
-        raise ValueError("URL does not contain a valid repository path")
-
-    # Return owner/repo format
-    return f"{path_parts[0]}/{path_parts[1]}"
+    Returns:
+        Tuple[str, str]: 组织名和仓库名的元组
+    """
+    repo_name = parse_github_url(url)
+    parts = repo_name.split('/')
+    
+    if len(parts) != 2:
+        raise ValueError(f"Invalid repository name format: {repo_name}")
+        
+    return parts[0], parts[1]
 
 def get_contents_recursively(repo, path):
     """
@@ -112,97 +239,148 @@ def get_contents_recursively(repo, path):
 
     return contents
 
-def download_md_files(repo_name, output_dir=None, token=None):
+async def download_md_files_with_progress(repo_url, output_dir, progress_callback=None):
     """
-    Download all markdown files from a GitHub repository.
+    下载 GitHub 仓库中的所有 Markdown 文件，支持进度回调
 
     Args:
-        repo_name (str): The repository name in the format 'owner/repo'
-        output_dir (str, optional): Directory to save downloaded files. Defaults to a directory named after the repo.
-        token (str, optional): GitHub personal access token for authentication. Public repos don't require this.
+        repo_url (str): GitHub 仓库 URL
+        output_dir (str): 保存下载文件的目录
+        progress_callback (callable, optional): 进度回调函数，接收 current, total, message 参数
 
     Returns:
-        tuple: (success, message, files_count, files_list)
+        list: 下载的 Markdown 文件路径列表
     """
-    # Create output directory if it doesn't exist
-    if output_dir is None:
-        output_dir = repo_name.split('/')[-1] + '_md_files'
-
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        print(f"Created directory: {output_dir}")
-
-    downloaded_files = []
-
     try:
-        # Initialize GitHub client
-        if token and isinstance(token, str) and token.strip():
-            # Use provided token if available and not empty
-            masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
-            print(f"Using provided token: {masked_token}")
-            auth = Auth.Token(token.strip())
-            g = Github(auth=auth)
-        elif DEFAULT_GITHUB_TOKEN and DEFAULT_GITHUB_TOKEN.strip():
-            # Fall back to token from .env file
-            masked_token = '*' * (len(DEFAULT_GITHUB_TOKEN) - 4) + DEFAULT_GITHUB_TOKEN[-4:] if len(DEFAULT_GITHUB_TOKEN) > 4 else '****'
-            print(f"Using GitHub token from .env file: {masked_token}")
-            auth = Auth.Token(DEFAULT_GITHUB_TOKEN.strip())
-            g = Github(auth=auth)
-        else:
-            # No token available, use unauthenticated client (rate limited)
-            print("Warning: No GitHub token provided. API requests may be rate limited.")
-            g = Github()
-
-        # Print rate limit info
+        # 解析 GitHub URL 获取仓库名称
         try:
+            repo_name = parse_github_url(str(repo_url))
+            logger.info(f"Parsed repo name: {repo_name}")
+        except ValueError as e:
+            logger.error(f"Error parsing GitHub URL: {str(e)}")
+            if progress_callback:
+                await progress_callback(0, 1, f"URL 格式错误: {str(e)}")
+            return []
+        
+        # 确保输出目录存在
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"Created directory: {output_dir}")
+        
+        # 发送进度更新
+        if progress_callback:
+            await progress_callback(3, 10, f"已创建输出目录: {output_dir}")
+
+        # 获取 GitHub 令牌
+        token = os.getenv("GITHUB_TOKEN")
+        if not token:
+            logger.error("GitHub token not found in environment variables")
+            if progress_callback:
+                await progress_callback(0, 1, "GitHub token not found in environment variables")
+            return []
+
+        # 打印令牌信息（隐藏大部分内容）
+        masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
+        logger.info(f"Loaded GitHub token from .env: {masked_token}")
+        
+        # 创建 GitHub 实例
+        try:
+            g = Github(token)
+            # 检查 API 速率限制
             rate_limit = g.get_rate_limit()
-            print(f"GitHub API rate limit: {rate_limit.core.remaining}/{rate_limit.core.limit} requests remaining")
+            logger.info(f"GitHub API rate limit: {rate_limit.core.remaining}/{rate_limit.core.limit} requests remaining")
         except Exception as e:
-            print(f"Could not get rate limit info: {str(e)}")
+            logger.error(f"Error initializing GitHub API: {str(e)}")
+            if progress_callback:
+                await progress_callback(0, 1, f"初始化 GitHub API 时出错: {str(e)}")
+            return []
 
-        # Get the repository
-        repo = g.get_repo(repo_name)
-        print(f"Repository: {repo.full_name}")
+        # 获取仓库
+        try:
+            logger.info(f"Getting repository: {repo_name}")
+            repo = g.get_repo(repo_name)
+            logger.info(f"Successfully got repository: {repo.full_name}")
+        except Exception as e:
+            logger.error(f"Error getting repository {repo_name}: {str(e)}")
+            if progress_callback:
+                await progress_callback(0, 1, f"获取仓库时出错: {str(e)}")
+            return []
 
-        # Get all contents recursively
-        contents = get_contents_recursively(repo, "")
+        # 发送进度更新：开始获取仓库内容
+        if progress_callback:
+            await progress_callback(0, 1, "正在获取仓库内容...")
 
-        # Filter and download markdown files
-        md_files_count = 0
-        for content in contents:
-            if content.path.endswith('.md'):
-                # Create subdirectories if needed
+        # 递归获取所有内容
+        try:
+            logger.info("Getting repository contents recursively...")
+            all_contents = get_contents_recursively(repo, "")
+            logger.info(f"Found {len(all_contents)} total files in repository")
+        except Exception as e:
+            logger.error(f"Error getting repository contents: {str(e)}")
+            if progress_callback:
+                await progress_callback(0, 1, f"获取仓库内容时出错: {str(e)}")
+            return []
+
+        # 过滤出 Markdown 文件
+        md_files = [content for content in all_contents if content.path.lower().endswith(".md")]
+        logger.info(f"Found {len(md_files)} Markdown files in repository")
+
+        if not md_files:
+            logger.warning("No Markdown files found in repository")
+            if progress_callback:
+                await progress_callback(0, 1, "仓库中未找到 Markdown 文件")
+            return []
+
+        # 发送进度更新：开始下载文件
+        if progress_callback:
+            await progress_callback(0, len(md_files), f"找到 {len(md_files)} 个 Markdown 文件，开始下载...")
+
+        # 下载 Markdown 文件
+        downloaded_files = []
+        for i, content in enumerate(md_files):
+            try:
+                # 创建必要的目录结构
                 file_path = os.path.join(output_dir, content.path)
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-                # Get file content
+                # 下载文件内容
+                logger.info(f"Downloading file: {content.path}")
                 file_content = repo.get_contents(content.path).decoded_content
 
-                # Write to file
-                with open(file_path, 'wb') as f:
+                # 保存文件
+                with open(file_path, "wb") as f:
                     f.write(file_content)
 
-                downloaded_files.append(content.path)
-                md_files_count += 1
+                downloaded_files.append(file_path)
+                logger.info(f"Successfully downloaded: {file_path}")
 
-        # Close the connection
-        g.close()
+                # 更新进度
+                if progress_callback:
+                    await progress_callback(i + 1, len(md_files), f"已下载 {i + 1}/{len(md_files)}: {content.path}")
+            except Exception as e:
+                logger.error(f"Error downloading file {content.path}: {str(e)}")
+                # 继续下载其他文件，不中断整个过程
 
-        return True, f"Downloaded {md_files_count} markdown files", md_files_count, downloaded_files
+        return downloaded_files
 
     except GithubException as e:
         error_message = f"GitHub API error: {e.status} - {e.data.get('message', str(e))}"
         print(f"GitHub Exception: {error_message}")
         print(f"Exception details: {e}")
-        return False, error_message, 0, []
+        
+        # 发送错误进度更新
+        if progress_callback:
+            await progress_callback(0, 1, error_message)
+            
+        return []
     except Exception as e:
-        error_message = f"Error: {str(e)}"
-        print(f"General Exception: {error_message}")
-        import traceback
-        print(f"Traceback: {traceback.format_exc()}")
-        return False, error_message, 0, []
-
-# ZIP archive creation function removed - files are saved directly to the project directory
+        error_message = f"Error downloading markdown files: {str(e)}"
+        print(error_message)
+        
+        # 发送错误进度更新
+        if progress_callback:
+            await progress_callback(0, 1, error_message)
+        
+        return []
 
 @app.get("/")
 async def root():
@@ -230,96 +408,162 @@ async def download_repository(repo_request: RepositoryRequest):
     and automatically embed them if embedding functionality is available.
 
     Args:
-        repo_request: Repository request containing URL
+        repo_request: Repository request containing URL and optional client_id for WebSocket updates
 
     Returns:
         JSON response with download status and embedding status
     """
     try:
-        # Parse GitHub URL to get repo name
-        repo_name = parse_github_url(str(repo_request.repo_url))
+        # 从 URL 提取组织和仓库名称
+        org, repo = extract_org_repo(str(repo_request.repo_url))
+        
+        # 如果没有提供 library_name，则自动生成
+        table_name = repo_request.library_name
+        if not table_name:
+            table_name = f"{org}_{repo}"
+        
+        # 确保表名中的连字符替换为下划线
+        table_name = table_name.replace("-", "_")
+        
+        # 获取客户端 ID（如果有）
+        client_id = repo_request.client_id
+        
+        # 创建临时目录
+        temp_dir = tempfile.mkdtemp()
+        logger.info(f"Created temporary directory: {temp_dir}")
+        
+        # 发送初始进度信息
+        if client_id:
+            await manager.send_json({
+                "type": "download",
+                "status": "started",
+                "progress": 0,
+                "message": f"开始下载 {org}/{repo} 仓库..."
+            }, client_id)
 
-        # Get repository name for the output directory
-        repo_dir_name = repo_name.split('/')[-1]
+        # 定义下载进度回调函数
+        async def download_progress_callback(current, total, message):
+            if client_id:
+                progress = int((current / total) * 100) if total > 0 else 0
+                await manager.send_json({
+                    "type": "download",
+                    "status": "in_progress",
+                    "progress": progress,
+                    "current": current,
+                    "total": total,
+                    "message": message
+                }, client_id)
 
-        # Create output directory in the project root
-        output_dir = os.path.join(os.getcwd(), f"{repo_dir_name}_md_files")
-
-        # Download markdown files - always use token from .env file
-        success, message, files_count, files_list = download_md_files(
-            repo_name,
-            output_dir=output_dir,
-            token=None  # Always use token from .env file
+        # 下载 Markdown 文件，使用带进度的版本
+        md_files = await download_md_files_with_progress(
+            repo_request.repo_url, 
+            temp_dir, 
+            progress_callback=download_progress_callback if client_id else None
         )
+        
+        if not md_files:
+            if client_id:
+                await manager.send_json({
+                    "type": "download",
+                    "status": "error",
+                    "progress": 0,
+                    "message": "仓库中未找到 Markdown 文件"
+                }, client_id)
+            
+            shutil.rmtree(temp_dir)
+            return DownloadResponse(
+                status="error",
+                message="No markdown files found in the repository"
+            )
 
-        if not success:
-            raise HTTPException(status_code=400, detail=message)
+        # 下载完成通知
+        if client_id:
+            await manager.send_json({
+                "type": "download",
+                "status": "completed",
+                "progress": 100,
+                "message": f"已下载 {len(md_files)} 个 Markdown 文件"
+            }, client_id)
+        
+        # 加载 Markdown 文件
+        documents = load_markdown_files(md_files)
+        
+        # 分割文档
+        docs = split_documents(documents)
 
-        # Initialize embedding status variables
-        embedding_status = "skipped"
-        embedding_count = 0
-
-        # Automatically embed documents if embedding functionality is available
-        if files_count > 0:
-            try:
-                print(f"Starting automatic embedding of {files_count} markdown files...")
-
-                # Load documents
-                documents = load_markdown_files(output_dir)
-
-                if documents:
-                    # Split documents
-                    split_docs = split_documents(documents)
-
-                    # Embed and store documents
-                    if repo_request.library_name:
-                        # 如果前端提供了 library_name，则直接使用，但确保将连字符替换为下划线
-                        table_name = repo_request.library_name.replace('-', '_')
-                    else:
-                        # 否则从 GitHub URL 中提取用户名和仓库名
-                        # 例如：https://github.com/cr7258/elasticsearch-mcp-server -> cr7258_elasticsearch_mcp_server
-                        repo_parts = repo_name.split('/')
-                        if len(repo_parts) == 2:
-                            owner, repo = repo_parts
-                            # 替换连字符为下划线以避免 SQL 语法错误
-                            safe_owner = owner.replace('-', '_')
-                            safe_repo = repo.replace('-', '_')
-                            table_name = f"{safe_owner}_{safe_repo}"
-                        else:
-                            # 如果无法正确解析，则使用原来的方式
-                            safe_repo_name = repo_dir_name.replace('-', '_')
-                            table_name = f"{safe_repo_name}_vectors"
-                    vector_store = embed_and_store(
-                        split_docs,
-                        table_name=table_name,
-                        drop_old=True
-                    )
-
-                    embedding_status = "success"
-                    embedding_count = len(split_docs)
-                    print(f"Successfully embedded {embedding_count} document chunks into table '{table_name}'")
-                else:
-                    embedding_status = "no_documents"
-                    print("No documents were loaded for embedding")
-            except Exception as e:
-                embedding_status = f"error: {str(e)}"
-                print(f"Error during embedding: {str(e)}")
-                import traceback
-                print(f"Embedding traceback: {traceback.format_exc()}")
-
+        # 嵌入并存储文档，使用带进度的版本
+        if client_id:
+            await manager.send_json({
+                "type": "embedding",
+                "status": "started",
+                "progress": 0,
+                "message": "开始嵌入文档..."
+            }, client_id)
+        
+        # 定义嵌入进度回调函数
+        async def embedding_progress_callback(current, total, message):
+            if client_id:
+                await manager.send_json({
+                    "type": "embedding",
+                    "status": "in_progress",
+                    "progress": int((current / total) * 100) if total > 0 else 0,
+                    "current": current,
+                    "total": total,
+                    "message": message
+                }, client_id)
+                    
+        try:
+            # 嵌入并存储文档
+            vector_store = await embed_and_store_with_progress(
+                docs, 
+                table_name=table_name, 
+                drop_old=True,
+                progress_callback=embedding_progress_callback
+            )
+            
+            # 嵌入完成通知
+            if client_id:
+                await manager.send_json({
+                    "type": "embedding",
+                    "status": "completed",
+                    "progress": 100,
+                    "message": f"成功嵌入 {len(docs)} 个文档片段到表 '{table_name}'"
+                }, client_id)
+        except Exception as e:
+            # 嵌入出错通知
+            if client_id:
+                await manager.send_json({
+                    "type": "embedding",
+                    "status": "error",
+                    "progress": 0,
+                    "message": f"嵌入文档时出错: {str(e)}"
+                }, client_id)
+            
+            # 清理临时目录
+            shutil.rmtree(temp_dir)
+            
+            return DownloadResponse(
+                status="error",
+                message=f"Error embedding documents: {str(e)}"
+            )
+        # 清理临时目录
+        shutil.rmtree(temp_dir)
+        
         return DownloadResponse(
             status="success",
-            message=f"Downloaded {files_count} markdown files to {output_dir}",
-            files_count=files_count,
-            files=files_list,
-            download_url=None,  # No download URL needed as files are saved directly
-            embedding_status=embedding_status,
-            embedding_count=embedding_count
+            message=f"Successfully downloaded and embedded {len(md_files)} markdown files",
+            table_name=table_name
         )
 
     except ValueError as e:
+        logger.error(f"ValueError in download_repository: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(f"Exception in download_repository: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 # Endpoint for downloading ZIP files removed - files are now saved directly to the project directory
@@ -383,6 +627,18 @@ async def query_vector_database(query_request: QueryRequest):
 def main():
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# 添加 WebSocket 端点，用于实时进度更新
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
+    await manager.connect(websocket, client_id)
+    try:
+        while True:
+            # 保持连接活跃，等待消息
+            data = await websocket.receive_text()
+            # 可以处理从客户端接收的消息，但这里我们主要是保持连接
+    except WebSocketDisconnect:
+        manager.disconnect(client_id)
 
 if __name__ == "__main__":
     main()

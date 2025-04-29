@@ -1,3 +1,0 @@
-embed_and_store
-main
-query_oceanbase

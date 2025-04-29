@@ -4,7 +4,8 @@ FastAPI server that receives GitHub repository URLs and downloads markdown files
 """
 
 import os
-from typing import List, Optional
+import sys
+from typing import List, Optional, Dict
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 
@@ -14,6 +15,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 from github import Github, Auth, GithubException
+from embed_and_store import load_markdown_files, split_documents, embed_and_store
+from query_oceanbase import search_documents, connect_to_vector_store
 
 # Load environment variables from .env file
 load_dotenv()
@@ -51,6 +54,8 @@ class DownloadResponse(BaseModel):
     files_count: int = 0
     files: List[str] = []
     download_url: Optional[str] = None
+    embedding_status: Optional[str] = None
+    embedding_count: int = 0
 
 # No need to store temporary directories anymore - files are saved directly to the project directory
 
@@ -206,6 +211,13 @@ async def root():
         html_content = f.read()
     return html_content
 
+@app.get("/query", response_class=HTMLResponse)
+async def query_page():
+    """Query page endpoint that serves the query HTML interface"""
+    with open("static/query.html", "r") as f:
+        html_content = f.read()
+    return html_content
+
 @app.get("/api/info")
 async def api_info():
     """API info endpoint that returns basic information about the API"""
@@ -214,13 +226,14 @@ async def api_info():
 @app.post("/download/", response_model=DownloadResponse)
 async def download_repository(repo_request: RepositoryRequest):
     """
-    Download markdown files from a GitHub repository directly to the project directory.
+    Download markdown files from a GitHub repository directly to the project directory
+    and automatically embed them if embedding functionality is available.
 
     Args:
         repo_request: Repository request containing URL
 
     Returns:
-        JSON response with download status
+        JSON response with download status and embedding status
     """
     try:
         # Parse GitHub URL to get repo name
@@ -242,12 +255,62 @@ async def download_repository(repo_request: RepositoryRequest):
         if not success:
             raise HTTPException(status_code=400, detail=message)
 
+        # Initialize embedding status variables
+        embedding_status = "skipped"
+        embedding_count = 0
+
+        # Automatically embed documents if embedding functionality is available
+        if files_count > 0:
+            try:
+                print(f"Starting automatic embedding of {files_count} markdown files...")
+
+                # Load documents
+                documents = load_markdown_files(output_dir)
+
+                if documents:
+                    # Split documents
+                    split_docs = split_documents(documents)
+
+                    # Embed and store documents
+                    # 从 GitHub URL 中提取用户名和仓库名
+                    # 例如：https://github.com/cr7258/elasticsearch-mcp-server -> cr7258_elasticsearch_mcp_server
+                    repo_parts = repo_name.split('/')
+                    if len(repo_parts) == 2:
+                        owner, repo = repo_parts
+                        # 替换连字符为下划线以避免 SQL 语法错误
+                        safe_owner = owner.replace('-', '_')
+                        safe_repo = repo.replace('-', '_')
+                        table_name = f"{safe_owner}_{safe_repo}"
+                    else:
+                        # 如果无法正确解析，则使用原来的方式
+                        safe_repo_name = repo_dir_name.replace('-', '_')
+                        table_name = f"{safe_repo_name}_vectors"
+                    vector_store = embed_and_store(
+                        split_docs,
+                        table_name=table_name,
+                        drop_old=True
+                    )
+
+                    embedding_status = "success"
+                    embedding_count = len(split_docs)
+                    print(f"Successfully embedded {embedding_count} document chunks into table '{table_name}'")
+                else:
+                    embedding_status = "no_documents"
+                    print("No documents were loaded for embedding")
+            except Exception as e:
+                embedding_status = f"error: {str(e)}"
+                print(f"Error during embedding: {str(e)}")
+                import traceback
+                print(f"Embedding traceback: {traceback.format_exc()}")
+
         return DownloadResponse(
             status="success",
             message=f"Downloaded {files_count} markdown files to {output_dir}",
             files_count=files_count,
             files=files_list,
-            download_url=None  # No download URL needed as files are saved directly
+            download_url=None,  # No download URL needed as files are saved directly
+            embedding_status=embedding_status,
+            embedding_count=embedding_count
         )
 
     except ValueError as e:
@@ -257,6 +320,65 @@ async def download_repository(repo_request: RepositoryRequest):
 
 # Endpoint for downloading ZIP files removed - files are now saved directly to the project directory
 
-if __name__ == "__main__":
+class QueryRequest(BaseModel):
+    """Request model for vector database query"""
+    query: str
+    table_name: str
+    k: int = 5
+    summarize: bool = False
+
+class QueryResponse(BaseModel):
+    """Response model for vector database query"""
+    status: str
+    message: str
+    results: List[Dict[str, str]] = []
+    summary: Optional[str] = None
+
+@app.post("/query/", response_model=QueryResponse)
+async def query_vector_database(query_request: QueryRequest):
+    """
+    Query the vector database for documents similar to the query.
+
+    Args:
+        query_request: Query request containing query string and table name
+
+    Returns:
+        JSON response with query results
+    """
+    try:
+        # Search for documents with optional summarization
+        results, summary = search_documents(
+            query=query_request.query,
+            k=query_request.k,
+            table_name=query_request.table_name,
+            summarize=query_request.summarize
+        )
+
+        # Format results
+        formatted_results = []
+        for i, doc in enumerate(results):
+            formatted_results.append({
+                "id": str(i + 1),
+                "source": doc.metadata.get("source", "Unknown"),
+                "content": doc.page_content
+            })
+
+        return QueryResponse(
+            status="success",
+            message=f"Found {len(results)} results for query: '{query_request.query}'",
+            results=formatted_results,
+            summary=summary
+        )
+
+    except Exception as e:
+        return QueryResponse(
+            status="error",
+            message=f"Error querying vector database: {str(e)}"
+        )
+
+def main():
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+if __name__ == "__main__":
+    main()

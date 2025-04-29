@@ -6,7 +6,13 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "aiofiles==24.1.0",
+    "dashscope==1.23.2",
     "fastapi==0.115.12",
+    "langchain-community==0.3.21",
+    "langchain-core==0.3.56",
+    "langchain-oceanbase==0.2.0",
+    "langchain-openai==0.3.14",
+    "langchain-text-splitters==0.3.8",
     "pydantic==2.11.3",
     "pygithub==2.6.1",
     "python-dotenv==1.1.0",

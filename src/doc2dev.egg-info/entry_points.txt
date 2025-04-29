@@ -1,0 +1,2 @@
+[console_scripts]
+doc2dev = src.main:main

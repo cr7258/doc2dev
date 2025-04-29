@@ -114,10 +114,40 @@
         .download-btn:hover {
             background-color: #286090;
         }
+
+        .embedding-status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .embedding-status h4 {
+            margin-top: 0;
+        }
+
+        .embedding-status.success {
+            background-color: #e8f5e9;
+            border-left: 5px solid #4CAF50;
+        }
+
+        .embedding-status.warning {
+            background-color: #fff8e1;
+            border-left: 5px solid #FFC107;
+        }
+
+        .embedding-status.error {
+            background-color: #ffebee;
+            border-left: 5px solid #F44336;
+        }
     </style>
 </head>
 <body>
     <h1>GitHub Markdown Downloader</h1>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <a href="/query" style="color: #2196F3; text-decoration: none;">
+            Query Vector Database
+        </a>
+    </div>
 
     <div class="container">
         <form id="downloadForm">
@@ -245,6 +275,31 @@
 
                         let html = `<h3>Success!</h3>
                                     <p>${data.message}</p>`;
+
+                        // Add embedding status information
+                        if (data.embedding_status) {
+                            let embeddingStatusText = '';
+                            let embeddingStatusClass = '';
+
+                            if (data.embedding_status === 'success') {
+                                embeddingStatusText = `Successfully embedded ${data.embedding_count} document chunks into vector database.`;
+                                embeddingStatusClass = 'success';
+                            } else if (data.embedding_status === 'skipped') {
+                                embeddingStatusText = 'Embedding was skipped. Embedding functionality may not be available.';
+                                embeddingStatusClass = 'warning';
+                            } else if (data.embedding_status === 'no_documents') {
+                                embeddingStatusText = 'No documents were loaded for embedding.';
+                                embeddingStatusClass = 'warning';
+                            } else if (data.embedding_status.startsWith('error')) {
+                                embeddingStatusText = `Error during embedding: ${data.embedding_status.substring(7)}`;
+                                embeddingStatusClass = 'error';
+                            }
+
+                            html += `<div class="embedding-status ${embeddingStatusClass}">
+                                        <h4>Embedding Status</h4>
+                                        <p>${embeddingStatusText}</p>
+                                    </div>`;
+                        }
 
                         if (data.files.length > 0) {
                             html += `<p>Downloaded files:</p>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Database Query</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border-left: 5px solid #4CAF50;
+        }
+        .error {
+            background-color: #ffebee;
+            border-left: 5px solid #F44336;
+        }
+        .result-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border-left: 3px solid #2196F3;
+        }
+        .result-source {
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+        .result-content {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            color: #2196F3;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vector Database Query</h1>
+    
+    <div class="container">
+        <form id="queryForm">
+            <div>
+                <label for="tableName">Table Name:</label>
+                <input type="text" id="tableName" name="tableName" placeholder="e.g., elasticsearch-mcp-server_vectors" required>
+            </div>
+            
+            <div>
+                <label for="query">Query:</label>
+                <input type="text" id="query" name="query" placeholder="Enter your query here" required>
+            </div>
+            
+            <!-- Number of Results 选项已移除，默认使用5个结果 -->
+            
+            <button type="submit">Search</button>
+        </form>
+    </div>
+    
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Searching...</p>
+    </div>
+    
+    <div id="result" class="result">
+        <!-- Results will be displayed here -->
+    </div>
+    
+    <a href="/" class="back-link">Back to Downloader</a>
+    
+    <script>
+        document.getElementById('queryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const tableName = document.getElementById('tableName').value;
+            const query = document.getElementById('query').value;
+            // k 元素已被移除，使用默认值 5
+            
+            const loadingDiv = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            
+            // Show loading
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/query/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        table_name: tableName,
+                        query: query,
+                        k: 5, 
+                        summarize: true 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Hide loading
+                loadingDiv.style.display = 'none';
+                
+                // Show result
+                resultDiv.style.display = 'block';
+                
+                if (data.status === 'success') {
+                    resultDiv.className = 'result success';
+                    
+                    let html = '';
+                    
+                    // 如果有大语言模型的总结结果，优先显示
+                    if (data.summary) {
+                        html = `
+                            <div class="result-item">
+                                <h4>查询结果</h4>
+                                <div class="result-content" style="white-space: pre-wrap; margin-top: 20px;">${data.summary}</div>
+                            </div>
+                        `;
+                    } else {
+                        html = `<h3>${data.message}</h3>`;
+                        
+                        if (data.results.length > 0) {
+                            data.results.forEach(result => {
+                                html += `
+                                    <div class="result-item">
+                                        <div class="result-source">Source: ${result.source}</div>
+                                        <div class="result-content">${result.content}</div>
+                                    </div>
+                                `;
+                            });
+                        } else {
+                            html += '<p>No results found.</p>';
+                        }
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h3>Error</h3><p>${data.message}</p>`;
+                }
+            } catch (error) {
+                // Hide loading
+                loadingDiv.style.display = 'none';
+                
+                // Show error
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<h3>Error</h3><p>Failed to connect to the server: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

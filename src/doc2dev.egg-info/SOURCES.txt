@@ -1,0 +1,11 @@
+README.md
+pyproject.toml
+src/embed_and_store.py
+src/main.py
+src/query_oceanbase.py
+src/doc2dev.egg-info/PKG-INFO
+src/doc2dev.egg-info/SOURCES.txt
+src/doc2dev.egg-info/dependency_links.txt
+src/doc2dev.egg-info/entry_points.txt
+src/doc2dev.egg-info/requires.txt
+src/doc2dev.egg-info/top_level.txt

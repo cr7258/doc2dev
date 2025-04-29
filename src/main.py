@@ -40,12 +40,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files directory
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# 前后端分离架构，不再需要挂载静态文件目录
 
 class RepositoryRequest(BaseModel):
     """Request model for repository URL"""
     repo_url: HttpUrl
+    library_name: Optional[str] = None  # 可选参数，如果前端没有提供，则自动从 URL 生成
 
 class DownloadResponse(BaseModel):
     """Response model for download status"""
@@ -204,19 +204,19 @@ def download_md_files(repo_name, output_dir=None, token=None):
 
 # ZIP archive creation function removed - files are saved directly to the project directory
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def root():
-    """Root endpoint that serves the HTML interface"""
-    with open("static/index.html", "r") as f:
-        html_content = f.read()
-    return html_content
-
-@app.get("/query", response_class=HTMLResponse)
-async def query_page():
-    """Query page endpoint that serves the query HTML interface"""
-    with open("static/query.html", "r") as f:
-        html_content = f.read()
-    return html_content
+    """API 根端点，返回基本信息"""
+    return {
+        "status": "success",
+        "message": "Doc2Dev API is running",
+        "version": "1.0.0",
+        "endpoints": [
+            "/api/info",
+            "/download/",
+            "/query/"
+        ]
+    }
 
 @app.get("/api/info")
 async def api_info():
@@ -272,19 +272,23 @@ async def download_repository(repo_request: RepositoryRequest):
                     split_docs = split_documents(documents)
 
                     # Embed and store documents
-                    # 从 GitHub URL 中提取用户名和仓库名
-                    # 例如：https://github.com/cr7258/elasticsearch-mcp-server -> cr7258_elasticsearch_mcp_server
-                    repo_parts = repo_name.split('/')
-                    if len(repo_parts) == 2:
-                        owner, repo = repo_parts
-                        # 替换连字符为下划线以避免 SQL 语法错误
-                        safe_owner = owner.replace('-', '_')
-                        safe_repo = repo.replace('-', '_')
-                        table_name = f"{safe_owner}_{safe_repo}"
+                    if repo_request.library_name:
+                        # 如果前端提供了 library_name，则直接使用，但确保将连字符替换为下划线
+                        table_name = repo_request.library_name.replace('-', '_')
                     else:
-                        # 如果无法正确解析，则使用原来的方式
-                        safe_repo_name = repo_dir_name.replace('-', '_')
-                        table_name = f"{safe_repo_name}_vectors"
+                        # 否则从 GitHub URL 中提取用户名和仓库名
+                        # 例如：https://github.com/cr7258/elasticsearch-mcp-server -> cr7258_elasticsearch_mcp_server
+                        repo_parts = repo_name.split('/')
+                        if len(repo_parts) == 2:
+                            owner, repo = repo_parts
+                            # 替换连字符为下划线以避免 SQL 语法错误
+                            safe_owner = owner.replace('-', '_')
+                            safe_repo = repo.replace('-', '_')
+                            table_name = f"{safe_owner}_{safe_repo}"
+                        else:
+                            # 如果无法正确解析，则使用原来的方式
+                            safe_repo_name = repo_dir_name.replace('-', '_')
+                            table_name = f"{safe_repo_name}_vectors"
                     vector_store = embed_and_store(
                         split_docs,
                         table_name=table_name,

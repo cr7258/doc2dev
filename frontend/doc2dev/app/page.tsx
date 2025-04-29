@@ -1,3 +1,7 @@
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -64,6 +68,17 @@ const libraryIcons = {
 };
 
 const HomePage: React.FC<HomePageProps> = ({ libraries }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // 跳转到查询页面，并传递搜索查询参数
+      router.push(`/query?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+  
   return (
     <div className="container mx-auto py-10">
       <div className="mb-10 text-center">
@@ -75,16 +90,21 @@ const HomePage: React.FC<HomePageProps> = ({ libraries }) => {
         </p>
         
         <div className="mt-6 flex justify-center">
-          <div className="relative w-full max-w-lg">
+          <form onSubmit={handleSearch} className="relative w-full max-w-lg">
             <input
               type="text"
               placeholder="搜索库..."
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <button className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-primary text-white rounded-md">
+            <button 
+              type="submit"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-primary text-white rounded-md"
+            >
               搜索
             </button>
-          </div>
+          </form>
         </div>
         
         <div className="mt-6">

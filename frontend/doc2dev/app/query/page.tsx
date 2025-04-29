@@ -13,9 +13,10 @@ interface QueryResult {
 export default function QueryPage() {
   const searchParams = useSearchParams();
   const initialTable = searchParams.get("table") || "";
+  const initialQuery = searchParams.get("q") || "";
   
   const [tableName, setTableName] = useState(initialTable);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<QueryResult[]>([]);
   const [summary, setSummary] = useState("");
@@ -114,28 +115,9 @@ export default function QueryPage() {
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">摘要</h2>
           <div className="prose max-w-none">
-            {summary.split("\n").map((paragraph, i) => (
-              <p key={i} className="mb-4">{paragraph}</p>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {results.length > 0 && (
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-xl font-bold mb-4">查询结果</h2>
-          
-          <div className="space-y-6">
-            {results.map((result) => (
-              <div key={result.id} className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold mb-2">{result.source}</h3>
-                <div className="prose max-w-none text-gray-700">
-                  <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded-md overflow-x-auto">
-                    {result.content}
-                  </pre>
-                </div>
-              </div>
-            ))}
+            <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded-md overflow-x-auto">
+              {summary}
+            </pre>
           </div>
         </div>
       )}

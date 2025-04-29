@@ -1,75 +1,101 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Book, Code, Database, FileCode, Library, Package } from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  ChevronDown,
+  ChevronUp,
+  Ellipsis,
+  ExternalLink,
+  Filter,
+  Github,
+  ListFilter,
+  MoreHorizontal,
+  Plus,
+  Search,
+} from "lucide-react";
 
-interface LibraryCardProps {
+interface Repository {
+  id: string;
   name: string;
   description: string;
-  icon: React.ReactNode;
-  count: number;
+  repo: string;
+  repo_url?: string;
+  tokens: number;
+  snippets: number;
+  lastUpdated: string;
+  status: "active" | "archived" | "private";
 }
 
-const LibraryCard: React.FC<LibraryCardProps> = ({
-  name,
-  description,
-  icon,
-  count,
-}) => {
-  return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {icon}
-            <CardTitle className="text-xl">{name}</CardTitle>
-          </div>
-          <Badge variant="secondary">{count}</Badge>
-        </div>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="h-2 w-full bg-muted overflow-hidden rounded-full">
-          <div
-            className="h-full bg-primary"
-            style={{ width: `${Math.min(count / 10, 100)}%` }}
-          ></div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-interface HomePageProps {
-  libraries: {
-    name: string;
-    description: string;
-    icon: keyof typeof libraryIcons;
-    count: number;
-  }[];
-}
-
-const libraryIcons = {
-  npm: <Package className="h-5 w-5 text-primary" />,
-  react: <Code className="h-5 w-5 text-blue-500" />,
-  vue: <FileCode className="h-5 w-5 text-green-500" />,
-  angular: <Book className="h-5 w-5 text-red-500" />,
-  database: <Database className="h-5 w-5 text-yellow-500" />,
-  library: <Library className="h-5 w-5 text-purple-500" />,
-};
-
-const HomePage: React.FC<HomePageProps> = ({ libraries }) => {
+export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortColumn, setSortColumn] = useState<keyof Repository>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  
+  // 从后端 API 获取仓库数据
+  useEffect(() => {
+    const fetchRepositories = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/`);
+        
+        if (!response.ok) {
+          throw new Error(`获取仓库数据失败: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === "success" && Array.isArray(data.repositories)) {
+          // 将后端数据转换为前端所需的格式
+          const formattedRepositories: Repository[] = data.repositories.map((repo: any) => ({
+            id: repo.id.toString(),
+            name: repo.name,
+            description: repo.description || '',
+            repo: repo.repo,
+            repo_url: repo.repo_url,
+            tokens: repo.tokens || 0,
+            snippets: repo.snippets || 0,
+            lastUpdated: repo.last_updated || '-',
+            status: "active"
+          }));
+          
+          setRepositories(formattedRepositories);
+        } else {
+          throw new Error('获取仓库数据格式不正确');
+        }
+      } catch (err) {
+        console.error('获取仓库数据失败:', err);
+        setError(err instanceof Error ? err.message : '获取仓库数据失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRepositories();
+  }, []);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,101 +105,256 @@ const HomePage: React.FC<HomePageProps> = ({ libraries }) => {
     }
   };
   
+  const handleSort = (column: keyof Repository) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+  
+  const filteredRepositories = useMemo(() => {
+    let filtered = [...repositories];
+    
+    // 搜索过滤
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (repo) =>
+          repo.name.toLowerCase().includes(query) ||
+          repo.description.toLowerCase().includes(query) ||
+          repo.repo.toLowerCase().includes(query)
+      );
+    }
+    
+    // 排序
+    filtered.sort((a, b) => {
+      const valueA = a[sortColumn];
+      const valueB = b[sortColumn];
+      
+      if (typeof valueA === "string" && typeof valueB === "string") {
+        return sortDirection === "asc"
+          ? valueA.localeCompare(valueB)
+          : valueB.localeCompare(valueA);
+      }
+      
+      // 对于数字类型
+      if (typeof valueA === "number" && typeof valueB === "number") {
+        return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
+      }
+      
+      return 0;
+    });
+    
+    return filtered;
+  }, [repositories, searchQuery, sortColumn, sortDirection]);
+  
+  const formatNumber = (num: number) => {
+    return num.toLocaleString();
+  };
+  
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 px-4">
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-bold tracking-tight mb-4">
           Doc2Dev - 文档检索系统
         </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
           欢迎使用 Doc2Dev 文档检索系统。我们索引了各种库的文档，帮助您快速找到所需的信息。
         </p>
         
-        <div className="mt-6 flex justify-center">
-          <form onSubmit={handleSearch} className="relative w-full max-w-lg">
-            <input
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+          <form onSubmit={handleSearch} className="relative w-full max-w-md">
+            <Input
               type="text"
               placeholder="搜索库..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              className="pr-10"
             />
-            <button 
+            <Button 
               type="submit"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-primary text-white rounded-md"
+              size="icon"
+              variant="ghost"
+              className="absolute right-0 top-0 h-full"
             >
-              搜索
-            </button>
+              <Search className="h-4 w-4" />
+            </Button>
           </form>
-        </div>
-        
-        <div className="mt-6">
-          <a href="/download" className="inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">
-            添加 GitHub 仓库
-          </a>
+          
+          <Link href="/download">
+            <Button className="bg-green-500 hover:bg-green-600">
+              <Plus className="mr-2 h-4 w-4" /> 添加 GitHub 仓库
+            </Button>
+          </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {libraries.map((library) => (
-          <LibraryCard
-            key={library.name}
-            name={library.name}
-            description={library.description}
-            icon={libraryIcons[library.icon]}
-            count={library.count}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p className="text-muted-foreground">加载仓库数据中...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center gap-2 text-destructive">
+            <div className="rounded-full bg-destructive/10 p-3">
+              <ExternalLink className="h-6 w-6" />
+            </div>
+            <p>加载仓库数据失败</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.reload()}
+            >
+              重试
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead 
+                  className="w-[250px] cursor-pointer"
+                  onClick={() => handleSort("name")}
+                >
+                  <div className="flex items-center">
+                    名称
+                    {sortColumn === "name" && (
+                      sortDirection === "asc" ? 
+                      <ChevronUp className="ml-1 h-4 w-4" /> : 
+                      <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead>仓库</TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("tokens")}
+                >
+                  <div className="flex items-center">
+                    Tokens
+                    {sortColumn === "tokens" && (
+                      sortDirection === "asc" ? 
+                      <ChevronUp className="ml-1 h-4 w-4" /> : 
+                      <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("snippets")}
+                >
+                  <div className="flex items-center">
+                    代码片段
+                    {sortColumn === "snippets" && (
+                      sortDirection === "asc" ? 
+                      <ChevronUp className="ml-1 h-4 w-4" /> : 
+                      <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("lastUpdated")}
+                >
+                  <div className="flex items-center">
+                    更新时间
+                    {sortColumn === "lastUpdated" && (
+                      sortDirection === "asc" ? 
+                      <ChevronUp className="ml-1 h-4 w-4" /> : 
+                      <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRepositories.length > 0 ? (
+                filteredRepositories.map((repo) => (
+                  <TableRow key={repo.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span className="text-primary font-semibold">{repo.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Github className="mr-2 h-4 w-4" />
+                        <a 
+                          href={repo.repo_url || `https://github.com${repo.repo}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline flex items-center"
+                        >
+                          <span>{repo.repo}</span>
+                          <ExternalLink className="ml-1 h-3 w-3" />
+                        </a>
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatNumber(repo.tokens)}</TableCell>
+                    <TableCell>{formatNumber(repo.snippets)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-normal">
+                        {repo.lastUpdated}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            // 从仓库路径中提取组织和仓库名
+                            const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
+                            const [org, repoName] = repoPath.split('/');
+                            // 使用下划线拼接作为表名
+                            const tableName = `${org}_${repoName}`.toLowerCase();
+                            router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
+                          }}
+                        >
+                          <Search className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                            // 从仓库路径中提取组织和仓库名
+                            const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
+                            const [org, repoName] = repoPath.split('/');
+                            // 使用下划线拼接作为表名
+                            const tableName = `${org}_${repoName}`.toLowerCase();
+                            router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
+                          }}>查询</DropdownMenuItem>
+                            <DropdownMenuItem>查看详情</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    没有找到仓库。
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
-};
-
-// 示例数据 - 这里会被替换为从后端 API 获取的真实数据
-const libraries: {
-  name: string;
-  description: string;
-  icon: keyof typeof libraryIcons;
-  count: number;
-}[] = [
-  {
-    name: "React",
-    description: "用于构建用户界面的 JavaScript 库",
-    icon: "react",
-    count: 1245,
-  },
-  {
-    name: "Vue.js",
-    description: "渐进式 JavaScript 框架",
-    icon: "vue",
-    count: 856,
-  },
-  {
-    name: "Angular",
-    description: "由 Google 维护的 TypeScript 框架",
-    icon: "angular",
-    count: 643,
-  },
-  {
-    name: "Express",
-    description: "Node.js Web 应用程序框架",
-    icon: "npm",
-    count: 954,
-  },
-  {
-    name: "MongoDB",
-    description: "文档数据库，提供高可扩展性和灵活性",
-    icon: "database",
-    count: 512,
-  },
-  {
-    name: "Lodash",
-    description: "JavaScript 实用工具库",
-    icon: "library",
-    count: 387,
-  },
-];
-
-export default function Home() {
-  return <HomePage libraries={libraries} />;
 }

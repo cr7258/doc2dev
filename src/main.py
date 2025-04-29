@@ -31,6 +31,7 @@ from pydantic import BaseModel, HttpUrl
 from github import Github, Auth, GithubException
 from embed_and_store import load_markdown_files, split_documents, embed_and_store
 from query_oceanbase import search_documents, connect_to_vector_store
+from repository_db import get_all_repositories, get_repository_by_name, add_repository, update_repository, delete_repository
 
 # 添加带进度回调的 embed_and_store 函数
 async def embed_and_store_with_progress(documents, table_name, drop_old=False, progress_callback=None):
@@ -639,6 +640,77 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             # 可以处理从客户端接收的消息，但这里我们主要是保持连接
     except WebSocketDisconnect:
         manager.disconnect(client_id)
+
+# 添加仓库API端点
+@app.get("/repositories/")
+async def get_repositories():
+    """
+    获取所有仓库信息
+    
+    Returns:
+        JSON 响应，包含所有仓库信息
+    """
+    try:
+        repositories = get_all_repositories()
+        
+        # 格式化日期时间为字符串
+        for repo in repositories:
+            if "created_at" in repo and repo["created_at"]:
+                repo["created_at"] = repo["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+            if "updated_at" in repo and repo["updated_at"]:
+                # 计算相对时间（例如：1天前，2小时前）
+                time_diff = time.time() - repo["updated_at"].timestamp()
+                if time_diff < 3600:  # 小于1小时
+                    repo["last_updated"] = f"{int(time_diff / 60)}分钟前"
+                elif time_diff < 86400:  # 小于1天
+                    repo["last_updated"] = f"{int(time_diff / 3600)}小时前"
+                elif time_diff < 2592000:  # 小于30天
+                    repo["last_updated"] = f"{int(time_diff / 86400)}天前"
+                else:
+                    repo["last_updated"] = repo["updated_at"].strftime("%Y-%m-%d")
+                repo["updated_at"] = repo["updated_at"].strftime("%Y-%m-%d %H:%M:%S")
+        
+        return {"status": "success", "repositories": repositories}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取仓库信息失败: {str(e)}")
+
+@app.get("/repositories/{name}")
+async def get_repository(name: str):
+    """
+    根据名称获取仓库信息
+    
+    Args:
+        name: 仓库名称
+        
+    Returns:
+        JSON 响应，包含仓库信息
+    """
+    try:
+        repository = get_repository_by_name(name)
+        if not repository:
+            raise HTTPException(status_code=404, detail=f"仓库 {name} 不存在")
+        
+        # 格式化日期时间为字符串
+        if "created_at" in repository and repository["created_at"]:
+            repository["created_at"] = repository["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+        if "updated_at" in repository and repository["updated_at"]:
+            # 计算相对时间（例如：1天前，2小时前）
+            time_diff = time.time() - repository["updated_at"].timestamp()
+            if time_diff < 3600:  # 小于1小时
+                repository["last_updated"] = f"{int(time_diff / 60)}分钟前"
+            elif time_diff < 86400:  # 小于1天
+                repository["last_updated"] = f"{int(time_diff / 3600)}小时前"
+            elif time_diff < 2592000:  # 小于30天
+                repository["last_updated"] = f"{int(time_diff / 86400)}天前"
+            else:
+                repository["last_updated"] = repository["updated_at"].strftime("%Y-%m-%d")
+            repository["updated_at"] = repository["updated_at"].strftime("%Y-%m-%d %H:%M:%S")
+        
+        return {"status": "success", "repository": repository}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取仓库信息失败: {str(e)}")
 
 if __name__ == "__main__":
     main()

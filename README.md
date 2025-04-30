@@ -39,9 +39,9 @@ Doc2Dev 采用前后端分离的架构设计：
 - **后端**：Python, FastAPI, WebSockets, AsyncIO
 - **AI 模型**：
   - DashScope 嵌入模型：用于生成文档的向量表示
-  - OpenAI API (via OpenRouter)：用于生成搜索结果摘要
+  - OpenAI API：用于生成搜索结果摘要
 - **数据库**：使用 OceanBase 处理向量存储、元数据管理和相似度检索
-- **MCP** 通过 MCP Server 的方式向 AI 编程助手提供查询文档的接口
+- **MCP**： 通过 MCP Server 的方式向 AI 编程助手提供查询文档的接口
 
 ### 数据处理流程
 

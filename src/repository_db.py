@@ -46,33 +46,14 @@ def get_all_repositories():
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             sql = """
             SELECT id, name, description, repo, repo_url, 
-                   created_at, updated_at
+                   tokens, snippets, created_at, updated_at
             FROM repositories
             ORDER BY name
             """
+            
+            # 执行原始查询
             cursor.execute(sql)
             repositories = cursor.fetchall()
-            
-            # 查询每个仓库的向量表信息
-            for repo in repositories:
-                repo_name = repo["name"].lower().replace("-", "_")
-                try:
-                    # 查询向量表中的文档数量
-                    sql_count = f"""
-                    SELECT COUNT(*) as count FROM {repo_name}_vectors
-                    """
-                    cursor.execute(sql_count)
-                    result = cursor.fetchone()
-                    if result:
-                        repo["tokens"] = result["count"] * 1536  # 假设每个向量是1536维
-                        repo["snippets"] = result["count"]
-                    else:
-                        repo["tokens"] = 0
-                        repo["snippets"] = 0
-                except Exception as e:
-                    # 如果表不存在，设置为0
-                    repo["tokens"] = 0
-                    repo["snippets"] = 0
             
             return repositories
     except Exception as e:
@@ -97,33 +78,12 @@ def get_repository_by_name(name: str):
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             sql = """
             SELECT id, name, description, repo, repo_url, 
-                   created_at, updated_at
+                   tokens, snippets, created_at, updated_at
             FROM repositories
             WHERE name = %s
             """
             cursor.execute(sql, (name,))
             repository = cursor.fetchone()
-            
-            if repository:
-                # 查询向量表信息
-                repo_name = repository["name"].lower().replace("-", "_")
-                try:
-                    # 查询向量表中的文档数量
-                    sql_count = f"""
-                    SELECT COUNT(*) as count FROM {repo_name}_vectors
-                    """
-                    cursor.execute(sql_count)
-                    result = cursor.fetchone()
-                    if result:
-                        repository["tokens"] = result["count"] * 1536  # 假设每个向量是1536维
-                        repository["snippets"] = result["count"]
-                    else:
-                        repository["tokens"] = 0
-                        repository["snippets"] = 0
-                except Exception as e:
-                    # 如果表不存在，设置为0
-                    repository["tokens"] = 0
-                    repository["snippets"] = 0
             
             return repository
     except Exception as e:

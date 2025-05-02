@@ -337,7 +337,28 @@ export default function Home() {
                             const tableName = `${org}_${repoName}`.toLowerCase();
                             router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
                           }}>查询</DropdownMenuItem>
-                            <DropdownMenuItem>查看详情</DropdownMenuItem>
+                            <DropdownMenuItem onClick={async () => {
+                              if (confirm(`确定要删除仓库 ${repo.name} 吗？此操作不可恢复！`)) {
+                                try {
+                                  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repo.id}`, {
+                                    method: 'DELETE',
+                                  });
+                                  
+                                  if (response.ok) {
+                                    const data = await response.json();
+                                    alert(data.message || '删除成功');
+                                    // 刷新页面以更新仓库列表
+                                    window.location.reload();
+                                  } else {
+                                    const error = await response.json();
+                                    alert(`删除失败: ${error.detail || '未知错误'}`);
+                                  }
+                                } catch (error) {
+                                  console.error('删除仓库失败:', error);
+                                  alert('删除仓库失败，请查看控制台获取详细信息');
+                                }
+                              }
+                            }}>删除</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

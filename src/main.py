@@ -25,7 +25,7 @@ from github import Github, Auth, GithubException
 # 导入自定义模块
 from embed_and_store import load_markdown_files, split_documents, embed_and_store
 from query_oceanbase import search_documents, connect_to_vector_store
-from repository_db import get_all_repositories, get_repository_by_name, add_repository, update_repository, delete_repository, get_repository_by_path
+from repository_db import get_all_repositories, get_repository_by_name, add_repository, update_repository, delete_repository, get_repository_by_path, get_repository_by_id, delete_vector_table
 from markdown_utils import count_code_blocks_in_documents
 
 # 配置日志记录
@@ -573,7 +573,6 @@ async def download_repository(repo_request: RepositoryRequest):
             try:
                 # 从 URL 提取仓库名称
                 repo_name = repo.replace("-", " ").title()
-                repo_path = f"/{org}/{repo}"
                 repo_url = f"https://github.com/{org}/{repo}"
                 
                 # 计算文档中的 token 数量和代码块数量
@@ -740,6 +739,62 @@ async def get_repositories():
         return {"status": "success", "repositories": repositories}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取仓库信息失败: {str(e)}")
+
+# 删除仓库的 API 端点
+@app.delete("/repositories/{repo_id}")
+async def delete_repository_endpoint(repo_id: int):
+    """
+    删除仓库
+    
+    Args:
+        repo_id: 仓库ID
+        
+    Returns:
+        JSON response with delete status
+    """
+    try:
+        # 使用 repository_db.py 中的函数获取仓库信息
+        repository = get_repository_by_id(repo_id)
+        
+        if not repository:
+            raise HTTPException(status_code=404, detail=f"仓库不存在: ID {repo_id}")
+        
+        # 获取仓库路径，用于生成表名
+        repo_path = repository['repo']
+        # 确保路径没有前导斜杠
+        if repo_path.startswith('/'):
+            repo_path = repo_path[1:]
+        
+        # 生成表名
+        table_name = repo_path.replace('/', '_').replace('-', '_')
+        
+        # 删除向量表
+        try:
+            # 使用 repository_db.py 中的函数删除向量表
+            vector_table_deleted = delete_vector_table(table_name)
+            if vector_table_deleted:
+                logger.info(f"已删除向量表: {table_name}")
+            else:
+                logger.warning(f"删除向量表失败: {table_name}")
+        except Exception as e:
+            logger.error(f"删除向量表失败: {str(e)}")
+            # 即使删除向量表失败，我们仍然尝试删除数据库记录
+        
+        # 删除数据库记录
+        success = delete_repository(repo_id)
+        
+        if success:
+            return {
+                "status": "success",
+                "message": f"已成功删除仓库: {repository['name']}"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="删除仓库记录失败")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"删除仓库失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"删除仓库失败: {str(e)}")
 
 @app.get("/repositories/{name}")
 async def get_repository(name: str):

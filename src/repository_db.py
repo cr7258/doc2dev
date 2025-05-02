@@ -213,3 +213,59 @@ def delete_repository(id: int):
     finally:
         if connection:
             connection.close()
+
+def delete_vector_table(table_name: str):
+    """
+    删除向量表
+    
+    Args:
+        table_name: 要删除的向量表名称
+        
+    Returns:
+        bool: 是否删除成功
+    """
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            # 安全地格式化表名
+            safe_table_name = table_name.replace('-', '_')
+            sql = f"DROP TABLE IF EXISTS {safe_table_name}"
+            cursor.execute(sql)
+            connection.commit()
+            return True
+    except Exception as e:
+        print(f"删除向量表失败: {str(e)}")
+        return False
+    finally:
+        if connection:
+            connection.close()
+
+def get_repository_by_id(id: int):
+    """
+    根据 ID 获取仓库信息
+    
+    Args:
+        id: 仓库ID
+        
+    Returns:
+        Dict: 仓库信息，如果不存在返回 None
+    """
+    try:
+        connection = get_db_connection()
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            sql = """
+            SELECT id, name, description, repo, repo_url, 
+                   tokens, snippets, created_at, updated_at
+            FROM repositories
+            WHERE id = %s
+            """
+            cursor.execute(sql, (id,))
+            repository = cursor.fetchone()
+            
+            return repository
+    except Exception as e:
+        print(f"根据 ID 获取仓库信息失败: {str(e)}")
+        return None
+    finally:
+        if connection:
+            connection.close()

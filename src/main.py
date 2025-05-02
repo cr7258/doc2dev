@@ -15,6 +15,18 @@ import shutil
 from typing import List, Optional, Dict, Any, Tuple
 from urllib.parse import urlparse
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, HttpUrl
+from github import Github, Auth, GithubException
+
+# 导入自定义模块
+from embed_and_store import load_markdown_files, split_documents, embed_and_store
+from query_oceanbase import search_documents, connect_to_vector_store
+from repository_db import get_all_repositories, get_repository_by_name, add_repository, update_repository, delete_repository, get_repository_by_path
+from markdown_utils import count_code_blocks_in_documents
 
 # 配置日志记录
 logging.basicConfig(
@@ -23,20 +35,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, HttpUrl
-from github import Github, Auth, GithubException
-from embed_and_store import load_markdown_files, split_documents, embed_and_store
-from query_oceanbase import search_documents, connect_to_vector_store
-from repository_db import get_all_repositories, get_repository_by_name, add_repository, update_repository, delete_repository
-
-# 添加带进度回调的 embed_and_store 函数
 async def embed_and_store_with_progress(documents, table_name, drop_old=False, progress_callback=None):
     """
     嵌入文档并存储到向量数据库，支持进度回调
+    
+    Args:
+        documents: 要嵌入的文档列表
+        table_name: 向量表名称
+        drop_old: 是否删除旧表
+        progress_callback: 进度回调函数
+        
+    Returns:
+        OceanbaseVectorStore: 向量存储对象
     """
     total_docs = len(documents)
     
@@ -60,7 +70,8 @@ async def embed_and_store_with_progress(documents, table_name, drop_old=False, p
         raise e
 
 # Load environment variables from .env file
-load_dotenv()
+# 强制重新加载 .env 文件，忽略缓存
+load_dotenv(override=True)
 
 # Get GitHub token from environment variables
 DEFAULT_GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
@@ -108,8 +119,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 前后端分离架构，不再需要挂载静态文件目录
-
 class RepositoryRequest(BaseModel):
     """Request model for repository URL"""
     repo_url: HttpUrl
@@ -125,6 +134,9 @@ class DownloadResponse(BaseModel):
     download_url: Optional[str] = None
     embedding_status: Optional[str] = None
     embedding_count: int = 0
+    table_name: Optional[str] = None  # 表名，用于跳转到查询页面
+    query_url: Optional[str] = None  # 查询页面的 URL，用于前端生成链接
+    repo_path: Optional[str] = None  # 仓库路径，用于前端显示
 
 # No need to store temporary directories anymore - files are saved directly to the project directory
 
@@ -418,6 +430,10 @@ async def download_repository(repo_request: RepositoryRequest):
         # 从 URL 提取组织和仓库名称
         org, repo = extract_org_repo(str(repo_request.repo_url))
         
+        # 检查仓库是否已经存在
+        repo_path = f"{org}/{repo}"
+        existing_repo = get_repository_by_path(repo_path)
+        
         # 如果没有提供 library_name，则自动生成
         table_name = repo_request.library_name
         if not table_name:
@@ -425,6 +441,28 @@ async def download_repository(repo_request: RepositoryRequest):
         
         # 确保表名中的连字符替换为下划线
         table_name = table_name.replace("-", "_")
+        
+        # 如果仓库已存在，返回提示信息
+        if existing_repo:
+            repo_name = existing_repo['name']
+            repo_path = existing_repo['repo']
+            
+            # 生成查询页面的 URL，包含表名、仓库名称和仓库路径
+            
+            # 使用实际的表名，而不是当前生成的 table_name
+            # 表名应该是仓库路径中的斜杠替换为下划线，连字符替换为下划线
+            actual_table_name = repo_path.replace('/', '_').replace('-', '_')
+            
+            # 生成查询页面 URL
+            query_url = f"http://localhost:3000/query?table={actual_table_name}&repo_name={repo_name}&repo_path={repo_path}"
+            
+            return DownloadResponse(
+                status="exists",
+                message=f"This repository has already been submitted. Check {repo_path} to see it.",
+                table_name=actual_table_name,
+                query_url=query_url,
+                repo_path=repo_path
+            )
         
         # 获取客户端 ID（如果有）
         client_id = repo_request.client_id
@@ -538,8 +576,12 @@ async def download_repository(repo_request: RepositoryRequest):
                 repo_path = f"/{org}/{repo}"
                 repo_url = f"https://github.com/{org}/{repo}"
                 
+                # 计算文档中的 token 数量和代码块数量
+                tokens_count = sum(len(doc.page_content.split()) for doc in documents)
+                snippets_count = count_code_blocks_in_documents(documents)
+                
                 # 添加到 repositories 表
-                add_repository(repo_name, "", repo_path, repo_url)
+                add_repository(repo_name, "", repo_path, repo_url, tokens_count, snippets_count)
                 
                 if client_id:
                     await manager.send_json({

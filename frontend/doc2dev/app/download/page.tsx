@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 export default function DownloadPage() {
   const [repoUrl, setRepoUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: "", content: "" });
+  const [message, setMessage] = useState({ type: "", content: "", queryUrl: "", repoPath: "" });
   
   // WebSocket 和进度状态
   const [connected, setConnected] = useState(false);
@@ -86,7 +86,7 @@ export default function DownloadPage() {
     
     // 重置所有状态
     setLoading(true);
-    setMessage({ type: "", content: "" });
+    setMessage({ type: "", content: "", queryUrl: "", repoPath: "" });
     setDownloadProgress(0);
     setDownloadStatus("");
     setDownloadMessage("");
@@ -112,12 +112,24 @@ export default function DownloadPage() {
         setMessage({
           type: "success",
           content: `成功下载并索引了仓库！`,
+          queryUrl: "",
+          repoPath: ""
         });
         setRepoUrl("");
+      } else if (data.status === "exists" && data.query_url) {
+        // 仓库已存在，有查询链接
+        setMessage({
+          type: "info",
+          content: data.message || "此仓库已存在",
+          queryUrl: data.query_url,
+          repoPath: data.repo_path || "该仓库"
+        });
       } else {
         setMessage({
           type: "error",
           content: data.message || "下载失败，请稍后重试。",
+          queryUrl: "",
+          repoPath: ""
         });
       }
     } catch (error) {
@@ -125,6 +137,8 @@ export default function DownloadPage() {
       setMessage({
         type: "error",
         content: "发生错误，请稍后重试。",
+        queryUrl: "",
+        repoPath: ""
       });
     } finally {
       setLoading(false);
@@ -202,9 +216,25 @@ export default function DownloadPage() {
       
       {message.content && (
         <div className={`max-w-2xl mx-auto p-4 rounded-md mb-8 ${
-          message.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+          message.type === "success" ? "bg-green-100 text-green-800" : 
+          message.type === "info" ? "bg-blue-100 text-blue-800" : 
+          "bg-red-100 text-red-800"
         }`}>
-          <p>{message.content}</p>
+          {message.queryUrl ? (
+            <p>
+              {message.content.split("Check")[0]}
+              Check <a 
+                href={message.queryUrl} 
+                className="text-blue-600 hover:underline"
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                {message.repoPath || "该仓库"}
+              </a> to see it.
+            </p>
+          ) : (
+            <p>{message.content}</p>
+          )}
         </div>
       )}
       

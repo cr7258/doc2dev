@@ -93,7 +93,37 @@ def get_repository_by_name(name: str):
         if connection:
             connection.close()
 
-def add_repository(name: str, description: str, repo: str, repo_url: str):
+def get_repository_by_path(repo_path: str):
+    """
+    根据仓库路径获取仓库信息
+    
+    Args:
+        repo_path: 仓库路径，格式为 /owner/repo
+        
+    Returns:
+        Dict: 仓库信息，如果不存在返回 None
+    """
+    try:
+        connection = get_db_connection()
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            sql = """
+            SELECT id, name, description, repo, repo_url, 
+                   tokens, snippets, created_at, updated_at
+            FROM repositories
+            WHERE repo = %s
+            """
+            cursor.execute(sql, (repo_path,))
+            repository = cursor.fetchone()
+            
+            return repository
+    except Exception as e:
+        print(f"根据路径获取仓库信息失败: {str(e)}")
+        return None
+    finally:
+        if connection:
+            connection.close()
+
+def add_repository(name: str, description: str, repo: str, repo_url: str, tokens: int = 0, snippets: int = 0):
     """
     添加仓库信息
     
@@ -102,6 +132,8 @@ def add_repository(name: str, description: str, repo: str, repo_url: str):
         description: 仓库描述
         repo: 仓库路径
         repo_url: 仓库URL
+        tokens: 文档中的 token 数量
+        snippets: 文档中的代码块数量
         
     Returns:
         bool: 是否添加成功
@@ -110,10 +142,10 @@ def add_repository(name: str, description: str, repo: str, repo_url: str):
         connection = get_db_connection()
         with connection.cursor() as cursor:
             sql = """
-            INSERT INTO repositories (name, description, repo, repo_url)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO repositories (name, description, repo, repo_url, tokens, snippets)
+            VALUES (%s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(sql, (name, description, repo, repo_url))
+            cursor.execute(sql, (name, description, repo, repo_url, tokens, snippets))
             connection.commit()
             return True
     except Exception as e:

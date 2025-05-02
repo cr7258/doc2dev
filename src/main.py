@@ -740,6 +740,50 @@ async def get_repositories():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取仓库信息失败: {str(e)}")
 
+# 获取特定仓库的详细信息
+@app.get("/repositories/{repo_path}")
+async def get_repository_details(repo_path: str):
+    """
+    获取特定仓库的详细信息
+    
+    Args:
+        repo_path: 仓库路径，格式为 owner/repo
+        
+    Returns:
+        JSON 响应，包含仓库详细信息
+    """
+    try:
+        # 将路径中的下划线替换为斜杠
+        repo_path = repo_path.replace("_", "/")
+        
+        # 获取仓库信息
+        repository = get_repository_by_path(repo_path)
+        
+        if not repository:
+            raise HTTPException(status_code=404, detail=f"未找到仓库: {repo_path}")
+        
+        # 格式化日期时间
+        if "created_at" in repository and repository["created_at"]:
+            repository["created_at"] = repository["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+        
+        if "updated_at" in repository and repository["updated_at"]:
+            # 计算相对时间（例如：1天前，2小时前）
+            time_diff = time.time() - repository["updated_at"].timestamp()
+            if time_diff < 3600:  # 小于1小时
+                repository["last_updated"] = f"{int(time_diff / 60)}分钟前"
+            elif time_diff < 86400:  # 小于1天
+                repository["last_updated"] = f"{int(time_diff / 3600)}小时前"
+            elif time_diff < 2592000:  # 小于30天
+                repository["last_updated"] = f"{int(time_diff / 86400)}天前"
+            else:
+                repository["last_updated"] = repository["updated_at"].strftime("%Y-%m-%d")
+            
+            repository["updated_at"] = repository["updated_at"].strftime("%Y-%m-%d %H:%M:%S")
+        
+        return {"status": "success", "repository": repository}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取仓库详细信息失败: {str(e)}")
+
 # 删除仓库的 API 端点
 @app.delete("/repositories/{repo_id}")
 async def delete_repository_endpoint(repo_id: int):
@@ -796,43 +840,8 @@ async def delete_repository_endpoint(repo_id: int):
         logger.error(f"删除仓库失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"删除仓库失败: {str(e)}")
 
-@app.get("/repositories/{name}")
-async def get_repository(name: str):
-    """
-    根据名称获取仓库信息
-    
-    Args:
-        name: 仓库名称
-        
-    Returns:
-        JSON 响应，包含仓库信息
-    """
-    try:
-        repository = get_repository_by_name(name)
-        if not repository:
-            raise HTTPException(status_code=404, detail=f"仓库 {name} 不存在")
-        
-        # 格式化日期时间为字符串
-        if "created_at" in repository and repository["created_at"]:
-            repository["created_at"] = repository["created_at"].strftime("%Y-%m-%d %H:%M:%S")
-        if "updated_at" in repository and repository["updated_at"]:
-            # 计算相对时间（例如：1天前，2小时前）
-            time_diff = time.time() - repository["updated_at"].timestamp()
-            if time_diff < 3600:  # 小于1小时
-                repository["last_updated"] = f"{int(time_diff / 60)}分钟前"
-            elif time_diff < 86400:  # 小于1天
-                repository["last_updated"] = f"{int(time_diff / 3600)}小时前"
-            elif time_diff < 2592000:  # 小于30天
-                repository["last_updated"] = f"{int(time_diff / 86400)}天前"
-            else:
-                repository["last_updated"] = repository["updated_at"].strftime("%Y-%m-%d")
-            repository["updated_at"] = repository["updated_at"].strftime("%Y-%m-%d %H:%M:%S")
-        
-        return {"status": "success", "repository": repository}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取仓库信息失败: {str(e)}")
+# 注意：原来的 get_repository 函数已被移除，因为它与 get_repository_details 函数功能重复
+# 如果需要通过仓库名称获取仓库信息，请使用 get_repository_details 函数
 
 if __name__ == "__main__":
     main()

@@ -2,7 +2,12 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Github, FileText, FileJson, AlertCircle, CheckCircle, Search, Database, ExternalLink } from "lucide-react";
 
 export default function DownloadPage() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -145,117 +150,199 @@ export default function DownloadPage() {
     }
   };
   
+  // 搜索功能
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      window.location.href = `/?search=${encodeURIComponent(searchQuery)}`;
+    }
+  };
+  
   return (
-    <div className="container mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">添加 GitHub 仓库</h1>
-      
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
-        <form onSubmit={handleSubmit}>
-
-          <div className="mb-6">
-            <label htmlFor="repoUrl" className="block text-sm font-medium mb-1">
-              GitHub 仓库 URL
-            </label>
-            <input
-              id="repoUrl"
-              type="text"
-              value={repoUrl}
-              onChange={(e) => setRepoUrl(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="https://github.com/facebook/react"
-              required
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              请输入完整的 GitHub 仓库 URL
-            </p>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="container mx-auto py-10 px-4">
+        {/* 顶部导航栏 */}
+        <div className="flex flex-wrap items-center justify-between gap-4 max-w-4xl mx-auto mb-8">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2">
+              <Database className="h-6 w-6 text-blue-600" />
+              <span className="text-xl font-bold">Doc2Dev</span>
+            </Link>
+            
+            <div className="relative">
+              <form onSubmit={handleSearch} className="flex items-center">
+                <div className="relative w-64">
+                  <Input
+                    className="pl-9 pr-4 bg-white border-border w-full cursor-pointer"
+                    placeholder="搜索仓库..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    type="search"
+                  />
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                    <Search size={16} strokeWidth={2} />
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
-          
-          <button
-            type="submit"
-            className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors"
-            disabled={loading}
-          >
-            {loading ? "处理中..." : "下载并索引"}
-          </button>
-        </form>
-      </div>
-      
-      {/* 下载进度 */}
-      {(downloadStatus || loading) && (
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-4">
-          <h3 className="text-lg font-semibold mb-2">下载进度</h3>
-          <Progress value={downloadProgress} className="mb-2" />
-          <p className="text-sm text-gray-600">
-            {downloadMessage || "正在准备下载..."}
-          </p>
-          {downloadStatus === "error" && (
-            <p className="text-sm text-red-600 mt-2">下载出错</p>
-          )}
-          {downloadStatus === "completed" && (
-            <p className="text-sm text-green-600 mt-2">下载完成</p>
-          )}
         </div>
-      )}
-      
-      {/* 嵌入进度 */}
-      {(embeddingStatus || (downloadStatus === "completed" && loading)) && (
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-4">
-          <h3 className="text-lg font-semibold mb-2">嵌入进度</h3>
-          <Progress value={embeddingProgress} className="mb-2" />
-          <p className="text-sm text-gray-600">
-            {embeddingMessage || "等待嵌入开始..."}
-          </p>
-          {embeddingStatus === "error" && (
-            <p className="text-sm text-red-600 mt-2">嵌入出错</p>
-          )}
-          {embeddingStatus === "completed" && (
-            <p className="text-sm text-green-600 mt-2">嵌入完成</p>
-          )}
-        </div>
-      )}
-      
-      {message.content && (
-        <div className={`max-w-2xl mx-auto p-4 rounded-md mb-8 ${
-          message.type === "success" ? "bg-green-100 text-green-800" : 
-          message.type === "info" ? "bg-blue-100 text-blue-800" : 
-          "bg-red-100 text-red-800"
-        }`}>
-          {message.queryUrl ? (
-            <p>
-              {message.content.split("Check")[0]}
-              Check <a 
-                href={message.queryUrl} 
-                className="text-blue-600 hover:underline"
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                {message.repoPath || "该仓库"}
-              </a> to see it.
-            </p>
-          ) : (
-            <p>{message.content}</p>
-          )}
-        </div>
-      )}
-      
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">使用说明</h2>
         
-        <div className="prose max-w-none">
-          <ol className="list-decimal pl-5 space-y-2">
-            <li>输入完整的 GitHub 仓库 URL</li>
-            <li>点击“下载并索引”按钮</li>
-            <li>等待系统下载并处理仓库中的 Markdown 文件</li>
-            <li>处理完成后，您可以在首页查看新添加的库</li>
-            <li>点击库卡片或使用查询页面来搜索文档</li>
-          </ol>
-        </div>
-      </div>
-      
-      <div className="text-center mt-8">
-        <Link href="/" className="text-primary hover:underline">
-          返回首页
-        </Link>
+        {/* 移除了标题文字 */}
+        
+        <Card className="max-w-4xl mx-auto mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Github className="h-5 w-5" />
+              添加新仓库
+            </CardTitle>
+            <CardDescription>
+              输入 GitHub 仓库 URL，系统将自动下载并索引其中的文档
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                {/* 移除了 GitHub 仓库 URL 标签 */}
+                <div className="flex items-center space-x-2">
+                  <div className="relative w-3/4">
+                    <Input
+                      id="repoUrl"
+                      type="text"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                      className="px-4 bg-white border-border w-full"
+                      placeholder="https://github.com/<org>/<repo>"
+                      required
+                    />
+                    {/* 移除了 GitHub 图标 */}
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={loading}
+                    className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
+                  >
+                    {loading ? "处理中..." : "下载并索引"}
+                  </Button>
+                </div>
+                {/* 移除了示例提示文本 */}
+                {message.type === "info" && message.queryUrl && (
+                  <div className="mt-4 text-red-500/80 text-sm flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <p>
+                      {message.content.split("Check")[0]}
+                      查看 <Link 
+                        href={message.queryUrl} 
+                        className="text-red-500/80 hover:underline font-medium inline-flex items-center"
+                      >
+                        {message.repoPath || "该仓库"}
+                        <ExternalLink className="ml-1 h-2.5 w-2.5" />
+                      </Link>
+                    </p>
+                  </div>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+        
+        {/* 下载进度 */}
+        {(downloadStatus || loading) && (
+          <Card className="max-w-4xl mx-auto mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-500" />
+                下载进度
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Progress value={downloadProgress} className="h-2" />
+              <p className="text-sm text-muted-foreground">
+                {downloadMessage || "正在准备下载..."}
+              </p>
+              {downloadStatus === "error" && (
+                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                  <AlertCircle className="h-3.5 w-3.5 mr-1" />
+                  下载出错
+                </Badge>
+              )}
+              {downloadStatus === "completed" && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                  下载完成
+                </Badge>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* 嵌入进度 */}
+        {(embeddingStatus || (downloadStatus === "completed" && loading)) && (
+          <Card className="max-w-4xl mx-auto mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileJson className="h-5 w-5 text-purple-500" />
+                嵌入进度
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Progress value={embeddingProgress} className="h-2" />
+              <p className="text-sm text-muted-foreground">
+                {embeddingMessage || "等待嵌入开始..."}
+              </p>
+              {embeddingStatus === "error" && (
+                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                  <AlertCircle className="h-3.5 w-3.5 mr-1" />
+                  嵌入出错
+                </Badge>
+              )}
+              {embeddingStatus === "completed" && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                  嵌入完成
+                </Badge>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* 消息提示 - 只显示成功和错误提示 */}
+        {message.content && message.type !== "info" && (
+          <Card className={`max-w-4xl mx-auto mb-4 ${
+            message.type === "success" ? "border-green-200" : "border-red-200"
+          }`}>
+            <CardContent className="pt-4">
+              <div className={`flex items-start gap-3 ${
+                message.type === "success" ? "text-green-700" : "text-red-700"
+              }`}>
+                {message.type === "success" && <CheckCircle className="h-5 w-5 mt-0.5" />}
+                {message.type === "error" && <AlertCircle className="h-5 w-5 mt-0.5" />}
+                
+                <div>
+                  <p>{message.content}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* 使用说明 */}
+        <Card className="max-w-4xl mx-auto">
+          <CardHeader>
+            <CardTitle>使用说明</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="list-decimal pl-5 space-y-2 text-sm">
+              <li>输入完整的 GitHub 仓库 URL</li>
+              <li>点击"下载并索引"按钮</li>
+              <li>等待系统下载并处理仓库中的 Markdown 文件</li>
+              <li>处理完成后，您可以在首页查看新添加的库</li>
+              <li>点击库卡片或使用查询页面来搜索文档</li>
+            </ol>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

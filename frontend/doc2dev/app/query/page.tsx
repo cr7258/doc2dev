@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Github, Clock, Code, RefreshCw, ExternalLink, FileCode, FileText, FileJson } from "lucide-react";
+import { Github, Clock, Code, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Database, Search, Copy } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -57,8 +58,9 @@ export default function QueryPage() {
   
   // 仓库数据状态
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<QueryResult[]>([]);
+  const [results, setResults] = useState<any[]>([]);
   const [summary, setSummary] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [repoData, setRepoData] = useState<RepositoryData | null>(null);
   
   // 根据实际数据构建 DocumentItem
@@ -131,10 +133,42 @@ export default function QueryPage() {
   };
   
   return (
-    <div className="container mx-auto py-10 px-4">
-      {/* 仓库信息区域 - 21st推荐的组件结构 */}
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="container mx-auto px-4 pt-6 pb-10">
+        {/* 顶部导航栏 */}
+        <div className="flex flex-wrap items-center justify-between gap-4 max-w-4xl mx-auto mb-8">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2">
+              <Database className="h-6 w-6 text-blue-600" />
+              <span className="text-xl font-bold">Doc2Dev</span>
+            </Link>
+            
+            <div className="relative">
+              <form onSubmit={(e: React.FormEvent) => {
+                e.preventDefault();
+                if (searchQuery.trim()) {
+                  window.location.href = `/?search=${encodeURIComponent(searchQuery)}`;
+                }
+              }} className="flex items-center">
+                <div className="relative w-64">
+                  <Input
+                    className="pl-9 pr-4 bg-white border-border w-full cursor-pointer"
+                    placeholder="搜索仓库..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    type="search"
+                  />
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                    <Search size={16} strokeWidth={2} />
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      {/* 仓库信息区域 */}
       {documentItem.projectName && (
-        <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden transition-all duration-200 hover:shadow-md">
+        <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden shadow-sm border border-gray-100">
           <CardHeader className="pb-2">
             <div className="flex flex-col">
               <CardTitle className="text-xl font-bold">{documentItem.projectName}</CardTitle>
@@ -145,7 +179,7 @@ export default function QueryPage() {
                 href={documentItem.githubLink} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                className="flex items-center gap-1 text-sm text-blue-500 hover:text-blue-700 transition-colors"
               >
                 <Github className="h-4 w-4" />
                 <span>{repoPath}</span>
@@ -155,15 +189,15 @@ export default function QueryPage() {
           </CardHeader>
           <CardContent className="pb-3">
             <div className="flex flex-wrap gap-3">
-              <Badge variant="outline" className="flex items-center gap-1.5 bg-blue-50 px-3 py-1 text-blue-700">
+              <Badge variant="outline" className="flex items-center gap-1.5 bg-blue-50 px-3 py-1 text-blue-700 border-blue-100">
                 <FileText className="h-3.5 w-3.5" />
                 <span>{documentItem.tokens} tokens</span>
               </Badge>
-              <Badge variant="outline" className="flex items-center gap-1.5 bg-purple-50 px-3 py-1 text-purple-700">
+              <Badge variant="outline" className="flex items-center gap-1.5 bg-purple-50 px-3 py-1 text-purple-700 border-purple-100">
                 <FileJson className="h-3.5 w-3.5" />
                 <span>{documentItem.snippets} snippets</span>
               </Badge>
-              <Badge variant="outline" className="flex items-center gap-1.5 bg-green-50 px-3 py-1 text-green-700">
+              <Badge variant="outline" className="flex items-center gap-1.5 bg-green-50 px-3 py-1 text-green-700 border-green-100">
                 <Clock className="h-3.5 w-3.5" />
                 <span>Updated {documentItem.updatedAt}</span>
               </Badge>
@@ -172,9 +206,12 @@ export default function QueryPage() {
         </Card>
       )}
       
-      <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden transition-all duration-200 hover:shadow-md">
-        <CardHeader>
-          <CardTitle className="text-xl">文档查询</CardTitle>
+      <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden shadow-sm border border-gray-100">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FileCode className="h-5 w-5 text-blue-500" />
+            文档查询
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
@@ -186,48 +223,49 @@ export default function QueryPage() {
             />
             
             <div className="mb-6">
-              <label htmlFor="query" className="block text-sm font-medium mb-1 text-gray-700">
+              <label htmlFor="query" className="block text-sm font-medium mb-2">
                 查询内容
               </label>
-              <div className="relative">
-                <input
-                  id="query"
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="输入您的问题..."
-                  required
-                />
-                {query && (
-                  <button 
-                    type="button" 
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    onClick={() => setQuery('')}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                )}
+              <div className="flex items-center space-x-2">
+                <div className="relative flex-1">
+                  <input
+                    id="query"
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    placeholder="输入您的问题..."
+                    required
+                  />
+                  {query && (
+                    <button 
+                      type="button" 
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      onClick={() => setQuery('')}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <Button
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      查询中...
+                    </>
+                  ) : "查询"}
+                </Button>
               </div>
             </div>
-            
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  查询中...
-                </>
-              ) : "查询"}
-            </Button>
           </form>
         </CardContent>
       </Card>
@@ -245,18 +283,42 @@ export default function QueryPage() {
       
       {/* 摘要部分 */}
       {summary && (
-        <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden transition-all duration-200 hover:shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              查询结果
-            </CardTitle>
+        <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden shadow-sm border border-gray-100">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-500" />
+                查询结果
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600 hover:bg-blue-50 cursor-pointer"
+                onClick={() => {
+                  navigator.clipboard.writeText(summary);
+                  // 使用状态变量来显示复制成功提示
+                  const button = document.getElementById('copy-button');
+                  if (button) {
+                    const originalContent = button.innerHTML;
+                    button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                    button.classList.add('text-green-500');
+                    
+                    setTimeout(() => {
+                      button.innerHTML = originalContent;
+                      button.classList.remove('text-green-500');
+                    }, 2000);
+                  }
+                }}
+                title="复制到剪贴板"
+                id="copy-button"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="prose max-w-none">
-              <div className="whitespace-pre-wrap text-sm bg-gray-50 p-5 rounded-lg overflow-x-auto border border-gray-100 text-gray-800">
+              <div className="whitespace-pre-wrap text-sm bg-white p-5 rounded-lg overflow-x-auto border border-gray-100 text-gray-800">
                 {summary}
               </div>
             </div>
@@ -273,6 +335,7 @@ export default function QueryPage() {
             返回首页
           </Link>
         </Button>
+      </div>
       </div>
     </div>
   );

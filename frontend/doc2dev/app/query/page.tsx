@@ -53,7 +53,20 @@ export default function QueryPage() {
   const repoName = searchParams.get("repo_name") || "";
   const repoPath = searchParams.get("repo_path") || "";
   
-  const [tableName, setTableName] = useState(initialTable);
+  // 转换表名为正确的格式
+  const formatTableName = (name: string) => {
+    // 如果表名是数字ID，我们需要获取真实的表名
+    if (/^\d+$/.test(name)) {
+      // 根据仓库路径生成表名
+      if (repoPath) {
+        // 将路径中的斜杠替换为下划线，并转换为小写
+        return repoPath.toLowerCase().replace(/\//g, '_');
+      }
+    }
+    return name;
+  };
+  
+  const [tableName, setTableName] = useState(formatTableName(initialTable));
   const [query, setQuery] = useState(initialQuery);
   // 查询状态已在上面声明
   
@@ -111,6 +124,7 @@ export default function QueryPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          // 表名应该是原始格式，不需要添加前缀
           table_name: tableName,
           query: query,
           k: 5,
@@ -125,9 +139,13 @@ export default function QueryPage() {
         setSummary(data.summary || "");
       } else {
         console.error("Error:", data.message);
+        // 显示错误信息给用户
+        setSummary(`查询出错: ${data.message}\n\n请检查以下可能的问题:\n1. 表名格式是否正确\n2. 该仓库是否已成功索引\n3. 后端服务是否正常运行`);
       }
     } catch (error) {
       console.error("Error querying:", error);
+      // 显示错误信息给用户
+      setSummary(`查询请求失败: ${error instanceof Error ? error.message : String(error)}\n\n请检查网络连接和后端服务是否正常运行。`);
     } finally {
       setLoading(false);
     }
@@ -232,7 +250,7 @@ export default function QueryPage() {
                 </div>
                 <Button
                   type="submit"
-                  className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
+                  className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer h-[42px] px-6 text-base font-medium"
                   disabled={loading}
                 >
                   {loading ? (

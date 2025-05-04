@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Github, FileText, FileJson, AlertCircle, CheckCircle, Search, Database, ExternalLink } from "lucide-react";
+import SearchWithSuggestions from "@/components/search-with-suggestions";
 
 export default function DownloadPage() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -171,22 +172,7 @@ export default function DownloadPage() {
               <span className="text-xl font-bold">Doc2Dev</span>
             </Link>
             
-            <div className="relative">
-              <form onSubmit={handleSearch} className="flex items-center">
-                <div className="relative w-64">
-                  <Input
-                    className="pl-9 pr-4 bg-white border-border w-full cursor-pointer"
-                    placeholder="搜索仓库..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    type="search"
-                  />
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                    <Search size={16} strokeWidth={2} />
-                  </div>
-                </div>
-              </form>
-            </div>
+            <SearchWithSuggestions />
           </div>
         </div>
         

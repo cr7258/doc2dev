@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Github, Clock, Code, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Database, Search, Copy } from "lucide-react";
+import SearchWithSuggestions from "@/components/search-with-suggestions";
 import {
   Card,
   CardContent,
@@ -143,27 +144,7 @@ export default function QueryPage() {
               <span className="text-xl font-bold">Doc2Dev</span>
             </Link>
             
-            <div className="relative">
-              <form onSubmit={(e: React.FormEvent) => {
-                e.preventDefault();
-                if (searchQuery.trim()) {
-                  window.location.href = `/?search=${encodeURIComponent(searchQuery)}`;
-                }
-              }} className="flex items-center">
-                <div className="relative w-64">
-                  <Input
-                    className="pl-9 pr-4 bg-white border-border w-full cursor-pointer"
-                    placeholder="搜索仓库..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    type="search"
-                  />
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                    <Search size={16} strokeWidth={2} />
-                  </div>
-                </div>
-              </form>
-            </div>
+            <SearchWithSuggestions />
           </div>
         </div>
       {/* 仓库信息区域 */}

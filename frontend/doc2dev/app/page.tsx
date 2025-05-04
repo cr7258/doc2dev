@@ -70,7 +70,26 @@ export default function Home() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const router = useRouter();
+  
+  // 点击页面其他区域关闭建议列表
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showSuggestions) {
+        const target = event.target as Node;
+        const searchContainer = document.getElementById('search-container');
+        if (searchContainer && !searchContainer.contains(target)) {
+          setShowSuggestions(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSuggestions]);
   
   // 从后端 API 获取仓库数据
   useEffect(() => {
@@ -145,28 +164,38 @@ export default function Home() {
       );
     }
     
-    // 排序
-    filtered.sort((a, b) => {
-      const valueA = a[sortColumn];
-      const valueB = b[sortColumn];
-      
-      if (typeof valueA === "string" && typeof valueB === "string") {
-        return sortDirection === "asc"
-          ? valueA.localeCompare(valueB)
-          : valueB.localeCompare(valueA);
-      }
-      
-      // 对于数字类型
-      if (typeof valueA === "number" && typeof valueB === "number") {
-        return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
-      }
-      
-      return 0;
-    });
-    
     return filtered;
-  }, [repositories, searchQuery, sortColumn, sortDirection]);
-  
+  }, [repositories, searchQuery]);
+
+  // 计算过滤后的搜索建议
+  const filteredSuggestions = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    
+    const query = searchQuery.toLowerCase();
+    return repositories
+      .filter(repo => 
+        repo.name.toLowerCase().includes(query) ||
+        repo.description.toLowerCase().includes(query) ||
+        repo.repo.toLowerCase().includes(query)
+      )
+      .slice(0, 5); // 只显示前5个结果
+  }, [searchQuery, repositories]);
+
+  // 计算过滤和排序后的仓库列表
+  const sortedRepositories = useMemo(() => {
+    return [...filteredRepositories].sort((a, b) => {
+      if (typeof a[sortColumn] === 'string' && typeof b[sortColumn] === 'string') {
+        return sortDirection === "asc"
+          ? (a[sortColumn] as string).localeCompare(b[sortColumn] as string)
+          : (b[sortColumn] as string).localeCompare(a[sortColumn] as string);
+      } else {
+        return sortDirection === "asc"
+          ? (a[sortColumn] as number) - (b[sortColumn] as number)
+          : (b[sortColumn] as number) - (a[sortColumn] as number);
+      }
+    });
+  }, [filteredRepositories, sortColumn, sortDirection]);
+
   const formatNumber = (num: number) => {
     return num.toLocaleString();
   };

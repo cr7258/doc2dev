@@ -33,6 +33,7 @@ import {
   FileText,
   FileJson,
 } from "lucide-react";
+import { NavBar } from "@/components/nav-bar";
 
 interface Repository {
   id: string;
@@ -212,6 +213,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto py-10 px-4">
+        {/* 顶部导航栏 - 只显示 logo，并对齐到左侧 */}
+        <div className="max-w-5xl mx-auto">
+          <NavBar showSearch={false} alignment="left" />
+        </div>
+
         <div className="mb-10 text-center max-w-5xl mx-auto">
           <h1 className="text-4xl font-bold tracking-tight mb-4">
             Doc2Dev - 为 LLM 和 AI 编程助手提供实时文档

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Github, Clock, Code, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Database, Search, Copy } from "lucide-react";
 import SearchWithSuggestions from "@/components/search-with-suggestions";
+import { NavBar } from "@/components/nav-bar";
 import {
   Card,
   CardContent,
@@ -155,16 +156,7 @@ export default function QueryPage() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto px-4 pt-6 pb-10">
         {/* 顶部导航栏 */}
-        <div className="flex flex-wrap items-center justify-between gap-4 max-w-4xl mx-auto mb-8">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2">
-              <Database className="h-6 w-6 text-blue-600" />
-              <span className="text-xl font-bold">Doc2Dev</span>
-            </Link>
-            
-            <SearchWithSuggestions />
-          </div>
-        </div>
+        <NavBar />
       {/* 仓库信息区域 */}
       {documentItem.projectName && (
         <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden shadow-sm border border-gray-100">

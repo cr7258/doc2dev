@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Github, FileText, FileJson, AlertCircle, CheckCircle, Search, Database, ExternalLink } from "lucide-react";
 import SearchWithSuggestions from "@/components/search-with-suggestions";
+import { NavBar } from "@/components/nav-bar";
 
 export default function DownloadPage() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -165,16 +166,7 @@ export default function DownloadPage() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto py-10 px-4">
         {/* 顶部导航栏 */}
-        <div className="flex flex-wrap items-center justify-between gap-4 max-w-4xl mx-auto mb-8">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2">
-              <Database className="h-6 w-6 text-blue-600" />
-              <span className="text-xl font-bold">Doc2Dev</span>
-            </Link>
-            
-            <SearchWithSuggestions />
-          </div>
-        </div>
+        <NavBar />
         
         {/* 移除了标题文字 */}
         

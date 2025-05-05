@@ -358,7 +358,7 @@ export default function Home() {
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="w-[60px] text-right">操作</TableHead>
+                  <TableHead className="w-[60px] text-center">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -405,30 +405,17 @@ export default function Home() {
                           {repo.lastUpdated}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => {
-                              // 从仓库路径中提取组织和仓库名
-                              const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
-                              const [org, repoName] = repoPath.split('/');
-                              // 使用下划线拼接作为表名
-                              const tableName = `${org}_${repoName}`.toLowerCase();
-                              router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
-                            }}
-                          >
-                            <Search className="h-4 w-4" />
-                          </Button>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-2">
+                          {/* 搜索按钮已移除，因为仓库名称现在可点击 */}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" className="cursor-pointer">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => {
+                              <DropdownMenuItem className="cursor-pointer" onClick={() => {
                                 // 从仓库路径中提取组织和仓库名
                                 const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
                                 const [org, repoName] = repoPath.split('/');
@@ -436,7 +423,7 @@ export default function Home() {
                                 const tableName = `${org}_${repoName}`.toLowerCase();
                                 router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
                               }}>查询</DropdownMenuItem>
-                              <DropdownMenuItem onClick={async () => {
+                              <DropdownMenuItem className="cursor-pointer" onClick={async () => {
                                 if (confirm(`确定要删除仓库 ${repo.name} 吗？此操作不可恢复！`)) {
                                   try {
                                     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repo.id}`, {

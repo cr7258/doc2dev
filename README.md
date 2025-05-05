@@ -2,7 +2,7 @@
 
 Doc2Dev 可以为 LLM 和 AI 编程助手提供实时的文档查询。Doc2Dev 可对任意 GitHub 仓库进行文档索引与查询，并通过 MCP 轻松集成至 Cursor、Windsurf 等 AI 编程工具。
 
-https://github.com/user-attachments/assets/590d68d6-e9ce-402f-b522-4b75cf73b147
+![](https://chengzw258.oss-cn-beijing.aliyuncs.com/Article/202505051236933.png)
 
 ## 开发者面临的痛点
 

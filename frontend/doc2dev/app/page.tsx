@@ -367,7 +367,21 @@ export default function Home() {
                     <TableRow key={repo.id}>
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
-                          <span className="text-primary font-semibold">{repo.name}</span>
+                          <a 
+                            href="#" 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              // 从仓库路径中提取组织和仓库名
+                              const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
+                              const [org, repoName] = repoPath.split('/');
+                              // 使用下划线拼接作为表名
+                              const tableName = `${org}_${repoName}`.toLowerCase();
+                              router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
+                            }}
+                            className="text-blue-500 font-semibold hover:text-blue-700 hover:underline cursor-pointer"
+                          >
+                            {repo.name}
+                          </a>
                         </div>
                       </TableCell>
                       <TableCell>

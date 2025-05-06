@@ -170,7 +170,7 @@ export default function DownloadPage() {
         
         {/* 移除了标题文字 */}
         
-        <Card className="max-w-4xl mx-auto mb-8">
+        <Card className="max-w-4xl mx-auto mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Github className="h-5 w-5" />
@@ -228,7 +228,7 @@ export default function DownloadPage() {
         
         {/* 下载进度 */}
         {(downloadStatus || loading) && (
-          <Card className="max-w-4xl mx-auto mb-4">
+          <Card className="max-w-4xl mx-auto mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-500" />
@@ -258,7 +258,7 @@ export default function DownloadPage() {
         
         {/* 嵌入进度 */}
         {(embeddingStatus || (downloadStatus === "completed" && loading)) && (
-          <Card className="max-w-4xl mx-auto mb-4">
+          <Card className="max-w-4xl mx-auto mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileJson className="h-5 w-5 text-purple-500" />
@@ -288,7 +288,7 @@ export default function DownloadPage() {
         
         {/* 消息提示 - 只显示成功和错误提示 */}
         {message.content && message.type !== "info" && (
-          <Card className={`max-w-4xl mx-auto mb-4 ${
+          <Card className={`max-w-4xl mx-auto mb-6 ${
             message.type === "success" ? "border-green-200" : "border-red-200"
           }`}>
             <CardContent className="pt-4">

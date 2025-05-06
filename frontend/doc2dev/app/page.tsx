@@ -36,6 +36,17 @@ import {
   Trash2,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast, Toaster } from "@/components/ui/toast";
 
 interface Repository {
   id: string;
@@ -74,6 +85,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [repoToDelete, setRepoToDelete] = useState<Repository | null>(null);
+  const { toast } = useToast();
   const router = useRouter();
   
   // 点击页面其他区域关闭建议列表
@@ -93,6 +107,48 @@ export default function Home() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showSuggestions]);
+  
+  // 删除仓库的函数
+  const handleDeleteRepo = async () => {
+    if (!repoToDelete) return;
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repoToDelete.id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "删除成功",
+          description: data.message || `仓库 ${repoToDelete.name} 已成功删除`,
+          variant: "success",
+          duration: 3000,
+        });
+        // 刷新页面以更新仓库列表
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        const error = await response.json();
+        toast({
+          title: "删除失败",
+          description: error.detail || '未知错误',
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('删除仓库时出错:', error);
+      toast({
+        title: "删除失败",
+        description: error instanceof Error ? error.message : '未知错误',
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setRepoToDelete(null);
+    }
+  };
   
   // 从后端 API 获取仓库数据
   useEffect(() => {
@@ -429,27 +485,9 @@ export default function Home() {
                                 id: 2,
                                 label: "删除",
                                 icon: Trash2,
-                                onClick: async () => {
-                                  if (confirm(`确定要删除仓库 ${repo.name} 吗？此操作不可恢复！`)) {
-                                    try {
-                                      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repo.id}`, {
-                                        method: 'DELETE',
-                                      });
-                                      
-                                      if (response.ok) {
-                                        const data = await response.json();
-                                        alert(data.message || '删除成功');
-                                        // 刷新页面以更新仓库列表
-                                        window.location.reload();
-                                      } else {
-                                        const error = await response.json();
-                                        alert(`删除失败: ${error.detail || '未知错误'}`);
-                                      }
-                                    } catch (error) {
-                                      console.error('删除仓库时出错:', error);
-                                      alert(`删除失败: ${error instanceof Error ? error.message : '未知错误'}`);
-                                    }
-                                  }
+                                onClick: () => {
+                                  setRepoToDelete(repo);
+                                  setDeleteDialogOpen(true);
                                 }
                               }
                             ]}
@@ -470,6 +508,32 @@ export default function Home() {
           </div>
         )}
       </div>
+      
+      {/* 删除确认对话框 */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除仓库？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {repoToDelete && (
+                <>
+                  确定要删除仓库 <span className="font-medium">{repoToDelete.name}</span> 吗？
+                  <span className="block mt-2 text-red-500">此操作不可恢复，删除后所有相关数据将被清除。</span>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteRepo} className="bg-red-500 hover:bg-red-600 cursor-pointer">
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Toast 通知组件 */}
+      <Toaster />
     </div>
   );
 }

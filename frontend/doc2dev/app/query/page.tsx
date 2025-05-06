@@ -91,9 +91,18 @@ export default function QueryPage() {
   // 获取仓库数据
   useEffect(() => {
     if (repoPath) {
+      // 清空之前的查询结果和查询内容
+      setResults([]);
+      setSummary("");
+      setQuery("");
+      
+      // 更新tableName为新的仓库路径
+      const newTableName = repoPath.toLowerCase().replace(/\//g, '_');
+      setTableName(newTableName);
+      
       const fetchRepoData = async () => {
         try {
-          const response = await fetch(`http://localhost:8000/repositories/${repoPath.replace('/', '_')}`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repoPath.replace('/', '_')}`);
           if (response.ok) {
             const data = await response.json();
             if (data.status === "success" && data.repository) {

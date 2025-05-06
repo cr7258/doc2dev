@@ -225,32 +225,30 @@ def extract_org_repo(url: str) -> Tuple[str, str]:
         
     return parts[0], parts[1]
 
-def get_contents_recursively(repo, path):
+def get_repo_contents_using_trees(repo):
     """
-    Recursively get all contents of a repository.
+    使用Git Trees API获取仓库所有内容，比递归方式更高效。
 
     Args:
         repo: GitHub repository object
-        path: Path to get contents from
 
     Returns:
-        list: List of content objects
+        list: 包含文件信息的列表，每个元素有path和sha属性
     """
-    contents = []
-
     try:
-        items = repo.get_contents(path)
-
-        for item in items:
-            if item.type == "dir":
-                # Recursively get contents of directories
-                contents.extend(get_contents_recursively(repo, item.path))
-            else:
-                contents.append(item)
+        # 获取默认分支
+        default_branch = repo.default_branch
+        logger.info(f"Using default branch: {default_branch}")
+        
+        # 获取树结构，recursive=True获取所有子目录
+        tree = repo.get_git_tree(default_branch, recursive=True)
+        logger.info(f"Got repository tree with {len(tree.tree)} items")
+        
+        # 返回所有文件
+        return tree.tree
     except Exception as e:
-        print(f"Error accessing {path}: {e}")
-
-    return contents
+        logger.error(f"Error getting repository tree: {e}")
+        return []
 
 async def download_md_files_with_progress(repo_url, output_dir, progress_callback=None):
     """
@@ -322,11 +320,11 @@ async def download_md_files_with_progress(repo_url, output_dir, progress_callbac
         if progress_callback:
             await progress_callback(0, 1, "正在获取仓库内容...")
 
-        # 递归获取所有内容
+        # 使用树结构API获取所有内容
         try:
-            logger.info("Getting repository contents recursively...")
-            all_contents = get_contents_recursively(repo, "")
-            logger.info(f"Found {len(all_contents)} total files in repository")
+            logger.info("Getting repository contents using tree API...")
+            all_contents = get_repo_contents_using_trees(repo)
+            logger.info(f"Found {len(all_contents)} total items in repository")
         except Exception as e:
             logger.error(f"Error getting repository contents: {str(e)}")
             if progress_callback:
@@ -357,7 +355,20 @@ async def download_md_files_with_progress(repo_url, output_dir, progress_callbac
 
                 # 下载文件内容
                 logger.info(f"Downloading file: {content.path}")
-                file_content = repo.get_contents(content.path).decoded_content
+                
+                # 使用blob获取内容，更高效
+                try:
+                    blob = repo.get_git_blob(content.sha)
+                    # 根据编码方式解码内容
+                    if blob.encoding == 'base64':
+                        import base64
+                        file_content = base64.b64decode(blob.content)
+                    else:
+                        file_content = blob.content.encode('utf-8')
+                except Exception as blob_error:
+                    logger.warning(f"Error getting blob for {content.path}: {blob_error}, falling back to get_contents")
+                    # 如果获取blob失败，回退到使用get_contents
+                    file_content = repo.get_contents(content.path).decoded_content
 
                 # 保存文件
                 with open(file_path, "wb") as f:

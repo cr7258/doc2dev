@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dropdown } from "@/components/dropdown";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,8 +33,9 @@ import {
   Database,
   FileText,
   FileJson,
+  Trash2,
 } from "lucide-react";
-import { NavBar } from "@/components/nav-bar";
+import { Navbar } from "@/components/navbar";
 
 interface Repository {
   id: string;
@@ -215,7 +217,7 @@ export default function Home() {
       <div className="container mx-auto py-10 px-4">
         {/* 顶部导航栏 - 只显示 logo，并对齐到左侧 */}
         <div className="max-w-5xl mx-auto">
-          <NavBar showSearch={false} alignment="left" />
+          <Navbar showSearch={false} alignment="left" />
         </div>
 
         <div className="mb-10 text-center max-w-5xl mx-auto">
@@ -407,46 +409,51 @@ export default function Home() {
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
-                          {/* 搜索按钮已移除，因为仓库名称现在可点击 */}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="cursor-pointer">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="cursor-pointer" onClick={() => {
-                                // 从仓库路径中提取组织和仓库名
-                                const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
-                                const [org, repoName] = repoPath.split('/');
-                                // 使用下划线拼接作为表名
-                                const tableName = `${org}_${repoName}`.toLowerCase();
-                                router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
-                              }}>查询</DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer" onClick={async () => {
-                                if (confirm(`确定要删除仓库 ${repo.name} 吗？此操作不可恢复！`)) {
-                                  try {
-                                    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repo.id}`, {
-                                      method: 'DELETE',
-                                    });
-                                    
-                                    if (response.ok) {
-                                      const data = await response.json();
-                                      alert(data.message || '删除成功');
-                                      // 刷新页面以更新仓库列表
-                                      window.location.reload();
-                                    } else {
-                                      const error = await response.json();
-                                      alert(`删除失败: ${error.detail || '未知错误'}`);
+                          {/* 使用下拉菜单组件 */}
+                          <Dropdown 
+                            items={[
+                              {
+                                id: 1,
+                                label: "查询",
+                                icon: Search,
+                                onClick: () => {
+                                  // 从仓库路径中提取组织和仓库名
+                                  const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
+                                  const [org, repoName] = repoPath.split('/');
+                                  // 使用下划线拼接作为表名
+                                  const tableName = `${org}_${repoName}`.toLowerCase();
+                                  router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
+                                }
+                              },
+                              {
+                                id: 2,
+                                label: "删除",
+                                icon: Trash2,
+                                onClick: async () => {
+                                  if (confirm(`确定要删除仓库 ${repo.name} 吗？此操作不可恢复！`)) {
+                                    try {
+                                      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repo.id}`, {
+                                        method: 'DELETE',
+                                      });
+                                      
+                                      if (response.ok) {
+                                        const data = await response.json();
+                                        alert(data.message || '删除成功');
+                                        // 刷新页面以更新仓库列表
+                                        window.location.reload();
+                                      } else {
+                                        const error = await response.json();
+                                        alert(`删除失败: ${error.detail || '未知错误'}`);
+                                      }
+                                    } catch (error) {
+                                      console.error('删除仓库时出错:', error);
+                                      alert(`删除失败: ${error instanceof Error ? error.message : '未知错误'}`);
                                     }
-                                  } catch (error) {
-                                    console.error('删除仓库失败:', error);
-                                    alert('删除仓库失败，请查看控制台获取详细信息');
                                   }
                                 }
-                              }}>删除</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              }
+                            ]}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

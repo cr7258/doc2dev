@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Github, Clock, Code, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Database, Search, Copy } from "lucide-react";
-import SearchWithSuggestions from "@/components/search-with-suggestions";
-import { NavBar } from "@/components/nav-bar";
+import SearchBar from "@/components/search";
+import { Navbar } from "@/components/navbar";
 import {
   Card,
   CardContent,
@@ -156,7 +156,7 @@ export default function QueryPage() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto px-4 pt-6 pb-10">
         {/* 顶部导航栏 */}
-        <NavBar />
+        <Navbar />
       {/* 仓库信息区域 */}
       {documentItem.projectName && (
         <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden shadow-sm border border-gray-100">

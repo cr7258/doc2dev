@@ -8,8 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Github, FileText, FileJson, AlertCircle, CheckCircle, Search, Database, ExternalLink } from "lucide-react";
-import SearchWithSuggestions from "@/components/search-with-suggestions";
-import { NavBar } from "@/components/nav-bar";
+import SearchBar from "@/components/search";
+import { Navbar } from "@/components/navbar";
 
 export default function DownloadPage() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -166,7 +166,7 @@ export default function DownloadPage() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto py-10 px-4">
         {/* 顶部导航栏 */}
-        <NavBar />
+        <Navbar />
         
         {/* 移除了标题文字 */}
         
@@ -314,13 +314,25 @@ export default function DownloadPage() {
           <CardContent>
             <ol className="list-decimal pl-5 space-y-2 text-sm">
               <li>输入完整的 GitHub 仓库 URL</li>
-              <li>点击"下载并索引"按钮</li>
+              <li>点击“下载并索引”按钮</li>
               <li>等待系统下载并处理仓库中的 Markdown 文件</li>
               <li>处理完成后，您可以在首页查看新添加的库</li>
               <li>点击库卡片或使用查询页面来搜索文档</li>
             </ol>
           </CardContent>
         </Card>
+        
+        {/* 返回首页按钮 */}
+        <div className="flex justify-center mt-8 mb-4">
+          <Button variant="outline" asChild>
+            <Link href="/" className="inline-flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+              返回首页
+            </Link>
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -15,12 +15,12 @@ interface Repository {
   snippets: number;
 }
 
-interface SearchWithSuggestionsProps {
+interface SearchBarProps {
   placeholder?: string;
   className?: string;
 }
 
-export default function SearchWithSuggestions({ placeholder = "搜索仓库...", className = "w-64" }: SearchWithSuggestionsProps) {
+export default function SearchBar({ placeholder = "搜索仓库...", className = "w-64" }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [repositories, setRepositories] = useState<Repository[]>([]);

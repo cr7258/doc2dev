@@ -1,13 +1,13 @@
 import Link from "next/link";
-import SearchWithSuggestions from "./search-with-suggestions";
+import SearchBar from "./search";
 import { Github } from "lucide-react";
 
-interface NavBarProps {
+interface NavbarProps {
   showSearch?: boolean;
   alignment?: "center" | "left";
 }
 
-export function NavBar({ showSearch = true, alignment = "center" }: NavBarProps) {
+export function Navbar({ showSearch = true, alignment = "center" }: NavbarProps) {
   return (
     <>
       <div className={`flex flex-wrap items-center justify-between gap-4 ${alignment === "center" ? "max-w-4xl mx-auto" : "w-full"} mb-4`}>
@@ -16,7 +16,7 @@ export function NavBar({ showSearch = true, alignment = "center" }: NavBarProps)
             <img src="/doc2dev.svg" alt="Doc2Dev Logo" className="h-6" />
           </Link>
           
-          {showSearch && <SearchWithSuggestions />}
+          {showSearch && <SearchBar />}
         </div>
         
         {/* GitHub 链接 */}

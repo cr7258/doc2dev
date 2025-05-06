@@ -159,7 +159,7 @@ export default function QueryPage() {
         <Navbar />
       {/* 仓库信息区域 */}
       {documentItem.projectName && (
-        <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden shadow-sm border border-gray-100">
+        <Card className="w-full max-w-4xl mx-auto mb-6 overflow-hidden shadow-sm border border-gray-100">
           <CardHeader className="pb-2">
             <div className="flex flex-col">
               <CardTitle className="text-xl font-bold">{documentItem.projectName}</CardTitle>
@@ -197,7 +197,7 @@ export default function QueryPage() {
         </Card>
       )}
       
-      <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden shadow-sm border border-gray-100">
+      <Card className="w-full max-w-4xl mx-auto mb-6 overflow-hidden shadow-sm border border-gray-100">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <FileCode className="h-5 w-5 text-blue-500" />
@@ -274,7 +274,7 @@ export default function QueryPage() {
       
       {/* 摘要部分 */}
       {summary && (
-        <Card className="w-full max-w-4xl mx-auto mb-8 overflow-hidden shadow-sm border border-gray-100">
+        <Card className="w-full max-w-4xl mx-auto mb-6 overflow-hidden shadow-sm border border-gray-100">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="text-lg flex items-center gap-2">

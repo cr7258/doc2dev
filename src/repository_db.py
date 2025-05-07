@@ -46,7 +46,7 @@ def get_all_repositories():
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             sql = """
             SELECT id, name, description, repo, repo_url, 
-                   tokens, snippets, created_at, updated_at
+                   tokens, snippets, repo_status, created_at, updated_at
             FROM repositories
             ORDER BY name
             """
@@ -78,7 +78,7 @@ def get_repository_by_name(name: str):
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             sql = """
             SELECT id, name, description, repo, repo_url, 
-                   tokens, snippets, created_at, updated_at
+                   tokens, snippets, repo_status, created_at, updated_at
             FROM repositories
             WHERE name = %s
             """
@@ -108,7 +108,7 @@ def get_repository_by_path(repo_path: str):
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             sql = """
             SELECT id, name, description, repo, repo_url, 
-                   tokens, snippets, created_at, updated_at
+                   tokens, snippets, repo_status, created_at, updated_at
             FROM repositories
             WHERE repo = %s
             """
@@ -123,7 +123,7 @@ def get_repository_by_path(repo_path: str):
         if connection:
             connection.close()
 
-def add_repository(name: str, description: str, repo: str, repo_url: str, tokens: int = 0, snippets: int = 0):
+def add_repository(name: str, description: str, repo: str, repo_url: str, repo_status: str, tokens: int = 0, snippets: int = 0):
     """
     添加仓库信息
     
@@ -132,8 +132,9 @@ def add_repository(name: str, description: str, repo: str, repo_url: str, tokens
         description: 仓库描述
         repo: 仓库路径
         repo_url: 仓库URL
-        tokens: 文档中的 token 数量
-        snippets: 文档中的代码块数量
+        repo_status: 仓库状态，可选值为 'in_progress', 'completed', 'failed', 'pending'
+        tokens: 文档中的 token 数量，默认为 0
+        snippets: 文档中的代码块数量，默认为 0
         
     Returns:
         bool: 是否添加成功
@@ -142,10 +143,10 @@ def add_repository(name: str, description: str, repo: str, repo_url: str, tokens
         connection = get_db_connection()
         with connection.cursor() as cursor:
             sql = """
-            INSERT INTO repositories (name, description, repo, repo_url, tokens, snippets)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO repositories (name, description, repo, repo_url, repo_status, tokens, snippets)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(sql, (name, description, repo, repo_url, tokens, snippets))
+            cursor.execute(sql, (name, description, repo, repo_url, repo_status, tokens, snippets))
             connection.commit()
             return True
     except Exception as e:
@@ -255,17 +256,46 @@ def get_repository_by_id(id: int):
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             sql = """
             SELECT id, name, description, repo, repo_url, 
-                   tokens, snippets, created_at, updated_at
+                   tokens, snippets, repo_status, created_at, updated_at
             FROM repositories
             WHERE id = %s
             """
             cursor.execute(sql, (id,))
-            repository = cursor.fetchone()
-            
-            return repository
+            result = cursor.fetchone()
+            return result
     except Exception as e:
-        print(f"根据 ID 获取仓库信息失败: {str(e)}")
+        print(f"获取仓库信息失败: {str(e)}")
         return None
+    finally:
+        if connection:
+            connection.close()
+
+
+def update_repository_status(id: int, repo_status: str):
+    """
+    更新仓库状态
+    
+    Args:
+        id: 仓库ID
+        repo_status: 仓库状态，可选值为 'in_progress', 'completed', 'failed', 'pending'
+        
+    Returns:
+        bool: 是否更新成功
+    """
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+            UPDATE repositories
+            SET repo_status = %s
+            WHERE id = %s
+            """
+            cursor.execute(sql, (repo_status, id))
+            connection.commit()
+            return True
+    except Exception as e:
+        print(f"更新仓库状态失败: {str(e)}")
+        return False
     finally:
         if connection:
             connection.close()

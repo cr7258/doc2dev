@@ -25,7 +25,7 @@ from github import Github, Auth, GithubException
 # 导入自定义模块
 from embed_and_store import load_markdown_files, split_documents, embed_and_store
 from query_oceanbase import search_documents, connect_to_vector_store
-from repository_db import get_all_repositories, get_repository_by_name, add_repository, update_repository, delete_repository, get_repository_by_path, get_repository_by_id, delete_vector_table
+from repository_db import get_all_repositories, get_repository_by_name, add_repository, update_repository, delete_repository, get_repository_by_path, get_repository_by_id, delete_vector_table, update_repository_status
 from markdown_utils import count_code_blocks_in_documents
 
 # 配置日志记录
@@ -491,6 +491,24 @@ async def download_repository(repo_request: RepositoryRequest):
                 "message": f"开始下载 {org}/{repo} 仓库..."
             }, client_id)
 
+        # 将仓库状态设置为 in_progress
+        repo_id = None
+        try:
+            # 首先将仓库添加到数据库，状态为 in_progress
+            repo_name = repo.replace("-", " ").title()
+            repo_url = f"https://github.com/{org}/{repo}"
+            
+            # 添加到 repositories 表
+            add_repository(repo_name, "", repo_path, repo_url, "in_progress", 0, 0)
+            
+            # 获取新添加的仓库 ID
+            added_repo = get_repository_by_path(repo_path)
+            if added_repo:
+                repo_id = added_repo['id']
+                logger.info(f"Added repository with ID: {repo_id}")
+        except Exception as e:
+            logger.error(f"Error adding repository to database: {str(e)}")
+        
         # 定义下载进度回调函数
         async def download_progress_callback(current, total, message):
             if client_id:
@@ -519,6 +537,14 @@ async def download_repository(repo_request: RepositoryRequest):
                     "progress": 0,
                     "message": "仓库中未找到 Markdown 文件"
                 }, client_id)
+            
+            # 如果有仓库 ID，将状态更新为 failed
+            if repo_id:
+                try:
+                    update_repository_status(repo_id, "failed")
+                    logger.info(f"Updated repository status to 'failed' for ID: {repo_id}")
+                except Exception as e:
+                    logger.error(f"Error updating repository status: {str(e)}")
             
             shutil.rmtree(temp_dir)
             return DownloadResponse(
@@ -591,7 +617,7 @@ async def download_repository(repo_request: RepositoryRequest):
                 snippets_count = count_code_blocks_in_documents(documents)
                 
                 # 添加到 repositories 表
-                add_repository(repo_name, "", repo_path, repo_url, tokens_count, snippets_count)
+                add_repository(repo_name, "", repo_path, repo_url, "completed", tokens_count, snippets_count)
                 
                 if client_id:
                     await manager.send_json({
@@ -607,23 +633,41 @@ async def download_repository(repo_request: RepositoryRequest):
                         "status": "error",
                         "message": f"将仓库信息写入数据库时出错: {str(e)}"
                     }, client_id)
+            
+            # 如果有仓库 ID，将状态更新为 completed
+            if repo_id:
+                try:
+                    update_repository_status(repo_id, "completed")
+                    logger.info(f"Updated repository status to 'completed' for ID: {repo_id}")
+                except Exception as e:
+                    logger.error(f"Error updating repository status: {str(e)}")
         except Exception as e:
-            # 嵌入出错通知
+            # 如果嵌入失败，发送错误通知
             if client_id:
                 await manager.send_json({
                     "type": "embedding",
                     "status": "error",
                     "progress": 0,
-                    "message": f"嵌入文档时出错: {str(e)}"
+                    "message": f"嵌入文档失败: {str(e)}"
                 }, client_id)
             
-            # 清理临时目录
-            shutil.rmtree(temp_dir)
+            # 如果有仓库 ID，将状态更新为 failed
+            if repo_id:
+                try:
+                    update_repository_status(repo_id, "failed")
+                    logger.info(f"Updated repository status to 'failed' for ID: {repo_id}")
+                except Exception as status_err:
+                    logger.error(f"Error updating repository status: {str(status_err)}")
             
+            logger.error(f"Error embedding documents: {str(e)}")
+            shutil.rmtree(temp_dir)
             return DownloadResponse(
                 status="error",
-                message=f"Error embedding documents: {str(e)}"
+                message=f"Error embedding documents: {str(e)}",
+                files_count=len(md_files),
+                files=md_files
             )
+            
         # 清理临时目录
         shutil.rmtree(temp_dir)
         
@@ -632,7 +676,6 @@ async def download_repository(repo_request: RepositoryRequest):
             message=f"Successfully downloaded and embedded {len(md_files)} markdown files",
             table_name=table_name
         )
-
     except ValueError as e:
         logger.error(f"ValueError in download_repository: {str(e)}")
         import traceback
@@ -850,9 +893,6 @@ async def delete_repository_endpoint(repo_id: int):
     except Exception as e:
         logger.error(f"删除仓库失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"删除仓库失败: {str(e)}")
-
-# 注意：原来的 get_repository 函数已被移除，因为它与 get_repository_details 函数功能重复
-# 如果需要通过仓库名称获取仓库信息，请使用 get_repository_details 函数
 
 if __name__ == "__main__":
     main()

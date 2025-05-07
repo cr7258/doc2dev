@@ -58,6 +58,7 @@ interface Repository {
   snippets: number;
   lastUpdated: string;
   status: "active" | "archived" | "private";
+  repo_status?: "in_progress" | "completed" | "failed" | "pending";
 }
 
 interface StatsCardProps {
@@ -174,7 +175,8 @@ export default function Home() {
             tokens: repo.tokens || 0,
             snippets: repo.snippets || 0,
             lastUpdated: repo.last_updated || '-',
-            status: "active"
+            status: "active",
+            repo_status: repo.repo_status || "pending"
           }));
           
           setRepositories(formattedRepositories);
@@ -416,6 +418,7 @@ export default function Home() {
                       )}
                     </div>
                   </TableHead>
+                  <TableHead className="w-[80px] text-center">状态</TableHead>
                   <TableHead className="w-[60px] text-center">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -462,6 +465,28 @@ export default function Home() {
                         <Badge variant="outline" className="font-normal">
                           {repo.lastUpdated}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {repo.repo_status === "in_progress" && (
+                          <Badge className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
+                            进行中
+                          </Badge>
+                        )}
+                        {repo.repo_status === "completed" && (
+                          <Badge className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100">
+                            已完成
+                          </Badge>
+                        )}
+                        {repo.repo_status === "failed" && (
+                          <Badge className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100">
+                            失败
+                          </Badge>
+                        )}
+                        {(repo.repo_status === "pending" || !repo.repo_status) && (
+                          <Badge className="bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100">
+                            等待中
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">

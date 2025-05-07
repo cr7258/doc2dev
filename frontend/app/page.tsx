@@ -437,7 +437,7 @@ export default function Home() {
               </TableHeader>
               <TableBody>
                 {filteredRepositories.length > 0 ? (
-                  filteredRepositories.map((repo) => (
+                  filteredRepositories.map((repo, index) => (
                     <TableRow key={repo.id}>
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
@@ -533,6 +533,9 @@ export default function Home() {
                                 }
                               }
                             ]}
+                            position="auto"
+                            index={index}
+                            total={filteredRepositories.length}
                           />
                         </div>
                       </TableCell>

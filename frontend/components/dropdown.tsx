@@ -15,11 +15,28 @@ type MenuItemType = {
 
 type DropdownProps = {
   items: MenuItemType[];
+  position?: 'top' | 'bottom' | 'auto';
+  index?: number;
+  total?: number;
 };
 
-export function Dropdown({ items }: DropdownProps) {
+export function Dropdown({ items, position = 'auto', index = 0, total = 0 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isHover, setIsHover] = useState<number | null>(null);
+  
+  // 确定弹出方向
+  const getDropdownPosition = (): 'top' | 'bottom' => {
+    // 如果指定了具体方向，则使用指定的方向
+    if (position === 'top') return 'top';
+    if (position === 'bottom') return 'bottom';
+    
+    // 自动判断：如果是最后几行且总行数较少，向上弹出
+    // 这里的逻辑是：如果是最后2行且总行数少于5行，向上弹出
+    const isNearBottom = total > 0 && index >= total - 2 && total < 5;
+    return isNearBottom ? 'top' : 'bottom';
+  };
+  
+  const dropdownPosition = getDropdownPosition();
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -44,10 +61,10 @@ export function Dropdown({ items }: DropdownProps) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="absolute right-0 z-50 mt-1"
-            initial={{ opacity: 0, y: -5 }}
+            className={`absolute right-0 z-50 ${dropdownPosition === 'top' ? 'bottom-full mb-1' : 'mt-1'}`}
+            initial={{ opacity: 0, y: dropdownPosition === 'top' ? 5 : -5 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
+            exit={{ opacity: 0, y: dropdownPosition === 'top' ? 5 : -5 }}
             transition={{ duration: 0.2 }}
           >
             <div className="bg-background border border-border rounded-md shadow-lg min-w-[120px] py-1">

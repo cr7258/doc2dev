@@ -15,7 +15,7 @@ import shutil
 from typing import List, Optional, Dict, Any, Tuple
 from urllib.parse import urlparse
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,7 +25,11 @@ from github import Github, Auth, GithubException
 # 导入自定义模块
 from embed_and_store import load_markdown_files, split_documents, embed_and_store
 from query_oceanbase import search_documents, connect_to_vector_store
-from repository_db import get_all_repositories, get_repository_by_name, add_repository, update_repository, delete_repository, get_repository_by_path, get_repository_by_id, delete_vector_table, update_repository_status
+from repository_db import (
+    get_all_repositories, get_repository_by_name, get_repository_by_path,
+    add_repository, update_repository, delete_repository, get_repository_by_id,
+    update_repository_status, update_repository_counts, delete_vector_table
+)
 from markdown_utils import count_code_blocks_in_documents
 
 # 配置日志记录
@@ -48,6 +52,7 @@ async def embed_and_store_with_progress(documents, table_name, drop_old=False, p
     Returns:
         OceanbaseVectorStore: 向量存储对象
     """
+    import asyncio
     total_docs = len(documents)
     
     # 调用原始的 embed_and_store 函数，但在过程中添加进度更新
@@ -56,8 +61,14 @@ async def embed_and_store_with_progress(documents, table_name, drop_old=False, p
         if progress_callback:
             await progress_callback(0, total_docs, "开始嵌入文档...")
         
-        # 创建向量存储
-        vector_store = embed_and_store(documents, table_name=table_name, drop_old=drop_old)
+        # 使用 asyncio.to_thread 将同步函数转换为异步操作
+        # 这样可以避免阻塞事件循环
+        vector_store = await asyncio.to_thread(
+            embed_and_store, 
+            documents, 
+            table_name=table_name, 
+            drop_old=drop_old
+        )
         
         # 完成进度
         if progress_callback:
@@ -99,10 +110,19 @@ class ConnectionManager:
             print(f"Client {client_id} disconnected. Total connections: {len(self.active_connections)}")
 
     async def send_json(self, data: Dict[str, Any], client_id: str):
-        if client_id in self.active_connections:
-            await self.active_connections[client_id].send_json(data)
-        else:
-            print(f"Warning: Client {client_id} not found in active connections")
+        try:
+            if client_id in self.active_connections:
+                await self.active_connections[client_id].send_json(data)
+            else:
+                print(f"Warning: Client {client_id} not found in active connections")
+        except Exception as e:
+            print(f"Error sending message to client {client_id}: {str(e)}")
+            # 如果发送失败，尝试移除连接
+            if client_id in self.active_connections:
+                del self.active_connections[client_id]
+                print(f"Removed client {client_id} due to send error. Total connections: {len(self.active_connections)}")
+            return False
+        return True
 
     async def broadcast(self, data: Dict[str, Any]):
         for connection in self.active_connections.values():
@@ -276,10 +296,6 @@ async def download_md_files_with_progress(repo_url, output_dir, progress_callbac
         # 确保输出目录存在
         os.makedirs(output_dir, exist_ok=True)
         print(f"Created directory: {output_dir}")
-        
-        # 发送进度更新
-        if progress_callback:
-            await progress_callback(3, 10, f"已创建输出目录: {output_dir}")
 
         # 获取 GitHub 令牌
         token = os.getenv("GITHUB_TOKEN")
@@ -295,9 +311,11 @@ async def download_md_files_with_progress(repo_url, output_dir, progress_callbac
         
         # 创建 GitHub 实例
         try:
+            # 使用 asyncio.to_thread 将同步的 GitHub API 调用转换为异步操作
+            import asyncio
             g = Github(token)
             # 检查 API 速率限制
-            rate_limit = g.get_rate_limit()
+            rate_limit = await asyncio.to_thread(g.get_rate_limit)
             logger.info(f"GitHub API rate limit: {rate_limit.core.remaining}/{rate_limit.core.limit} requests remaining")
         except Exception as e:
             logger.error(f"Error initializing GitHub API: {str(e)}")
@@ -308,7 +326,7 @@ async def download_md_files_with_progress(repo_url, output_dir, progress_callbac
         # 获取仓库
         try:
             logger.info(f"Getting repository: {repo_name}")
-            repo = g.get_repo(repo_name)
+            repo = await asyncio.to_thread(g.get_repo, repo_name)
             logger.info(f"Successfully got repository: {repo.full_name}")
         except Exception as e:
             logger.error(f"Error getting repository {repo_name}: {str(e)}")
@@ -323,7 +341,8 @@ async def download_md_files_with_progress(repo_url, output_dir, progress_callbac
         # 使用树结构API获取所有内容
         try:
             logger.info("Getting repository contents using tree API...")
-            all_contents = get_repo_contents_using_trees(repo)
+            # 使用 asyncio.to_thread 将同步函数转换为异步操作
+            all_contents = await asyncio.to_thread(get_repo_contents_using_trees, repo)
             logger.info(f"Found {len(all_contents)} total items in repository")
         except Exception as e:
             logger.error(f"Error getting repository contents: {str(e)}")
@@ -358,7 +377,8 @@ async def download_md_files_with_progress(repo_url, output_dir, progress_callbac
                 
                 # 使用blob获取内容，更高效
                 try:
-                    blob = repo.get_git_blob(content.sha)
+                    # 使用 asyncio.to_thread 将同步的 GitHub API 调用转换为异步操作
+                    blob = await asyncio.to_thread(repo.get_git_blob, content.sha)
                     # 根据编码方式解码内容
                     if blob.encoding == 'base64':
                         import base64
@@ -368,7 +388,8 @@ async def download_md_files_with_progress(repo_url, output_dir, progress_callbac
                 except Exception as blob_error:
                     logger.warning(f"Error getting blob for {content.path}: {blob_error}, falling back to get_contents")
                     # 如果获取blob失败，回退到使用get_contents
-                    file_content = repo.get_contents(content.path).decoded_content
+                    contents = await asyncio.to_thread(repo.get_contents, content.path)
+                    file_content = contents.decoded_content
 
                 # 保存文件
                 with open(file_path, "wb") as f:
@@ -425,8 +446,290 @@ async def api_info():
     """API info endpoint that returns basic information about the API"""
     return {"message": "GitHub Markdown Downloader API", "version": "1.0.0"}
 
+# 后台处理仓库的函数
+async def process_repository_background(repo_url: str, library_name: Optional[str] = None, client_id: Optional[str] = None):
+    """
+    在后台处理仓库下载和索引任务
+    
+    Args:
+        repo_url: 仓库 URL
+        library_name: 可选的库名称
+        client_id: 可选的客户端 ID，用于 WebSocket 更新
+    """
+    try:
+        # 从 URL 提取组织和仓库名称
+        org, repo = extract_org_repo(str(repo_url))
+        
+        # 检查仓库是否已经存在
+        repo_path = f"{org}/{repo}"
+        existing_repo = get_repository_by_path(repo_path)
+        
+        # 如果仓库已存在，直接返回
+        if existing_repo:
+            return
+            
+        # 如果没有提供 library_name，则自动生成
+        table_name = library_name
+        if not table_name:
+            table_name = f"{org}_{repo}"
+        
+        # 确保表名中的连字符替换为下划线
+        table_name = table_name.replace("-", "_")
+        
+        # 将仓库状态设置为 in_progress
+        repo_id = None
+        try:
+            # 首先将仓库添加到数据库，状态为 in_progress
+            repo_name = repo.replace("-", " ").title()
+            repo_url_full = f"https://github.com/{org}/{repo}"
+            
+            # 添加到 repositories 表
+            add_repository(repo_name, "", repo_path, repo_url_full, "in_progress", 0, 0)
+            
+            # 获取新添加的仓库 ID
+            added_repo = get_repository_by_path(repo_path)
+            if added_repo:
+                repo_id = added_repo['id']
+                logger.info(f"Added repository with ID: {repo_id}")
+        except Exception as e:
+            logger.error(f"Error adding repository to database: {str(e)}")
+        
+        # 创建临时目录
+        temp_dir = tempfile.mkdtemp()
+        logger.info(f"Created temporary directory: {temp_dir}")
+        
+        # 发送初始进度信息
+        websocket_connected = True
+        if client_id:
+            websocket_connected = await manager.send_json({
+                "type": "download",
+                "status": "started",
+                "progress": 0,
+                "message": f"开始下载 {org}/{repo} 仓库..."
+            }, client_id)
+            
+            # 如果 WebSocket 连接失败，记录日志但继续处理
+            if not websocket_connected:
+                logger.warning(f"WebSocket connection to client {client_id} failed, but continuing with repository processing")
+                # 将 client_id 设置为 None，避免后续尝试发送消息
+                client_id = None
+
+        # 定义下载进度回调函数
+        async def download_progress_callback(current, total, message):
+            nonlocal client_id, websocket_connected
+            if client_id and websocket_connected:
+                progress = int((current / total) * 100) if total > 0 else 0
+                websocket_connected = await manager.send_json({
+                    "type": "download",
+                    "status": "in_progress",
+                    "progress": progress,
+                    "current": current,
+                    "total": total,
+                    "message": message
+                }, client_id)
+                
+                # 如果 WebSocket 连接失败，记录日志并停止尝试发送
+                if not websocket_connected:
+                    logger.warning(f"WebSocket connection to client {client_id} failed during download progress update")
+                    client_id = None  # 避免后续尝试发送
+
+        # 下载 Markdown 文件，使用带进度的版本
+        md_files = await download_md_files_with_progress(
+            repo_url, 
+            temp_dir, 
+            progress_callback=download_progress_callback if client_id else None
+        )
+        
+        if not md_files:
+            if client_id and websocket_connected:
+                websocket_connected = await manager.send_json({
+                    "type": "download",
+                    "status": "error",
+                    "progress": 0,
+                    "message": "仓库中未找到 Markdown 文件"
+                }, client_id)
+                
+                if not websocket_connected:
+                    logger.warning(f"WebSocket connection to client {client_id} failed when sending error message")
+                    client_id = None
+            
+            # 如果有仓库 ID，将状态更新为 failed
+            if repo_id:
+                try:
+                    update_repository_status(repo_id, "failed")
+                    logger.info(f"Updated repository status to 'failed' for ID: {repo_id}")
+                except Exception as e:
+                    logger.error(f"Error updating repository status: {str(e)}")
+            
+            shutil.rmtree(temp_dir)
+            return
+
+        # 下载完成通知
+        if client_id and websocket_connected:
+            websocket_connected = await manager.send_json({
+                "type": "download",
+                "status": "completed",
+                "progress": 100,
+                "message": f"已下载 {len(md_files)} 个 Markdown 文件"
+            }, client_id)
+            
+            if not websocket_connected:
+                logger.warning(f"WebSocket connection to client {client_id} failed when sending download completion message")
+                client_id = None
+        
+        # 加载 Markdown 文件
+        documents = load_markdown_files(md_files)
+        
+        # 分割文档
+        docs = split_documents(documents)
+
+        # 嵌入并存储文档，使用带进度的版本
+        if client_id and websocket_connected:
+            websocket_connected = await manager.send_json({
+                "type": "embedding",
+                "status": "started",
+                "progress": 0,
+                "message": "开始嵌入文档..."
+            }, client_id)
+            
+            if not websocket_connected:
+                logger.warning(f"WebSocket connection to client {client_id} failed when sending embedding start message")
+                client_id = None
+        
+        # 定义嵌入进度回调函数
+        async def embedding_progress_callback(current, total, message):
+            nonlocal client_id, websocket_connected
+            if client_id and websocket_connected:
+                websocket_connected = await manager.send_json({
+                    "type": "embedding",
+                    "status": "in_progress",
+                    "progress": int((current / total) * 100) if total > 0 else 0,
+                    "current": current,
+                    "total": total,
+                    "message": message
+                }, client_id)
+                
+                if not websocket_connected:
+                    logger.warning(f"WebSocket connection to client {client_id} failed during embedding progress update")
+                    client_id = None  # 避免后续尝试发送
+                    
+        try:
+            # 嵌入并存储文档
+            vector_store = await embed_and_store_with_progress(
+                docs, 
+                table_name=table_name, 
+                drop_old=True,
+                progress_callback=embedding_progress_callback
+            )
+            
+            # 完成通知
+            if client_id and websocket_connected:
+                try:
+                    websocket_connected = await manager.send_json({
+                        "type": "embedding",
+                        "status": "completed",
+                        "progress": 100,
+                        "message": f"成功嵌入 {len(docs)} 个文档到表 {table_name}"
+                    }, client_id)
+                except Exception as e:
+                    logger.error(f"Error sending embedding completion message: {str(e)}")
+                    websocket_connected = False
+                    client_id = None
+            
+            # 如果有仓库 ID，将状态更新为 completed
+            if repo_id:
+                try:
+                    # 计算文档中的 token 数量和代码块数量
+                    tokens_count = sum(len(doc.page_content.split()) for doc in documents)
+                    snippets_count = count_code_blocks_in_documents(documents)
+                    
+                    # 更新仓库状态
+                    update_repository_status(repo_id, "completed")
+                    logger.info(f"Updated repository status to 'completed' for ID: {repo_id}")
+                    
+                    # 更新仓库的 tokens 和代码片段数量
+                    update_repository_counts(repo_id, tokens_count, snippets_count)
+                    logger.info(f"Updated repository counts for ID: {repo_id} - Tokens: {tokens_count}, Snippets: {snippets_count}")
+                except Exception as e:
+                    logger.error(f"Error updating repository status or counts: {str(e)}")
+            
+            # 将仓库信息写入数据库
+            try:
+                # 从 URL 提取仓库名称
+                repo_name = repo.replace("-", " ").title()
+                repo_url_full = f"https://github.com/{org}/{repo}"
+                
+                # 计算文档中的 token 数量和代码块数量
+                tokens_count = sum(len(doc.page_content.split()) for doc in documents)
+                snippets_count = count_code_blocks_in_documents(documents)
+                
+                # 添加到 repositories 表
+                add_repository(repo_name, "", repo_path, repo_url_full, "completed", tokens_count, snippets_count)
+                
+                if client_id and websocket_connected:
+                    try:
+                        await manager.send_json({
+                            "type": "database",
+                            "status": "completed",
+                            "message": f"已将仓库信息添加到数据库"
+                        }, client_id)
+                    except Exception as e:
+                        logger.error(f"Error sending database completion message: {str(e)}")
+                        websocket_connected = False
+                        client_id = None
+            except Exception as e:
+                logger.error(f"将仓库信息写入数据库时出错: {str(e)}")
+                if client_id and websocket_connected:
+                    try:
+                        await manager.send_json({
+                            "type": "database",
+                            "status": "error",
+                            "message": f"将仓库信息写入数据库时出错: {str(e)}"
+                        }, client_id)
+                    except Exception as ws_err:
+                        logger.error(f"Error sending database error message: {str(ws_err)}")
+                        websocket_connected = False
+                        client_id = None
+        except Exception as e:
+            logger.error(f"Error embedding documents: {str(e)}")
+            
+            # 发送错误通知
+            if client_id and websocket_connected:
+                try:
+                    await manager.send_json({
+                        "type": "embedding",
+                        "status": "error",
+                        "progress": 0,
+                        "message": f"嵌入文档时出错: {str(e)}"
+                    }, client_id)
+                except Exception as ws_err:
+                    logger.error(f"Error sending embedding error message: {str(ws_err)}")
+                
+            # 如果有仓库 ID，将状态更新为 failed
+            if repo_id:
+                try:
+                    update_repository_status(repo_id, "failed")
+                    logger.info(f"Updated repository status to 'failed' for ID: {repo_id}")
+                except Exception as status_err:
+                    logger.error(f"Error updating repository status: {str(status_err)}")
+        
+        # 清理临时目录
+        try:
+            shutil.rmtree(temp_dir)
+            logger.info(f"Cleaned up temporary directory: {temp_dir}")
+        except Exception as e:
+            logger.error(f"Error cleaning up temporary directory: {str(e)}")
+            
+    except Exception as e:
+        logger.error(f"Background task error: {str(e)}")
+        if client_id:
+            await manager.send_json({
+                "type": "error",
+                "message": f"处理仓库时出错: {str(e)}"
+            }, client_id)
+
 @app.post("/download/", response_model=DownloadResponse)
-async def download_repository(repo_request: RepositoryRequest):
+async def download_repository(repo_request: RepositoryRequest, background_tasks: BackgroundTasks):
     """
     Download markdown files from a GitHub repository directly to the project directory
     and automatically embed them if embedding functionality is available.
@@ -475,207 +778,32 @@ async def download_repository(repo_request: RepositoryRequest):
                 repo_path=repo_path
             )
         
-        # 获取客户端 ID（如果有）
-        client_id = repo_request.client_id
-        
-        # 创建临时目录
-        temp_dir = tempfile.mkdtemp()
-        logger.info(f"Created temporary directory: {temp_dir}")
-        
-        # 发送初始进度信息
-        if client_id:
-            await manager.send_json({
-                "type": "download",
-                "status": "started",
-                "progress": 0,
-                "message": f"开始下载 {org}/{repo} 仓库..."
-            }, client_id)
-
-        # 将仓库状态设置为 in_progress
-        repo_id = None
-        try:
-            # 首先将仓库添加到数据库，状态为 in_progress
-            repo_name = repo.replace("-", " ").title()
-            repo_url = f"https://github.com/{org}/{repo}"
-            
-            # 添加到 repositories 表
-            add_repository(repo_name, "", repo_path, repo_url, "in_progress", 0, 0)
-            
-            # 获取新添加的仓库 ID
-            added_repo = get_repository_by_path(repo_path)
-            if added_repo:
-                repo_id = added_repo['id']
-                logger.info(f"Added repository with ID: {repo_id}")
-        except Exception as e:
-            logger.error(f"Error adding repository to database: {str(e)}")
-        
-        # 定义下载进度回调函数
-        async def download_progress_callback(current, total, message):
-            if client_id:
-                progress = int((current / total) * 100) if total > 0 else 0
-                await manager.send_json({
-                    "type": "download",
-                    "status": "in_progress",
-                    "progress": progress,
-                    "current": current,
-                    "total": total,
-                    "message": message
-                }, client_id)
-
-        # 下载 Markdown 文件，使用带进度的版本
-        md_files = await download_md_files_with_progress(
-            repo_request.repo_url, 
-            temp_dir, 
-            progress_callback=download_progress_callback if client_id else None
+        # 在后台任务中处理仓库下载和索引
+        background_tasks.add_task(
+            process_repository_background,
+            str(repo_request.repo_url),
+            repo_request.library_name,
+            repo_request.client_id
         )
         
-        if not md_files:
-            if client_id:
-                await manager.send_json({
-                    "type": "download",
-                    "status": "error",
-                    "progress": 0,
-                    "message": "仓库中未找到 Markdown 文件"
-                }, client_id)
-            
-            # 如果有仓库 ID，将状态更新为 failed
-            if repo_id:
-                try:
-                    update_repository_status(repo_id, "failed")
-                    logger.info(f"Updated repository status to 'failed' for ID: {repo_id}")
-                except Exception as e:
-                    logger.error(f"Error updating repository status: {str(e)}")
-            
-            shutil.rmtree(temp_dir)
-            return DownloadResponse(
-                status="error",
-                message="No markdown files found in the repository"
-            )
-
-        # 下载完成通知
-        if client_id:
-            await manager.send_json({
-                "type": "download",
-                "status": "completed",
-                "progress": 100,
-                "message": f"已下载 {len(md_files)} 个 Markdown 文件"
-            }, client_id)
+        # 生成查询页面 URL
+        query_url = f"http://localhost:3000/query?table={table_name}&repo_name={repo.replace('-', ' ').title()}&repo_path={repo_path}"
         
-        # 加载 Markdown 文件
-        documents = load_markdown_files(md_files)
-        
-        # 分割文档
-        docs = split_documents(documents)
-
-        # 嵌入并存储文档，使用带进度的版本
-        if client_id:
-            await manager.send_json({
-                "type": "embedding",
-                "status": "started",
-                "progress": 0,
-                "message": "开始嵌入文档..."
-            }, client_id)
-        
-        # 定义嵌入进度回调函数
-        async def embedding_progress_callback(current, total, message):
-            if client_id:
-                await manager.send_json({
-                    "type": "embedding",
-                    "status": "in_progress",
-                    "progress": int((current / total) * 100) if total > 0 else 0,
-                    "current": current,
-                    "total": total,
-                    "message": message
-                }, client_id)
-                    
-        try:
-            # 嵌入并存储文档
-            vector_store = await embed_and_store_with_progress(
-                docs, 
-                table_name=table_name, 
-                drop_old=True,
-                progress_callback=embedding_progress_callback
-            )
-            
-            # 嵌入完成通知
-            if client_id:
-                await manager.send_json({
-                    "type": "embedding",
-                    "status": "completed",
-                    "progress": 100,
-                    "message": f"成功嵌入 {len(docs)} 个文档片段到表 '{table_name}'"
-                }, client_id)
-                
-            # 将仓库信息写入数据库
-            try:
-                # 从 URL 提取仓库名称
-                repo_name = repo.replace("-", " ").title()
-                repo_url = f"https://github.com/{org}/{repo}"
-                
-                # 计算文档中的 token 数量和代码块数量
-                tokens_count = sum(len(doc.page_content.split()) for doc in documents)
-                snippets_count = count_code_blocks_in_documents(documents)
-                
-                # 添加到 repositories 表
-                add_repository(repo_name, "", repo_path, repo_url, "completed", tokens_count, snippets_count)
-                
-                if client_id:
-                    await manager.send_json({
-                        "type": "database",
-                        "status": "completed",
-                        "message": f"已将仓库信息添加到数据库"
-                    }, client_id)
-            except Exception as e:
-                logger.error(f"将仓库信息写入数据库时出错: {str(e)}")
-                if client_id:
-                    await manager.send_json({
-                        "type": "database",
-                        "status": "error",
-                        "message": f"将仓库信息写入数据库时出错: {str(e)}"
-                    }, client_id)
-            
-            # 如果有仓库 ID，将状态更新为 completed
-            if repo_id:
-                try:
-                    update_repository_status(repo_id, "completed")
-                    logger.info(f"Updated repository status to 'completed' for ID: {repo_id}")
-                except Exception as e:
-                    logger.error(f"Error updating repository status: {str(e)}")
-        except Exception as e:
-            # 如果嵌入失败，发送错误通知
-            if client_id:
-                await manager.send_json({
-                    "type": "embedding",
-                    "status": "error",
-                    "progress": 0,
-                    "message": f"嵌入文档失败: {str(e)}"
-                }, client_id)
-            
-            # 如果有仓库 ID，将状态更新为 failed
-            if repo_id:
-                try:
-                    update_repository_status(repo_id, "failed")
-                    logger.info(f"Updated repository status to 'failed' for ID: {repo_id}")
-                except Exception as status_err:
-                    logger.error(f"Error updating repository status: {str(status_err)}")
-            
-            logger.error(f"Error embedding documents: {str(e)}")
-            shutil.rmtree(temp_dir)
-            return DownloadResponse(
-                status="error",
-                message=f"Error embedding documents: {str(e)}",
-                files_count=len(md_files),
-                files=md_files
-            )
-            
-        # 清理临时目录
-        shutil.rmtree(temp_dir)
-        
+        # 返回响应，表示任务已在后台启动
         return DownloadResponse(
-            status="success",
-            message=f"Successfully downloaded and embedded {len(md_files)} markdown files",
-            table_name=table_name
+            status="accepted",
+            message=f"Repository processing started in background. You can continue using the application while the repository is being processed.",
+            table_name=table_name,
+            query_url=query_url,
+            repo_path=repo_path
         )
+
+    except ValueError as e:
+        logger.error(f"ValueError in download_repository: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Exception in download_repository: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
     except ValueError as e:
         logger.error(f"ValueError in download_repository: {str(e)}")
         import traceback

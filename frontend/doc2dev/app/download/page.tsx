@@ -131,6 +131,14 @@ export default function DownloadPage() {
           queryUrl: data.query_url,
           repoPath: data.repo_path || "该仓库"
         });
+      } else if (data.status === "accepted") {
+        // 仓库处理已在后台启动，显示蓝色通知
+        setMessage({
+          type: "processing",
+          content: data.message || "仓库处理已在后台启动，您可以继续使用应用程序。",
+          queryUrl: "",
+          repoPath: ""
+        });
       } else {
         setMessage({
           type: "error",
@@ -221,6 +229,12 @@ export default function DownloadPage() {
                     </p>
                   </div>
                 )}
+                {message.type === "processing" && (
+                  <div className="mt-4 text-blue-500 text-sm flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <p>{message.content}</p>
+                  </div>
+                )}
               </div>
             </form>
           </CardContent>
@@ -287,7 +301,7 @@ export default function DownloadPage() {
         )}
         
         {/* 消息提示 - 只显示成功和错误提示 */}
-        {message.content && message.type !== "info" && (
+        {message.content && message.type !== "info" && message.type !== "processing" && (
           <Card className={`max-w-4xl mx-auto mb-6 ${
             message.type === "success" ? "border-green-200" : "border-red-200"
           }`}>

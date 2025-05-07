@@ -299,3 +299,33 @@ def update_repository_status(id: int, repo_status: str):
     finally:
         if connection:
             connection.close()
+
+def update_repository_counts(id: int, tokens: int, snippets: int):
+    """
+    更新仓库的 tokens 和代码片段数量
+    
+    Args:
+        id: 仓库ID
+        tokens: tokens 数量
+        snippets: 代码片段数量
+        
+    Returns:
+        bool: 是否更新成功
+    """
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+            UPDATE repositories
+            SET tokens = %s, snippets = %s
+            WHERE id = %s
+            """
+            cursor.execute(sql, (tokens, snippets, id))
+            connection.commit()
+            return True
+    except Exception as e:
+        print(f"更新仓库计数失败: {str(e)}")
+        return False
+    finally:
+        if connection:
+            connection.close()

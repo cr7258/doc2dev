@@ -901,22 +901,14 @@ async def get_repositories():
     try:
         repositories = get_all_repositories()
         
-        # 格式化日期时间为字符串
+        # 将时间转换为 ISO 格式，保留时区信息
         for repo in repositories:
             if "created_at" in repo and repo["created_at"]:
-                repo["created_at"] = repo["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                # 转换为 ISO 格式字符串
+                repo["created_at"] = repo["created_at"].isoformat()
             if "updated_at" in repo and repo["updated_at"]:
-                # 计算相对时间（例如：1天前，2小时前）
-                time_diff = time.time() - repo["updated_at"].timestamp()
-                if time_diff < 3600:  # 小于1小时
-                    repo["last_updated"] = f"{int(time_diff / 60)}分钟前"
-                elif time_diff < 86400:  # 小于1天
-                    repo["last_updated"] = f"{int(time_diff / 3600)}小时前"
-                elif time_diff < 2592000:  # 小于30天
-                    repo["last_updated"] = f"{int(time_diff / 86400)}天前"
-                else:
-                    repo["last_updated"] = repo["updated_at"].strftime("%Y-%m-%d")
-                repo["updated_at"] = repo["updated_at"].strftime("%Y-%m-%d %H:%M:%S")
+                # 转换为 ISO 格式字符串
+                repo["updated_at"] = repo["updated_at"].isoformat()
         
         return {"status": "success", "repositories": repositories}
     except Exception as e:
@@ -944,23 +936,14 @@ async def get_repository_details(repo_path: str):
         if not repository:
             raise HTTPException(status_code=404, detail=f"未找到仓库: {repo_path}")
         
-        # 格式化日期时间
+        # 将时间转换为 ISO 格式，保留时区信息
         if "created_at" in repository and repository["created_at"]:
-            repository["created_at"] = repository["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+            # 转换为 ISO 格式字符串
+            repository["created_at"] = repository["created_at"].isoformat()
         
         if "updated_at" in repository and repository["updated_at"]:
-            # 计算相对时间（例如：1天前，2小时前）
-            time_diff = time.time() - repository["updated_at"].timestamp()
-            if time_diff < 3600:  # 小于1小时
-                repository["last_updated"] = f"{int(time_diff / 60)}分钟前"
-            elif time_diff < 86400:  # 小于1天
-                repository["last_updated"] = f"{int(time_diff / 3600)}小时前"
-            elif time_diff < 2592000:  # 小于30天
-                repository["last_updated"] = f"{int(time_diff / 86400)}天前"
-            else:
-                repository["last_updated"] = repository["updated_at"].strftime("%Y-%m-%d")
-            
-            repository["updated_at"] = repository["updated_at"].strftime("%Y-%m-%d %H:%M:%S")
+            # 转换为 ISO 格式字符串
+            repository["updated_at"] = repository["updated_at"].isoformat()
         
         return {"status": "success", "repository": repository}
     except Exception as e:

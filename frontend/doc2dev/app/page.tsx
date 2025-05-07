@@ -36,6 +36,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
+import { formatDateTime, getRelativeTime, formatNumber } from "@/utils/date";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +58,8 @@ interface Repository {
   tokens: number;
   snippets: number;
   lastUpdated: string;
+  updatedAt?: string; // ISO 格式的更新时间
+  createdAt?: string; // ISO 格式的创建时间
   status: "active" | "archived" | "private";
   repo_status?: "in_progress" | "completed" | "failed" | "pending";
 }
@@ -166,7 +169,7 @@ export default function Home() {
         
         if (data.status === "success" && Array.isArray(data.repositories)) {
           // 将后端数据转换为前端所需的格式
-          const formattedRepositories: Repository[] = data.repositories.map((repo: any) => ({
+          const formattedRepositories = data.repositories.map((repo: any) => ({
             id: repo.id.toString(),
             name: repo.name,
             description: repo.description || '',
@@ -174,7 +177,11 @@ export default function Home() {
             repo_url: repo.repo_url,
             tokens: repo.tokens || 0,
             snippets: repo.snippets || 0,
-            lastUpdated: repo.last_updated || '-',
+            // 使用相对时间计算函数
+            lastUpdated: getRelativeTime(repo.updated_at),
+            // 保存原始时间戳用于排序和详细显示
+            updatedAt: repo.updated_at,
+            createdAt: repo.created_at,
             status: "active",
             repo_status: repo.repo_status || "pending"
           }));
@@ -245,11 +252,20 @@ export default function Home() {
   // 计算过滤和排序后的仓库列表
   const sortedRepositories = useMemo(() => {
     return [...filteredRepositories].sort((a, b) => {
-      if (typeof a[sortColumn] === 'string' && typeof b[sortColumn] === 'string') {
+      // 对于 lastUpdated 列，使用 updatedAt 字段进行排序
+      if (sortColumn === "lastUpdated") {
+        const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+      }
+      // 其他字符串列的排序
+      else if (typeof a[sortColumn] === 'string' && typeof b[sortColumn] === 'string') {
         return sortDirection === "asc"
           ? (a[sortColumn] as string).localeCompare(b[sortColumn] as string)
           : (b[sortColumn] as string).localeCompare(a[sortColumn] as string);
-      } else {
+      } 
+      // 数字列的排序
+      else {
         return sortDirection === "asc"
           ? (a[sortColumn] as number) - (b[sortColumn] as number)
           : (b[sortColumn] as number) - (a[sortColumn] as number);
@@ -257,10 +273,7 @@ export default function Home() {
     });
   }, [filteredRepositories, sortColumn, sortDirection]);
 
-  const formatNumber = (num: number) => {
-    return num.toLocaleString();
-  };
-  
+  // 时间和数字格式化函数已移至 utils/date-utils.ts
   // 计算统计数据
   const totalTokens = useMemo(() => {
     return repositories.reduce((sum, repo) => sum + repo.tokens, 0);
@@ -462,7 +475,11 @@ export default function Home() {
                       <TableCell>{formatNumber(repo.tokens)}</TableCell>
                       <TableCell>{formatNumber(repo.snippets)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-normal">
+                        <Badge 
+                          variant="outline" 
+                          className="font-normal"
+                          title={repo.updatedAt ? formatDateTime(repo.updatedAt) : ''}
+                        >
                           {repo.lastUpdated}
                         </Badge>
                       </TableCell>

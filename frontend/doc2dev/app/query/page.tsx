@@ -4,20 +4,17 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Github, Clock, Code, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Database, Search, Copy } from "lucide-react";
-import SearchBar from "@/components/search";
+import { getRelativeTime} from "@/utils/date";
 import { Navbar } from "@/components/navbar";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 
 interface QueryResult {
   id: string;
@@ -44,8 +41,10 @@ interface RepositoryData {
   snippets: number;
   created_at: string;
   updated_at: string;
-  last_updated: string;
 }
+
+// 格式化日期时间为本地时间
+// 时间和数字格式化函数已移至 utils/date-utils.ts
 
 export default function QueryPage() {
   const searchParams = useSearchParams();
@@ -85,7 +84,7 @@ export default function QueryPage() {
     description: repoData?.description || "一个用于文档查询和代码参考的GitHub仓库",
     tokens: repoData ? repoData.tokens.toLocaleString() : "0",
     snippets: repoData ? repoData.snippets.toLocaleString() : "0",
-    updatedAt: repoData?.last_updated || ""
+    updatedAt: repoData?.updated_at ? getRelativeTime(repoData.updated_at) : ""
   };
   
   // 获取仓库数据

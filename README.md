@@ -186,11 +186,11 @@ CREATE TABLE repositories (
 
 1. 启动后端服务：
    ```bash
-   uv run src/main.py
+   uv run backend/main.py
    ```
 
 2. 启动前端服务：
    ```bash
-   cd frontend/doc2dev
+   cd frontend
    npm run dev
    ```

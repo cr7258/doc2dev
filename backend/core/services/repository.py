@@ -33,16 +33,11 @@ class RepositoryService:
             settings: Application settings containing database configuration
         """
         self.settings = settings
-        self._db_session: Optional[Session] = None
-    
-    def _initialize_db_session(self):
-        """Initialize database session if not already initialized"""
-        if self._db_session is None:
-            print("Initializing database session...")
-            self._db_session = ServiceFactory.create_db_session(
-                self.settings.metadata_db
-            )
-            print("✅ Database session initialized successfully")
+        print("Initializing database session...")
+        self._db_session: Session = ServiceFactory.create_db_session(
+            self.settings.metadata_db
+        )
+        print("✅ Database session initialized successfully")
     
     def get_all_repositories(self) -> List[Repository]:
         """
@@ -52,7 +47,6 @@ class RepositoryService:
             List of all Repository objects
         """
         try:
-            self._initialize_db_session()
             repositories = self._db_session.query(Repository).order_by(Repository.name).all()
             print(f"✅ Retrieved {len(repositories)} repositories")
             return repositories
@@ -71,7 +65,6 @@ class RepositoryService:
             Repository object if found, None otherwise
         """
         try:
-            self._initialize_db_session()
             repository = self._db_session.query(Repository).filter(Repository.name == name).first()
             if repository:
                 print(f"✅ Found repository: {name}")
@@ -93,7 +86,6 @@ class RepositoryService:
             Repository object if found, None otherwise
         """
         try:
-            self._initialize_db_session()
             repository = self._db_session.query(Repository).filter(Repository.repo == repo_path).first()
             if repository:
                 print(f"✅ Found repository by path: {repo_path}")
@@ -115,7 +107,6 @@ class RepositoryService:
             Repository object if found, None otherwise
         """
         try:
-            self._initialize_db_session()
             repository = self._db_session.query(Repository).filter(Repository.id == repo_id).first()
             if repository:
                 print(f"✅ Found repository by ID: {repo_id}")
@@ -152,8 +143,6 @@ class RepositoryService:
             Created Repository object if successful, None otherwise
         """
         try:
-            self._initialize_db_session()
-            
             repository = Repository(
                 name=name,
                 description=description,
@@ -179,6 +168,31 @@ class RepositoryService:
             print(f"❌ Failed to create repository '{name}': {e}")
             return None
     
+    def search_repositories(self, search_term: str) -> List[Repository]:
+        """
+        Search repositories by name or repo path.
+        
+        Args:
+            search_term: Term to search for in name or repo fields
+            
+        Returns:
+            List of matching Repository objects
+        """
+        try:
+            # Use LIKE for fuzzy matching on both name and repo fields
+            search_pattern = f"%{search_term}%"
+            repositories = self._db_session.query(Repository).filter(
+                (Repository.name.like(search_pattern)) | 
+                (Repository.repo.like(search_pattern))
+            ).order_by(Repository.name).all()
+            
+            print(f"✅ Found {len(repositories)} repositories matching '{search_term}'")
+            return repositories
+            
+        except Exception as e:
+            print(f"❌ Failed to search repositories with term '{search_term}': {e}")
+            return []
+    
     def update_repository(
         self, 
         repo_id: int, 
@@ -201,8 +215,6 @@ class RepositoryService:
             True if successful, False otherwise
         """
         try:
-            self._initialize_db_session()
-            
             repository = self._db_session.query(Repository).filter(Repository.id == repo_id).first()
             if not repository:
                 print(f"❌ Repository not found: ID {repo_id}")
@@ -243,8 +255,6 @@ class RepositoryService:
             True if successful, False otherwise
         """
         try:
-            self._initialize_db_session()
-            
             repository = self._db_session.query(Repository).filter(Repository.id == repo_id).first()
             if not repository:
                 print(f"❌ Repository not found: ID {repo_id}")
@@ -274,8 +284,6 @@ class RepositoryService:
             True if successful, False otherwise
         """
         try:
-            self._initialize_db_session()
-            
             repository = self._db_session.query(Repository).filter(Repository.id == repo_id).first()
             if not repository:
                 print(f"❌ Repository not found: ID {repo_id}")
@@ -304,8 +312,6 @@ class RepositoryService:
             True if successful, False otherwise
         """
         try:
-            self._initialize_db_session()
-            
             repository = self._db_session.query(Repository).filter(Repository.id == repo_id).first()
             if not repository:
                 print(f"❌ Repository not found: ID {repo_id}")
@@ -334,7 +340,6 @@ class RepositoryService:
             List of Repository objects with the specified status
         """
         try:
-            self._initialize_db_session()
             repositories = self._db_session.query(Repository).filter(
                 Repository.repo_status == status
             ).order_by(Repository.name).all()

@@ -55,9 +55,11 @@ def main():
     try:
         # Create complete setup using factory
         print("Creating embedding service, vector store, and database session...")
-        vector_store, db_session = ServiceFactory.create_embedding_vector_store_and_db_session(
+        vector_store = ServiceFactory.create_vector_store(
             settings.embedding,
-            settings.vector_store,
+            settings.vector_store
+        )
+        db_session = ServiceFactory.create_db_session(
             settings.metadata_db
         )
         

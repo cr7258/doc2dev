@@ -39,18 +39,16 @@ class DocumentService:
         """
         self.settings = settings
         self._vector_store: Optional[VectorStore] = None
-        self._db_session: Optional[Session] = None
     
-    def _initialize_vector_store_and_db_session(self):
-        """Initialize vector store and database session if not already initialized"""
-        if self._vector_store is None or self._db_session is None:
-            print("Initializing vector store and database session...")
-            self._vector_store, self._db_session = ServiceFactory.create_embedding_vector_store_and_db_session(
+    def _initialize_vector_store(self):
+        """Initialize vector store if not already initialized"""
+        if self._vector_store is None:
+            print("Initializing vector store...")
+            self._vector_store = ServiceFactory.create_vector_store(
                 self.settings.embedding,
-                self.settings.vector_store,
-                self.settings.metadata_db
+                self.settings.vector_store
             )
-            print("✅ Vector store and database session initialized successfully")
+            print("✅ Vector store initialized successfully")
     
     def load_documents(self, path_or_paths: Union[str, List[str]]) -> List[Document]:
         """
@@ -162,7 +160,7 @@ class DocumentService:
         
         try:
             # Ensure components are initialized
-            self._initialize_vector_store_and_db_session()
+            self._initialize_vector_store()
             
             print(f"Embedding and storing {len(documents)} documents...")
             
@@ -195,7 +193,7 @@ class DocumentService:
         """
         try:
             # Ensure components are initialized
-            self._initialize_vector_store_and_db_session()
+            self._initialize_vector_store()
             
             print(f"Searching for documents similar to: '{query}'")
             
@@ -231,7 +229,7 @@ class DocumentService:
         """
         try:
             # Ensure components are initialized
-            self._initialize_vector_store_and_db_session()
+            self._initialize_vector_store()
             
             print(f"Searching for documents with scores similar to: '{query}'")
             
@@ -319,9 +317,3 @@ class DocumentService:
     def get_supported_file_types(self) -> List[str]:
         """Get list of supported file types"""
         return ["md", "txt", "pdf"]
-    
-    def close(self):
-        """Close database session if open"""
-        if self._db_session:
-            self._db_session.close()
-            print("Database session closed")

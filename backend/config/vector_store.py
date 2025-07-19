@@ -8,12 +8,12 @@ class OceanBaseVectorConfig(BaseSettings):
     """OceanBase vector database specific configuration"""
     type: Literal["oceanbase"] = "oceanbase"
     host: str = "127.0.0.1"
-    port: str = "2881"
+    port: int = 2881
     user: str = "root@test"
     password: str = ""
-    db_name: str = "test"
+    db_name: str = "doc2dev"
     table_name: str = "langchain_vector"
-    vidx_metric_type: str = "l2"
+    metric_type: str = "l2"  # Renamed from vidx_metric_type for consistency
     
     model_config = SettingsConfigDict(env_prefix='VECTOR_OCEANBASE_')
 

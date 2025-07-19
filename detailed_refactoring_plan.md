@@ -185,37 +185,39 @@
 - 数据库：使用 SQLAlchemy 的 `Session`, `Engine` 接口
 - 文档处理：直接在业务服务层实现，使用 LangChain 的 `Document` 类型
 
-### 第二阶段：适配器实现（2-3周）
+### 第二阶段：适配器实现（已废弃）
 
-#### 2.1 向量数据库适配器
-- [ ] 实现 OceanBase 向量存储适配器
-- [ ] 实现 ChromaDB 适配器
-- [ ] 实现 PGVector 适配器
-- [ ] 实现 Qdrant 适配器（可选）
-- [ ] 实现 Weaviate 适配器（可选）
+#### 2.1 向量数据库适配器（已废弃）
+- [x] ~~实现 OceanBase 向量存储适配器~~ (已废弃，工厂直接使用 LangChain)
+- [x] ~~实现 ChromaDB 适配器~~ (已废弃，工厂直接使用 LangChain)
+- [x] ~~实现 PGVector 适配器~~ (已废弃，工厂直接使用 LangChain)
+- [x] ~~实现 Qdrant 适配器~~ (已废弃，工厂直接使用 LangChain)
+- [x] ~~实现 Weaviate 适配器~~ (已废弃，工厂直接使用 LangChain)
 
-#### 2.2 元数据数据库适配器
-- [ ] 实现 MySQL 适配器
-- [ ] 实现 PostgreSQL 适配器
-- [ ] 实现 SQLite 适配器
-- [ ] 实现 OceanBase 元数据适配器
+#### 2.2 元数据数据库适配器（已废弃）
+- [x] ~~实现 MySQL 适配器~~ (已废弃，工厂直接使用 SQLAlchemy)
+- [x] ~~实现 PostgreSQL 适配器~~ (已废弃，工厂直接使用 SQLAlchemy)
+- [x] ~~实现 SQLite 适配器~~ (已废弃，工厂直接使用 SQLAlchemy)
+- [x] ~~实现 OceanBase 元数据适配器~~ (已废弃，工厂直接使用 SQLAlchemy)
 
-#### 2.3 嵌入服务适配器
-- [ ] 实现 DashScope 嵌入适配器
-- [ ] 实现 OpenAI 嵌入适配器
-- [ ] 实现 Cohere 嵌入适配器（可选）
-- [ ] 实现 HuggingFace 嵌入适配器（可选）
+#### 2.3 嵌入服务适配器（已废弃）
+- [x] ~~实现 DashScope 嵌入适配器~~ (已废弃，工厂直接使用 LangChain)
+- [x] ~~实现 OpenAI 嵌入适配器~~ (已废弃，工厂直接使用 LangChain)
+- [x] ~~实现 Cohere 嵌入适配器~~ (已废弃，工厂直接使用 LangChain)
+- [x] ~~实现 HuggingFace 嵌入适配器~~ (已废弃，工厂直接使用 LangChain)
+
+**说明**: 经过重新设计，我们发现适配器层是不必要的复杂性。工厂系统已经提供了足够的抽象，直接使用标准库接口（LangChain VectorStore、SQLAlchemy Session、LangChain Embeddings）更加简洁和可靠。
 
 ### 第三阶段：业务逻辑层（2周）
 
 #### 3.1 工厂类实现
-- [ ] 实现向量存储工厂
-- [ ] 实现元数据数据库工厂
-- [ ] 实现嵌入服务工厂
-- [ ] 实现统一服务工厂
+- [x] 实现向量存储工厂 (core/factories/vector_store.py)
+- [x] 实现元数据数据库工厂 (core/factories/metadata_db.py)
+- [x] 实现嵌入服务工厂 (core/factories/embedding.py)
+- [x] 实现统一服务工厂 (core/factories/service.py)
 
 #### 3.2 业务服务实现
-- [ ] 实现文档处理服务
+- [x] 实现文档处理服务
 - [ ] 实现向量操作服务
 - [ ] 实现元数据操作服务
 - [ ] 实现查询服务

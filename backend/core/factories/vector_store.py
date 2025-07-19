@@ -36,22 +36,19 @@ class VectorStoreFactory:
         
         match store_type:
             case "oceanbase":
-                # Note: OceanBase integration might need separate installation
-                # pip install langchain-oceanbase
+                # Direct use of LangChain OceanBase implementation
                 try:
                     from langchain_oceanbase.vectorstores import OceanbaseVectorStore
                     return OceanbaseVectorStore(
                         embedding_function=embeddings,
-                        table_name=vector_store_config.config.table_name,
+                        table_name=specific_config.table_name.replace('-', '_'),  # Sanitize table name
                         connection_args={
-                            "host": vector_store_config.config.host,
-                            "port": str(vector_store_config.config.port),
-                            "user": vector_store_config.config.user,
-                            "password": vector_store_config.config.password,
-                            "db_name": vector_store_config.config.database,
+                            "host": specific_config.host,
+                            "port": str(specific_config.port),
+                            "user": specific_config.user,
+                            "password": specific_config.password,
+                            "db_name": specific_config.db_name,
                         },
-                        vidx_metric_type=vector_store_config.config.metric_type,
-                        drop_old=vector_store_config.config.drop_old,
                     )
                 except ImportError:
                     raise ImportError(

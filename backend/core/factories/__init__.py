@@ -11,6 +11,7 @@ from .embedding import EmbeddingFactory
 from .metadata_db import MetadataDBFactory
 from .service import ServiceFactory
 from .vector_store import VectorStoreFactory
+from .llm import LLMFactory
 
 __all__ = [
     "DocumentLoaderFactory",
@@ -19,4 +20,5 @@ __all__ = [
     "MetadataDBFactory",
     "ServiceFactory",
     "VectorStoreFactory",
+    "LLMFactory",
 ]

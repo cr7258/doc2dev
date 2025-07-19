@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from .metadata_db import MetadataDBConfig
 from .vector_store import VectorStoreConfig
 from .embedding import EmbeddingConfig
+from .llm import LLMConfig
 
 
 class Settings(BaseSettings):
@@ -17,6 +18,9 @@ class Settings(BaseSettings):
     
     # Embedding service configuration
     embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
+    
+    # LLM service configuration
+    llm: LLMConfig = Field(default_factory=LLMConfig)
     
     # Application configuration
     app_name: str = "Doc2Dev"

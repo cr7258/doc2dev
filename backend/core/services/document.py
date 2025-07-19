@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from config.settings import Settings
 from core.factories.document import DocumentLoaderFactory, DocumentSplitterFactory
 from core.factories.service import ServiceFactory
+from .summary import SummaryService
 
 
 class DocumentService:
@@ -39,6 +40,7 @@ class DocumentService:
         """
         self.settings = settings
         self._vector_store: Optional[VectorStore] = None
+        self._summary_service: Optional[SummaryService] = None
     
     def _initialize_vector_store(self):
         """Initialize vector store if not already initialized"""
@@ -49,6 +51,13 @@ class DocumentService:
                 self.settings.vector_store
             )
             print("✅ Vector store initialized successfully")
+    
+    def _initialize_summary_service(self):
+        """Initialize summary service if not already initialized"""
+        if self._summary_service is None:
+            print("Initializing summary service...")
+            self._summary_service = SummaryService(self.settings)
+            print("✅ Summary service initialized successfully")
     
     def load_documents(self, path_or_paths: Union[str, List[str]]) -> List[Document]:
         """
@@ -243,8 +252,61 @@ class DocumentService:
             return results
             
         except Exception as e:
-            print(f"❌ Failed to search documents with scores: {e}")
+            print(f"❌ Error searching documents with scores: {e}")
             return []
+    
+    def search_with_summary(
+        self, 
+        query: str, 
+        k: int = 5, 
+        filter: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Search for similar documents and generate a summary of the results.
+        
+        Args:
+            query: Search query string
+            k: Number of documents to return (default: 5)
+            filter: Optional filter dictionary for metadata filtering
+            
+        Returns:
+            Dictionary containing search results and summary
+        """
+        try:
+            # First, perform the search
+            documents = self.search_documents(query, k, filter)
+            
+            if not documents:
+                return {
+                    "query": query,
+                    "documents": [],
+                    "summary": "No documents found for the given query.",
+                    "document_count": 0
+                }
+            
+            # Initialize summary service and generate summary
+            self._initialize_summary_service()
+            summary = self._summary_service.summarize_search_results(documents, query)
+            
+            return {
+                "query": query,
+                "documents": [{
+                    "content": doc.page_content,
+                    "metadata": doc.metadata
+                } for doc in documents],
+                "summary": summary,
+                "document_count": len(documents)
+            }
+            
+        except Exception as e:
+            error_msg = f"Error searching with summary: {e}"
+            print(f"❌ {error_msg}")
+            return {
+                "query": query,
+                "documents": [],
+                "summary": error_msg,
+                "document_count": 0
+            }
     
     def process_documents(
         self, 
@@ -287,6 +349,8 @@ class DocumentService:
         except Exception as e:
             print(f"❌ Document processing pipeline failed: {e}")
             return False
+    
+
     
     def _get_supported_files(self, path_or_paths: Union[str, List[str]]) -> List[str]:
         """Get all supported files from input paths"""

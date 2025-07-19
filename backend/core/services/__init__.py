@@ -9,8 +9,10 @@ to create and manage various components for document processing.
 
 from .document import DocumentService
 from .repository import RepositoryService
+from .summary import SummaryService
 
 __all__ = [
     "DocumentService",
     "RepositoryService",
+    "SummaryService",
 ]

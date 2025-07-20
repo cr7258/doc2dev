@@ -351,6 +351,33 @@ class RepositoryService:
             print(f"❌ Failed to get repositories by status '{status.value}': {e}")
             return []
     
+    def delete_vector_table(self, table_name: str) -> bool:
+        """
+        Delete vector table from the database.
+        
+        Args:
+            table_name: Name of the vector table to delete
+            
+        Returns:
+            bool: True if deletion was successful, False otherwise
+        """
+        try:
+            # Sanitize table name by replacing hyphens with underscores to avoid SQL syntax errors
+            safe_table_name = table_name.replace('-', '_')
+            
+            # Use existing SQLAlchemy session to execute raw SQL
+            sql = f"DROP TABLE IF EXISTS {safe_table_name}"
+            self._db_session.execute(sql)
+            self._db_session.commit()
+            
+            print(f"✅ Successfully deleted vector table: {safe_table_name}")
+            return True
+            
+        except Exception as e:
+            self._db_session.rollback()
+            print(f"❌ Failed to delete vector table '{table_name}': {str(e)}")
+            return False
+    
     def close(self):
         """Close database session if open"""
         if self._db_session:

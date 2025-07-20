@@ -204,10 +204,9 @@ async def delete_repository_endpoint(repo_id: int):
         # Generate table name
         table_name = repo_path.replace('/', '_').replace('-', '_')
         
-        # Delete vector table (temporarily using direct import until we add this to RepositoryService)
+        # Delete vector table using RepositoryService
         try:
-            from repository_db import delete_vector_table
-            vector_table_deleted = delete_vector_table(table_name)
+            vector_table_deleted = repository_service.delete_vector_table(table_name)
             if vector_table_deleted:
                 logger.info(f"Deleted vector table: {table_name}")
             else:

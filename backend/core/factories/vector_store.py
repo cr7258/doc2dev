@@ -2,6 +2,7 @@
 Vector store factory for creating vector store instances based on configuration.
 """
 
+from typing import Optional
 from langchain.vectorstores.base import VectorStore
 from langchain.embeddings.base import Embeddings
 

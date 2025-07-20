@@ -114,9 +114,8 @@ class RepositoryProcessor:
             # Use asyncio.to_thread to convert sync function to async operation
             # This avoids blocking the event loop
             success = await asyncio.to_thread(
-                self.document_service.embed_and_store_documents,
+                self.document_service.embed_and_store,
                 documents, 
-                table_name=table_name, 
                 drop_old=drop_old
             )
             

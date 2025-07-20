@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Markdown 处理工具模块
+Markdown processing utilities module
 """
 
 from markdown_it import MarkdownIt
@@ -9,13 +9,13 @@ from langchain_core.documents import Document
 
 def count_code_blocks(markdown_text: str) -> int:
     """
-    统计 Markdown 文本中的代码块数量
+    Count the number of code blocks in Markdown text
     
     Args:
-        markdown_text: Markdown 文本内容
+        markdown_text: Markdown text content
         
     Returns:
-        int: 代码块数量
+        int: Number of code blocks
     """
     md = MarkdownIt()
     tokens = md.parse(markdown_text)
@@ -30,13 +30,13 @@ def count_code_blocks(markdown_text: str) -> int:
 
 def count_code_blocks_in_documents(documents: List[Document]) -> int:
     """
-    统计文档列表中的代码块总数
+    Count total code blocks in a list of documents
     
     Args:
-        documents: Document 对象列表
+        documents: List of Document objects
         
     Returns:
-        int: 所有文档中的代码块总数
+        int: Total number of code blocks in all documents
     """
     total_code_blocks = 0
     

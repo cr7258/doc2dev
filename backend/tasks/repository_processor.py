@@ -10,7 +10,7 @@ import logging
 from typing import Optional
 
 from utils.github import extract_org_repo, download_md_files_with_progress
-from utils.md import count_code_blocks_in_documents
+from utils.markdown import count_code_blocks_in_documents
 from core.services.document import DocumentService
 from core.services.repository import RepositoryService
 from core.factories.document import DocumentLoaderFactory, DocumentSplitterFactory

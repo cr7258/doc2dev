@@ -21,7 +21,8 @@ class ServiceFactory:
     @staticmethod
     def create_vector_store(
         embedding_config: EmbeddingConfig,
-        vector_store_config: VectorStoreConfig
+        vector_store_config: VectorStoreConfig,
+        table_name: str
     ) -> VectorStore:
         """
         Create vector store with embedding service.
@@ -29,6 +30,7 @@ class ServiceFactory:
         Args:
             embedding_config: Embedding service configuration
             vector_store_config: Vector store configuration
+            table_name: Table name for the vector store
             
         Returns:
             VectorStore instance
@@ -37,7 +39,7 @@ class ServiceFactory:
         embeddings = EmbeddingFactory.create_embeddings(embedding_config)
         
         # Step 2: Create vector store with embeddings
-        vector_store = VectorStoreFactory.create_vector_store(vector_store_config, embeddings)
+        vector_store = VectorStoreFactory.create_vector_store(vector_store_config, embeddings, table_name)
         
         return vector_store
     

@@ -116,6 +116,7 @@ class RepositoryProcessor:
             success = await asyncio.to_thread(
                 self.document_service.embed_and_store,
                 documents, 
+                table_name,
                 drop_old=drop_old
             )
             

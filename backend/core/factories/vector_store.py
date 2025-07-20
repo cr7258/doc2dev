@@ -19,13 +19,14 @@ class VectorStoreFactory:
     """Factory for creating vector store instances based on configuration."""
     
     @staticmethod
-    def create_vector_store(vector_store_config: VectorStoreConfig, embeddings: Embeddings) -> VectorStore:
+    def create_vector_store(vector_store_config: VectorStoreConfig, embeddings: Embeddings, table_name: str) -> VectorStore:
         """
         Create a vector store instance based on configuration.
         
         Args:
             vector_store_config: Vector store configuration
             embeddings: Embedding model instance
+            table_name: Table name for the vector store
             
         Returns:
             VectorStore instance
@@ -42,7 +43,7 @@ class VectorStoreFactory:
                     from langchain_oceanbase.vectorstores import OceanbaseVectorStore
                     return OceanbaseVectorStore(
                         embedding_function=embeddings,
-                        table_name=vector_store_config.config.table_name.replace('-', '_'),  # Sanitize table name
+                        table_name=table_name.replace('-', '_'),  # Sanitize table name
                         connection_args={
                             "host": vector_store_config.config.host,
                             "port": str(vector_store_config.config.port),

@@ -50,4 +50,7 @@ class EmbeddingConfig(BaseSettings):
     """Configuration for embedding service"""
     config: EmbeddingConfigUnion
     
-    model_config = SettingsConfigDict(env_prefix='EMBEDDING_')
+    model_config = SettingsConfigDict(
+        env_prefix='EMBEDDING_',
+        env_nested_delimiter='_'
+    )

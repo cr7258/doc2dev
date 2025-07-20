@@ -31,33 +31,17 @@ class MetadataDBFactory:
         match db_type:
             case "mysql":
                 connection_string = (
-                    f"mysql+pymysql://{metadata_db_config.config.user}:{metadata_db_config.config.password}"
+                    f"mysql+pymysql://{metadata_db_config.config.username}:{metadata_db_config.config.password}"
                     f"@{metadata_db_config.config.host}:{metadata_db_config.config.port}/{metadata_db_config.config.database}"
                 )
-                
-                engine_kwargs = {
-                    "pool_size": metadata_db_config.config.pool_size,
-                    "max_overflow": metadata_db_config.config.max_overflow,
-                    "pool_timeout": metadata_db_config.config.pool_timeout,
-                    "pool_recycle": metadata_db_config.config.pool_recycle,
-                }
-                
-                return create_engine(connection_string, **engine_kwargs)
+                return create_engine(connection_string)
             
             case "postgresql":
                 connection_string = (
-                    f"postgresql+psycopg2://{metadata_db_config.config.user}:{metadata_db_config.config.password}"
+                    f"postgresql+psycopg2://{metadata_db_config.config.username}:{metadata_db_config.config.password}"
                     f"@{metadata_db_config.config.host}:{metadata_db_config.config.port}/{metadata_db_config.config.database}"
                 )
-                
-                engine_kwargs = {
-                    "pool_size": metadata_db_config.config.pool_size,
-                    "max_overflow": metadata_db_config.config.max_overflow,
-                    "pool_timeout": metadata_db_config.config.pool_timeout,
-                    "pool_recycle": metadata_db_config.config.pool_recycle,
-                }
-                
-                return create_engine(connection_string, **engine_kwargs)
+                return create_engine(connection_string)
             
             case _:
                 raise ValueError(f"Unsupported database type: {db_type}")

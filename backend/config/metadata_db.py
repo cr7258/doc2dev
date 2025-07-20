@@ -16,7 +16,6 @@ class MySQLMetadataDBConfig(BaseSettings):
     
     model_config = SettingsConfigDict(env_prefix='METADATA_DB_MYSQL_')
 
-
 class PostgreSQLMetadataDBConfig(BaseSettings):
     """PostgreSQL metadata database specific configuration"""
     type: Literal["postgresql"] = "postgresql"
@@ -29,16 +28,17 @@ class PostgreSQLMetadataDBConfig(BaseSettings):
     
     model_config = SettingsConfigDict(env_prefix='METADATA_DB_POSTGRESQL_')
 
-
 # Discriminated union for metadata database configurations
 MetadataDBConfigUnion = Annotated[
     MySQLMetadataDBConfig | PostgreSQLMetadataDBConfig,
     Field(discriminator='type')
 ]
 
-
 class MetadataDBConfig(BaseSettings):
     """Configuration for metadata database"""
     config: MetadataDBConfigUnion
     
-    model_config = SettingsConfigDict(env_prefix='METADATA_DB_')
+    model_config = SettingsConfigDict(
+        env_prefix='METADATA_DB_', 
+        env_nested_delimiter='_'
+    )

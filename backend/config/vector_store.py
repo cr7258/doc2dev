@@ -72,4 +72,7 @@ class VectorStoreConfig(BaseSettings):
     """Configuration for vector database"""
     config: VectorStoreConfigUnion
     
-    model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_')
+    model_config = SettingsConfigDict(
+        env_prefix='VECTOR_STORE_', 
+        env_nested_delimiter='_'
+    )

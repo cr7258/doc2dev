@@ -4,11 +4,13 @@ LLM Configuration
 Configuration classes for different Language Model providers using Pydantic v2 discriminated unions.
 """
 
-from typing import Literal, Union, Optional
+import os
+from typing import Literal, Union, Optional, Annotated
 from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class OpenAILLMConfig(BaseModel):
+class OpenAILLMConfig(BaseSettings):
     """OpenAI LLM configuration"""
     type: Literal["openai"] = "openai"
     api_key: str = Field(..., description="OpenAI API key")
@@ -17,11 +19,10 @@ class OpenAILLMConfig(BaseModel):
     temperature: float = Field(default=0.3, ge=0.0, le=2.0, description="Temperature for response generation")
     max_tokens: int = Field(default=2000, gt=0, description="Maximum tokens in response")
     
-    class Config:
-        env_prefix = "LLM_OPENAI_"
+    model_config = SettingsConfigDict(env_prefix='LLM_OPENAI_')
 
 
-class AnthropicLLMConfig(BaseModel):
+class AnthropicLLMConfig(BaseSettings):
     """Anthropic Claude LLM configuration"""
     type: Literal["anthropic"] = "anthropic"
     api_key: str = Field(..., description="Anthropic API key")
@@ -29,11 +30,10 @@ class AnthropicLLMConfig(BaseModel):
     temperature: float = Field(default=0.3, ge=0.0, le=1.0, description="Temperature for response generation")
     max_tokens: int = Field(default=2000, gt=0, description="Maximum tokens in response")
     
-    class Config:
-        env_prefix = "LLM_ANTHROPIC_"
+    model_config = SettingsConfigDict(env_prefix='LLM_ANTHROPIC_')
 
 
-class HuggingFaceLLMConfig(BaseModel):
+class HuggingFaceLLMConfig(BaseSettings):
     """HuggingFace LLM configuration"""
     type: Literal["huggingface"] = "huggingface"
     api_key: Optional[str] = Field(default=None, description="HuggingFace API key (optional for some models)")
@@ -41,32 +41,29 @@ class HuggingFaceLLMConfig(BaseModel):
     temperature: float = Field(default=0.3, ge=0.0, le=1.0, description="Temperature for response generation")
     max_tokens: int = Field(default=2000, gt=0, description="Maximum tokens in response")
     
-    class Config:
-        env_prefix = "LLM_HUGGINGFACE_"
+    model_config = SettingsConfigDict(env_prefix='LLM_HUGGINGFACE_')
 
 
-class OllamaLLMConfig(BaseModel):
+class OllamaLLMConfig(BaseSettings):
     """Ollama local LLM configuration"""
     type: Literal["ollama"] = "ollama"
     base_url: str = Field(default="http://localhost:11434", description="Ollama server URL")
     model: str = Field(default="llama2", description="Ollama model name")
     temperature: float = Field(default=0.3, ge=0.0, le=1.0, description="Temperature for response generation")
     
-    class Config:
-        env_prefix = "LLM_OLLAMA_"
+    model_config = SettingsConfigDict(env_prefix='LLM_OLLAMA_')
 
-# Union type for all LLM configurations
-LLMConfigUnion = Union[
-    OpenAILLMConfig,
-    AnthropicLLMConfig,
-    HuggingFaceLLMConfig,
-    OllamaLLMConfig,
+# Discriminated union for LLM configurations
+LLMConfigUnion = Annotated[
+    OpenAILLMConfig | AnthropicLLMConfig | HuggingFaceLLMConfig | OllamaLLMConfig,
+    Field(discriminator='type')
 ]
 
-
-class LLMConfig(BaseModel):
-    """Main LLM configuration with discriminated union"""
-    config: LLMConfigUnion = Field(..., discriminator='type', description="LLM provider configuration")
+class LLMConfig(BaseSettings):
+    """Configuration for LLM service"""
+    config: LLMConfigUnion
     
-    class Config:
-        env_prefix = "LLM_"
+    model_config = SettingsConfigDict(
+        env_prefix='LLM_', 
+        env_nested_delimiter='_'
+    )

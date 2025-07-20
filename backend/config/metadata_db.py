@@ -10,7 +10,7 @@ class MySQLMetadataDBConfig(BaseSettings):
     host: str = "localhost"
     port: int = 3306
     database: str
-    username: str
+    user: str
     password: str
     charset: str = "utf8mb4"
     
@@ -22,7 +22,7 @@ class PostgreSQLMetadataDBConfig(BaseSettings):
     host: str = "localhost"
     port: int = 5432
     database: str
-    username: str
+    user: str
     password: str
     schema: str = "public"
     

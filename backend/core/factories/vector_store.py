@@ -41,13 +41,13 @@ class VectorStoreFactory:
                     from langchain_oceanbase.vectorstores import OceanbaseVectorStore
                     return OceanbaseVectorStore(
                         embedding_function=embeddings,
-                        table_name=specific_config.table_name.replace('-', '_'),  # Sanitize table name
+                        table_name=vector_store_config.config.table_name.replace('-', '_'),  # Sanitize table name
                         connection_args={
-                            "host": specific_config.host,
-                            "port": str(specific_config.port),
-                            "user": specific_config.user,
-                            "password": specific_config.password,
-                            "db_name": specific_config.db_name,
+                            "host": vector_store_config.config.host,
+                            "port": str(vector_store_config.config.port),
+                            "user": vector_store_config.config.user,
+                            "password": vector_store_config.config.password,
+                            "db_name": vector_store_config.config.db_name,
                         },
                     )
                 except ImportError:

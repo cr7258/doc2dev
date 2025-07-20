@@ -57,7 +57,7 @@ class Repository(Base):
             'repo_url': self.repo_url,
             'tokens': self.tokens,
             'snippets': self.snippets,
-            'repo_status': self.repo_status.value if self.repo_status else None,
+            'repo_status': self.repo_status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

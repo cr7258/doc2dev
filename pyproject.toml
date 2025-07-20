@@ -22,5 +22,6 @@ dependencies = [
     "pygithub==2.6.1",
     "python-dotenv==1.1.0",
     "python-multipart==0.0.20",
+    "unstructured>=0.18.9",
     "uvicorn==0.34.2",
 ]

@@ -46,7 +46,7 @@ async def search_library_id(libraryName: str) -> Dict[str, Any]:
                 "libraryID": libraryID,
                 "repository": repo.repo,
                 "description": f"Table: {repo.name}, Repository: {repo.repo}",
-                "status": repo.repo_status.value if repo.repo_status else "unknown",
+                "status": repo.repo_status,
                 "tokens": repo.tokens,
                 "snippets": repo.snippets
             })

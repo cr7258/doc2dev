@@ -19,7 +19,6 @@ from config.llm import (
     OllamaLLMConfig,
 )
 
-
 class LLMFactory:
     """Factory for creating Language Model instances"""
     
@@ -37,21 +36,20 @@ class LLMFactory:
         Raises:
             ValueError: If unsupported LLM type is specified
         """
-        specific_config = llm_config.config
         
-        match specific_config.type:
+        match llm_config.config.type:
             case "openai":
-                return LLMFactory._create_openai_llm(specific_config)
+                return LLMFactory._create_openai_llm(llm_config.config)
             case "anthropic":
-                return LLMFactory._create_anthropic_llm(specific_config)
+                return LLMFactory._create_anthropic_llm(llm_config.config)
             case "huggingface":
-                return LLMFactory._create_huggingface_llm(specific_config)
+                return LLMFactory._create_huggingface_llm(llm_config.config)
             case "ollama":
-                return LLMFactory._create_ollama_llm(specific_config)
+                return LLMFactory._create_ollama_llm(llm_config.config)
             case "azure_openai":
-                return LLMFactory._create_azure_openai_llm(specific_config)
+                return LLMFactory._create_azure_openai_llm(llm_config.config)
             case _:
-                raise ValueError(f"Unsupported LLM type: {specific_config.type}")
+                raise ValueError(f"Unsupported LLM type: {llm_config.config.type}")
     
     @staticmethod
     def _create_openai_llm(config: OpenAILLMConfig) -> ChatOpenAI:

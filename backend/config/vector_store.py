@@ -15,7 +15,7 @@ class OceanBaseVectorConfig(BaseSettings):
     table_name: str = "langchain_vector"
     metric_type: str = "l2"  # Renamed from vidx_metric_type for consistency
     
-    model_config = SettingsConfigDict(env_prefix='VECTOR_OCEANBASE_')
+    model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_OCEANBASE_')
 
 
 class ChromaVectorConfig(BaseSettings):
@@ -24,7 +24,7 @@ class ChromaVectorConfig(BaseSettings):
     persist_directory: str = "./chroma_db"
     collection_name: str = "doc2dev"
     
-    model_config = SettingsConfigDict(env_prefix='VECTOR_CHROMA_')
+    model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_CHROMA_')
 
 
 class PGVectorConfig(BaseSettings):
@@ -38,7 +38,7 @@ class PGVectorConfig(BaseSettings):
     schema_name: str = "public"
     table_name: str = "langchain_vectors"
     
-    model_config = SettingsConfigDict(env_prefix='VECTOR_PGVECTOR_')
+    model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_PGVECTOR_')
 
 
 class QdrantVectorConfig(BaseSettings):
@@ -47,7 +47,7 @@ class QdrantVectorConfig(BaseSettings):
     url: str = "http://localhost:6333"
     collection_name: str = "doc2dev"
     
-    model_config = SettingsConfigDict(env_prefix='VECTOR_QDRANT_')
+    model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_QDRANT_')
 
 
 class ElasticsearchVectorConfig(BaseSettings):
@@ -58,7 +58,7 @@ class ElasticsearchVectorConfig(BaseSettings):
     es_password: Optional[str] = None
     index_name: str = "doc2dev"
     
-    model_config = SettingsConfigDict(env_prefix='VECTOR_ES_')
+    model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_ELASTICSEARCH_')
 
 
 # Discriminated union for vector store configurations
@@ -72,4 +72,4 @@ class VectorStoreConfig(BaseSettings):
     """Configuration for vector database"""
     config: VectorStoreConfigUnion
     
-    model_config = SettingsConfigDict(env_prefix='VECTOR_')
+    model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_')

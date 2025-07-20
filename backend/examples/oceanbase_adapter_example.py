@@ -26,7 +26,7 @@ def main():
     # Ensure we're using OceanBase
     if settings.vector_store.config.type != "oceanbase":
         print("This example requires OceanBase vector store configuration.")
-        print("Set VECTOR_CONFIG_TYPE=oceanbase in your .env file")
+        print("Set VECTOR_STORE_TYPE=oceanbase in your .env file")
         return
     
     print("=== OceanBase Vector Store Factory Example ===")

@@ -4,9 +4,14 @@ WebSocket routes for Doc2Dev API
 """
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from utils.websocket import manager
 
 router = APIRouter()
+
+# Import manager from main module (will be available after main.py initializes)
+def get_manager():
+    """Get the global manager instance from main module"""
+    from main import manager
+    return manager
 
 
 @router.websocket("/ws/{client_id}")
@@ -18,6 +23,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         websocket: WebSocket connection
         client_id: Client identifier for connection management
     """
+    manager = get_manager()
     await manager.connect(websocket, client_id)
     try:
         while True:

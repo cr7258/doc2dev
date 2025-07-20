@@ -55,28 +55,12 @@ class OllamaLLMConfig(BaseModel):
     class Config:
         env_prefix = "LLM_OLLAMA_"
 
-
-class AzureOpenAILLMConfig(BaseModel):
-    """Azure OpenAI LLM configuration"""
-    type: Literal["azure_openai"] = "azure_openai"
-    api_key: str = Field(..., description="Azure OpenAI API key")
-    azure_endpoint: str = Field(..., description="Azure OpenAI endpoint")
-    api_version: str = Field(default="2024-02-15-preview", description="Azure OpenAI API version")
-    deployment_name: str = Field(..., description="Azure OpenAI deployment name")
-    temperature: float = Field(default=0.3, ge=0.0, le=2.0, description="Temperature for response generation")
-    max_tokens: int = Field(default=2000, gt=0, description="Maximum tokens in response")
-    
-    class Config:
-        env_prefix = "LLM_AZURE_OPENAI_"
-
-
 # Union type for all LLM configurations
 LLMConfigUnion = Union[
     OpenAILLMConfig,
     AnthropicLLMConfig,
     HuggingFaceLLMConfig,
     OllamaLLMConfig,
-    AzureOpenAILLMConfig,
 ]
 
 

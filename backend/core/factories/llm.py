@@ -17,7 +17,6 @@ from config.llm import (
     AnthropicLLMConfig,
     HuggingFaceLLMConfig,
     OllamaLLMConfig,
-    AzureOpenAILLMConfig,
 )
 
 
@@ -105,19 +104,7 @@ class LLMFactory:
             model=config.model,
             temperature=config.temperature,
         )
-    
-    @staticmethod
-    def _create_azure_openai_llm(config: AzureOpenAILLMConfig) -> AzureChatOpenAI:
-        """Create Azure OpenAI instance"""
-        return AzureChatOpenAI(
-            deployment_name=config.deployment_name,
-            temperature=config.temperature,
-            max_tokens=config.max_tokens,
-            azure_endpoint=config.azure_endpoint,
-            api_key=config.api_key,
-            api_version=config.api_version,
-        )
-    
+
     @staticmethod
     def get_supported_llm_types() -> list[str]:
         """Get list of supported LLM types"""

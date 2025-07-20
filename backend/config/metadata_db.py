@@ -14,7 +14,7 @@ class MySQLMetadataDBConfig(BaseSettings):
     password: str
     charset: str = "utf8mb4"
     
-    model_config = SettingsConfigDict(env_prefix='METADATA_MYSQL_')
+    model_config = SettingsConfigDict(env_prefix='METADATA_DB_MYSQL_')
 
 
 class PostgreSQLMetadataDBConfig(BaseSettings):
@@ -27,7 +27,7 @@ class PostgreSQLMetadataDBConfig(BaseSettings):
     password: str
     schema: str = "public"
     
-    model_config = SettingsConfigDict(env_prefix='METADATA_POSTGRESQL_')
+    model_config = SettingsConfigDict(env_prefix='METADATA_DB_POSTGRESQL_')
 
 
 # Discriminated union for metadata database configurations
@@ -41,4 +41,4 @@ class MetadataDBConfig(BaseSettings):
     """Configuration for metadata database"""
     config: MetadataDBConfigUnion
     
-    model_config = SettingsConfigDict(env_prefix='METADATA_')
+    model_config = SettingsConfigDict(env_prefix='METADATA_DB_')

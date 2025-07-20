@@ -171,7 +171,7 @@ class RepositoryProcessor:
                     description="",
                     repo=repo_path,
                     repo_url=repo_url_full,
-                    repo_status=RepositoryStatus.IN_PROGRESS,
+                    repo_status=RepositoryStatus.in_progress,
                     tokens=0,
                     snippets=0
                 )
@@ -229,7 +229,7 @@ class RepositoryProcessor:
                 # If there's a repository ID, update status to failed
                 if repo_id:
                     try:
-                        self.repository_service.update_repository_status(repo_id, RepositoryStatus.FAILED)
+                        self.repository_service.update_repository_status(repo_id, RepositoryStatus.failed)
                         logger.info(f"Updated repository status to 'failed' for ID: {repo_id}")
                     except Exception as e:
                         logger.error(f"Error updating repository status: {str(e)}")
@@ -306,7 +306,7 @@ class RepositoryProcessor:
                         snippets_count = count_code_blocks_in_documents(documents)
                         
                         # Update repository status
-                        self.repository_service.update_repository_status(repo_id, RepositoryStatus.COMPLETED)
+                        self.repository_service.update_repository_status(repo_id, RepositoryStatus.completed)
                         logger.info(f"Updated repository status to 'completed' for ID: {repo_id}")
                         
                         # Update repository token and code snippet counts
@@ -346,7 +346,7 @@ class RepositoryProcessor:
                 # If there's a repository ID, update status to failed
                 if repo_id:
                     try:
-                        self.repository_service.update_repository_status(repo_id, RepositoryStatus.FAILED)
+                        self.repository_service.update_repository_status(repo_id, RepositoryStatus.failed)
                         logger.info(f"Updated repository status to 'failed' for ID: {repo_id}")
                     except Exception as status_err:
                         logger.error(f"Error updating repository status: {str(status_err)}")

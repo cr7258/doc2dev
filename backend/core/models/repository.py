@@ -16,10 +16,10 @@ Base = declarative_base()
 
 class RepositoryStatus(str, Enum):
     """Repository processing status enumeration"""
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
+    pending = "pending"
+    in_progress = "in_progress"
+    completed = "completed"
+    failed = "failed"
 
 class Repository(Base):
     """
@@ -38,7 +38,7 @@ class Repository(Base):
     snippets = Column(Integer, default=0, nullable=False)
     repo_status = Column(
         SQLEnum(RepositoryStatus), 
-        default=RepositoryStatus.PENDING, 
+        default=RepositoryStatus.pending, 
         nullable=False
     )
     created_at = Column(DateTime, default=func.now(), nullable=False)

@@ -123,10 +123,10 @@ class RepositoryService:
         description: str, 
         repo: str, 
         repo_url: str, 
-        repo_status: RepositoryStatus = RepositoryStatus.PENDING,
+        repo_status: RepositoryStatus = RepositoryStatus.pending,
         tokens: int = 0,
         snippets: int = 0
-    ) -> Optional[Repository]:
+    ) -> Optional[int]:
         """
         Create a new repository.
         
@@ -157,7 +157,7 @@ class RepositoryService:
             self._db_session.commit()
             
             print(f"✅ Created repository: {name}")
-            return repository
+            return repository.id
             
         except IntegrityError as e:
             self._db_session.rollback()

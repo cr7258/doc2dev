@@ -191,6 +191,6 @@ CREATE TABLE repositories (
 
 2. 启动前端服务：
    ```bash
-   cd frontend/doc2dev
+   cd frontend
    npm run dev
    ```

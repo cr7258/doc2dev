@@ -166,7 +166,15 @@ class RepositoryProcessor:
                 repo_url_full = f"https://github.com/{org}/{repo}"
                 
                 # Add to repositories table using RepositoryService
-                repo_id = self.repository_service.add_repository(repo_name, "", repo_path, repo_url_full, "in_progress", 0, 0)
+                repo_id = self.repository_service.create_repository(
+                    name=repo_name,
+                    description="",
+                    repo=repo_path,
+                    repo_url=repo_url_full,
+                    repo_status="in_progress",
+                    tokens=0,
+                    snippets=0
+                )
                 
                 if repo_id:
                     logger.info(f"Added repository with ID: {repo_id}")
@@ -243,16 +251,15 @@ class RepositoryProcessor:
                     self.current_client_id = None
             
             # Load Markdown files using DocumentLoaderFactory
-            loader_factory = DocumentLoaderFactory()
-            loader = loader_factory.create_loader("markdown")
+            loader_class = DocumentLoaderFactory.get_loader("markdown")
             documents = []
             for file_path in md_files:
-                docs = loader.load(file_path)
+                loader = loader_class(file_path)
+                docs = loader.load()
                 documents.extend(docs)
             
             # Split documents using DocumentSplitterFactory
-            splitter_factory = DocumentSplitterFactory()
-            splitter = splitter_factory.create_splitter("recursive")
+            splitter = DocumentSplitterFactory.get_splitter("recursive")
             docs = splitter.split_documents(documents)
 
             # Embed and store documents using progress version

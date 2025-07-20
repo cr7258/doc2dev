@@ -36,6 +36,7 @@ async def query_vector_database(query_request: QueryRequest):
             # Use search_with_summary for summarized results
             result = document_service.search_with_summary(
                 query=query_request.query,
+                table_name=query_request.table_name,
                 k=query_request.k,
                 filter=filter_dict
             )
@@ -59,6 +60,7 @@ async def query_vector_database(query_request: QueryRequest):
             # Use regular search_documents for non-summarized results
             results = document_service.search_documents(
                 query=query_request.query,
+                table_name=query_request.table_name,
                 k=query_request.k,
                 filter=filter_dict
             )

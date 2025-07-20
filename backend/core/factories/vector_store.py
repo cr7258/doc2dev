@@ -43,7 +43,7 @@ class VectorStoreFactory:
                     from langchain_oceanbase.vectorstores import OceanbaseVectorStore
                     return OceanbaseVectorStore(
                         embedding_function=embeddings,
-                        table_name=table_name.replace('-', '_'),  # Sanitize table name
+                        table_name=table_name.replace('-', '_'),  # Ensure string type and sanitize table name
                         connection_args={
                             "host": vector_store_config.config.host,
                             "port": str(vector_store_config.config.port),

@@ -230,6 +230,7 @@ class DocumentService:
     def search_with_summary(
         self, 
         query: str, 
+        table_name: str,
         k: int = 5, 
         filter: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
@@ -238,15 +239,16 @@ class DocumentService:
         
         Args:
             query: Search query string
-            k: Number of documents to return (default: 5)
-            filter: Optional filter dictionary for metadata filtering
+            table_name: Table name for the vector store
+            k: Number of documents to retrieve
+            filter: Optional filter to apply to search
             
         Returns:
             Dictionary containing search results and summary
         """
         try:
             # First, perform the search
-            documents = self.search_documents(query, k, filter)
+            documents = self.search_documents(query, table_name, k, filter)
             
             if not documents:
                 return {

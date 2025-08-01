@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # API configuration
     api_base_url: str = "http://localhost:8000"
     
+    # GitHub OAuth configuration
+    github_client_id: str = Field(default="", env="GITHUB_CLIENT_ID")
+    github_client_secret: str = Field(default="", env="GITHUB_CLIENT_SECRET")
+    jwt_secret_key: str = Field(default="your-secret-key-change-in-production", env="JWT_SECRET_KEY")
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding='utf-8',

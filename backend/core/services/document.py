@@ -14,7 +14,6 @@ from langchain.vectorstores.base import VectorStore
 from langchain_core.documents import Document
 from sqlalchemy.orm import Session
 
-from config.settings import Settings
 from core.factories.document import DocumentLoaderFactory, DocumentSplitterFactory
 from core.factories.service import ServiceFactory
 from .summary import SummaryService
@@ -31,14 +30,16 @@ class DocumentService:
     - Managing document metadata
     """
     
-    def __init__(self, settings: Settings):
+    def __init__(self, settings, db_router):
         """
-        Initialize document service with configuration.
+        Initialize document service with configuration and database router.
         
         Args:
             settings: Application settings containing all configurations
+            db_router: DatabaseRouter instance for multi-tenant database access
         """
         self.settings = settings
+        self.db_router = db_router
         self._vector_store: Optional[VectorStore] = None
         self._summary_service: Optional[SummaryService] = None
     

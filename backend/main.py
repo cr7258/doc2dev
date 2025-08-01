@@ -10,11 +10,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Import route modules
 from routes import base_router, repository_router, query_router, websocket_router
+from routes.auth import router as auth_router
 
 # Import global services
 from config.settings import Settings
 from core.services.repository import RepositoryService
 from core.services.document import DocumentService
+from core.database.router import DatabaseRouter
+from core.auth.service import GitHubOAuthService
 from utils.websocket import ConnectionManager
 from tasks.repository_processor import RepositoryProcessor
 
@@ -39,8 +42,16 @@ manager = ConnectionManager()
 
 # Initialize global service instances
 settings = Settings()
-repository_service = RepositoryService(settings)
-document_service = DocumentService(settings)
+db_router = DatabaseRouter(settings)
+repository_service = RepositoryService(db_router)
+document_service = DocumentService(settings, db_router)
+github_oauth_service = GitHubOAuthService(
+    users_session=db_router.get_users_session(),
+    db_router=db_router,
+    client_id=settings.github_client_id,
+    client_secret=settings.github_client_secret,
+    jwt_secret=settings.jwt_secret_key
+)
 
 # Create global RepositoryProcessor instance with service dependencies
 repository_processor = RepositoryProcessor(manager, repository_service, document_service)
@@ -56,6 +67,7 @@ app.add_middleware(
 
 # Include route modules
 app.include_router(base_router)
+app.include_router(auth_router)
 app.include_router(repository_router)
 app.include_router(query_router)
 app.include_router(websocket_router)

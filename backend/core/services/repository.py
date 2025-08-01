@@ -9,8 +9,6 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from config.settings import Settings
-from core.factories.service import ServiceFactory
 from core.models.repository import Repository, RepositoryStatus
 
 
@@ -25,18 +23,17 @@ class RepositoryService:
     - Integration with metadata database
     """
     
-    def __init__(self, settings: Settings):
+    def __init__(self, db_router):
         """
-        Initialize RepositoryService with configuration.
+        Initialize RepositoryService with database router.
         
         Args:
-            settings: Application settings containing database configuration
+            db_router: DatabaseRouter instance for multi-tenant database access
         """
-        self.settings = settings
+        self.db_router = db_router
         print("Initializing database session...")
-        self._db_session: Session = ServiceFactory.create_db_session(
-            self.settings.metadata_db
-        )
+        # Use public database session for repository metadata
+        self._db_session: Session = self.db_router.public_session
         print("✅ Database session initialized successfully")
     
     def get_all_repositories(self) -> List[Repository]:

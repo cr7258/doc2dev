@@ -12,13 +12,23 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // 获取认证头信息
+    const authorization = request.headers.get('authorization');
+
     // 调用后端 API
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    // 如果有认证信息，添加到请求头
+    if (authorization) {
+      headers.authorization = authorization;
+    }
+
     const response = await fetch(`${backendUrl}/query/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: headers,
       body: JSON.stringify({
         table_name: table_name,
         query: query,

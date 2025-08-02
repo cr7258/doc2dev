@@ -39,7 +39,7 @@ class RepositoryService:
     def get_all_repositories(self) -> List[Repository]:
         """
         Get all repositories.
-        
+
         Returns:
             List of all Repository objects
         """
@@ -49,6 +49,26 @@ class RepositoryService:
             return repositories
         except Exception as e:
             print(f"❌ Failed to get repositories: {e}")
+            return []
+
+    def get_user_repositories(self, user_id: str) -> List[Repository]:
+        """
+        Get repositories for a specific user from their private database.
+
+        Args:
+            user_id: User ID to get repositories for
+
+        Returns:
+            List of Repository objects for the user
+        """
+        try:
+            # Get user-specific database session
+            user_session = self.db_router.get_session(user_id)
+            repositories = user_session.query(Repository).order_by(Repository.name).all()
+            print(f"✅ Retrieved {len(repositories)} repositories for user {user_id}")
+            return repositories
+        except Exception as e:
+            print(f"❌ Failed to get repositories for user {user_id}: {e}")
             return []
     
     def get_repository_by_name(self, name: str) -> Optional[Repository]:
@@ -75,10 +95,10 @@ class RepositoryService:
     def get_repository_by_path(self, repo_path: str) -> Optional[Repository]:
         """
         Get repository by path.
-        
+
         Args:
             repo_path: Repository path (e.g., /owner/repo)
-            
+
         Returns:
             Repository object if found, None otherwise
         """
@@ -91,6 +111,52 @@ class RepositoryService:
             return repository
         except Exception as e:
             print(f"❌ Failed to get repository by path '{repo_path}': {e}")
+            return None
+
+    def get_user_repository_by_path(self, user_id: str, repo_path: str) -> Optional[Repository]:
+        """
+        Get repository by path for a specific user from their private database.
+
+        Args:
+            user_id: User ID
+            repo_path: Repository path (e.g., /owner/repo)
+
+        Returns:
+            Repository object if found, None otherwise
+        """
+        try:
+            user_session = self.db_router.get_session(user_id)
+            repository = user_session.query(Repository).filter(Repository.repo == repo_path).first()
+            if repository:
+                print(f"✅ Found repository by path for user {user_id}: {repo_path}")
+            else:
+                print(f"❌ Repository not found by path for user {user_id}: {repo_path}")
+            return repository
+        except Exception as e:
+            print(f"❌ Failed to get repository by path for user {user_id} '{repo_path}': {e}")
+            return None
+
+    def get_user_repository_by_id(self, user_id: str, repo_id: int) -> Optional[Repository]:
+        """
+        Get repository by ID from user's private database.
+
+        Args:
+            user_id: User ID
+            repo_id: Repository ID
+
+        Returns:
+            Repository object if found, None otherwise
+        """
+        try:
+            user_session = self.db_router.get_session(user_id)
+            repository = user_session.query(Repository).filter(Repository.id == repo_id).first()
+            if repository:
+                print(f"✅ Found repository by ID for user {user_id}: {repo_id}")
+            else:
+                print(f"❌ Repository not found by ID for user {user_id}: {repo_id}")
+            return repository
+        except Exception as e:
+            print(f"❌ Failed to get repository by ID for user {user_id} '{repo_id}': {e}")
             return None
     
     def get_repository_by_id(self, repo_id: int) -> Optional[Repository]:
@@ -163,6 +229,60 @@ class RepositoryService:
         except Exception as e:
             self._db_session.rollback()
             print(f"❌ Failed to create repository '{name}': {e}")
+            return None
+
+    def create_user_repository(
+        self,
+        user_id: str,
+        name: str,
+        description: str,
+        repo: str,
+        repo_url: str,
+        repo_status: RepositoryStatus = RepositoryStatus.pending,
+        tokens: int = 0,
+        snippets: int = 0
+    ) -> Optional[int]:
+        """
+        Create a new repository in user's private database.
+
+        Args:
+            user_id: User ID
+            name: Repository name (must be unique within user's database)
+            description: Repository description
+            repo: Repository path
+            repo_url: Repository URL
+            repo_status: Repository status
+            tokens: Token count
+            snippets: Snippet count
+
+        Returns:
+            Created Repository ID if successful, None otherwise
+        """
+        try:
+            user_session = self.db_router.get_session(user_id)
+            repository = Repository(
+                name=name,
+                description=description,
+                repo=repo,
+                repo_url=repo_url,
+                repo_status=repo_status,
+                tokens=tokens,
+                snippets=snippets
+            )
+
+            user_session.add(repository)
+            user_session.commit()
+
+            print(f"✅ Created repository for user {user_id}: {name}")
+            return repository.id
+
+        except IntegrityError as e:
+            user_session.rollback()
+            print(f"❌ Repository name already exists for user {user_id}: {name}")
+            return None
+        except Exception as e:
+            user_session.rollback()
+            print(f"❌ Failed to create repository for user {user_id} '{name}': {e}")
             return None
     
     def search_repositories(self, search_term: str) -> List[Repository]:
@@ -297,6 +417,68 @@ class RepositoryService:
             self._db_session.rollback()
             print(f"❌ Failed to update repository counts ID {repo_id}: {e}")
             return False
+
+    def update_user_repository_status(self, user_id: str, repo_id: int, status: RepositoryStatus) -> bool:
+        """
+        Update repository status in user's private database.
+
+        Args:
+            user_id: User ID
+            repo_id: Repository ID
+            status: New status
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            user_session = self.db_router.get_session(user_id)
+            repository = user_session.query(Repository).filter(Repository.id == repo_id).first()
+            if not repository:
+                print(f"❌ Repository not found for user {user_id}: ID {repo_id}")
+                return False
+
+            repository.repo_status = status
+            user_session.commit()
+
+            print(f"✅ Updated repository status for user {user_id}: ID {repo_id} -> {status.value}")
+            return True
+
+        except Exception as e:
+            user_session.rollback()
+            print(f"❌ Failed to update repository status for user {user_id} ID {repo_id}: {e}")
+            return False
+
+    def update_user_repository_counts(self, user_id: str, repo_id: int, tokens: int, snippets: int) -> bool:
+        """
+        Update repository token and snippet counts in user's private database.
+
+        Args:
+            user_id: User ID
+            repo_id: Repository ID
+            tokens: Token count
+            snippets: Snippet count
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            user_session = self.db_router.get_session(user_id)
+            repository = user_session.query(Repository).filter(Repository.id == repo_id).first()
+            if not repository:
+                print(f"❌ Repository not found for user {user_id}: ID {repo_id}")
+                return False
+
+            repository.tokens = tokens
+            repository.snippets = snippets
+            user_session.commit()
+
+            print(f"✅ Updated repository counts for user {user_id}: ID {repo_id} -> tokens: {tokens}, snippets: {snippets}")
+            return True
+
+        except Exception as e:
+            user_session.rollback()
+            print(f"❌ Failed to update repository counts for user {user_id} ID {repo_id}: {e}")
+            return False
     
     def delete_repository(self, repo_id: int) -> bool:
         """
@@ -324,6 +506,36 @@ class RepositoryService:
         except Exception as e:
             self._db_session.rollback()
             print(f"❌ Failed to delete repository ID {repo_id}: {e}")
+            return False
+
+    def delete_user_repository(self, user_id: str, repo_id: int) -> bool:
+        """
+        Delete repository from user's private database.
+
+        Args:
+            user_id: User ID
+            repo_id: Repository ID
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            user_session = self.db_router.get_session(user_id)
+            repository = user_session.query(Repository).filter(Repository.id == repo_id).first()
+            if not repository:
+                print(f"❌ Repository not found for user {user_id}: ID {repo_id}")
+                return False
+
+            repo_name = repository.name
+            user_session.delete(repository)
+            user_session.commit()
+
+            print(f"✅ Deleted repository for user {user_id}: {repo_name} (ID {repo_id})")
+            return True
+
+        except Exception as e:
+            user_session.rollback()
+            print(f"❌ Failed to delete repository for user {user_id} ID {repo_id}: {e}")
             return False
     
     def get_repositories_by_status(self, status: RepositoryStatus) -> List[Repository]:

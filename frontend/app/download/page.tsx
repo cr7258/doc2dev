@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Github, FileText, FileJson, AlertCircle, CheckCircle, Search, Database, ExternalLink } from "lucide-react";
 import SearchBar from "@/components/search";
 import { Navbar } from "@/components/navbar";
+import { useAuth } from "@/lib/auth";
 
 export default function DownloadPage() {
+  const { token, user } = useAuth();
   const [repoUrl, setRepoUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", content: "", queryUrl: "", repoPath: "" });
@@ -88,9 +90,20 @@ export default function DownloadPage() {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!repoUrl) return;
-    
+
+    // 检查用户是否已登录
+    if (!token) {
+      setMessage({
+        type: "error",
+        content: "请先登录后再下载仓库。",
+        queryUrl: "",
+        repoPath: ""
+      });
+      return;
+    }
+
     // 重置所有状态
     setLoading(true);
     setMessage({ type: "", content: "", queryUrl: "", repoPath: "" });
@@ -100,13 +113,19 @@ export default function DownloadPage() {
     setEmbeddingProgress(0);
     setEmbeddingStatus("");
     setEmbeddingMessage("");
-    
+
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const response = await fetch("/api/download", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           repo_url: repoUrl,
           client_id: clientId, // 传递客户端 ID 用于 WebSocket 连接
@@ -189,6 +208,16 @@ export default function DownloadPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {!token && (
+              <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2 text-yellow-800">
+                  <AlertCircle className="h-4 w-4" />
+                  <p className="text-sm">
+                    请先 <Link href="/auth/login" className="text-blue-600 hover:underline font-medium">登录</Link> 后再下载仓库。
+                  </p>
+                </div>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 {/* 移除了 GitHub 仓库 URL 标签 */}
@@ -202,13 +231,14 @@ export default function DownloadPage() {
                       className="px-4 bg-white border-border w-full"
                       placeholder="https://github.com/<org>/<repo>"
                       required
+                      disabled={!token}
                     />
                     {/* 移除了 GitHub 图标 */}
                   </div>
-                  <Button 
-                    type="submit" 
-                    disabled={loading}
-                    className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
+                  <Button
+                    type="submit"
+                    disabled={loading || !token}
+                    className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? "处理中..." : "下载并索引"}
                   </Button>

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Github, Clock, Code, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Database, Search, Copy } from "lucide-react";
 import { getRelativeTime} from "@/utils/date";
 import { Navbar } from "@/components/navbar";
+import { useAuth } from "@/lib/auth";
 import {
   Card,
   CardContent,
@@ -47,6 +48,7 @@ interface RepositoryData {
 // 时间和数字格式化函数已移至 utils/date-utils.ts
 
 export default function QueryPage() {
+  const { token } = useAuth();
   const searchParams = useSearchParams();
   const initialTable = searchParams.get("table") || "";
   const initialQuery = searchParams.get("q") || "";
@@ -127,11 +129,18 @@ export default function QueryPage() {
     setSummary("");
     
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      // 如果有认证token，添加到请求头
+      if (token) {
+        headers.authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch("/api/query", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify({
           // 表名应该是原始格式，不需要添加前缀
           table_name: tableName,

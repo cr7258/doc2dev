@@ -3,10 +3,11 @@
 Repository routes for Doc2Dev API
 """
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
 from core.models.api import RepositoryRequest, DownloadResponse
 from utils.github import extract_org_repo
 from core.services.repository import RepositoryService
+from api.auth import get_current_user_required, get_current_user_optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,11 @@ router = APIRouter()
 
 
 @router.post("/download/", response_model=DownloadResponse)
-async def download_repository(repo_request: RepositoryRequest, background_tasks: BackgroundTasks):
+async def download_repository(
+    repo_request: RepositoryRequest,
+    background_tasks: BackgroundTasks,
+    current_user_id: str = Depends(get_current_user_required)
+):
     """
     Download markdown files from a GitHub repository directly to the project directory
     and automatically embed them if embedding functionality is available.
@@ -32,9 +37,9 @@ async def download_repository(repo_request: RepositoryRequest, background_tasks:
         # Import global repository service from main module
         from main import repository_service
         
-        # Check if repository already exists
+        # Check if repository already exists for this user
         repo_path = f"{org}/{repo}"
-        existing_repo = repository_service.get_repository_by_path(repo_path)
+        existing_repo = repository_service.get_user_repository_by_path(current_user_id, repo_path)
         
         # If no library_name provided, auto-generate
         table_name = repo_request.library_name
@@ -71,6 +76,7 @@ async def download_repository(repo_request: RepositoryRequest, background_tasks:
         background_tasks.add_task(
             repository_processor.process_repository_background,
             str(repo_request.repo_url),
+            current_user_id,
             repo_request.library_name,
             repo_request.client_id
         )
@@ -96,18 +102,26 @@ async def download_repository(repo_request: RepositoryRequest, background_tasks:
 
 
 @router.get("/repositories/")
-async def get_repositories():
+async def get_repositories(current_user_id: str = Depends(get_current_user_optional)):
     """
-    Get all repository information
-    
+    Get repositories based on authentication status:
+    - If user is logged in: return user's private repositories
+    - If user is not logged in: return all public repositories
+
     Returns:
-        JSON response containing all repository information
+        JSON response containing list of repositories
     """
     try:
         # Import global repository service from main module
         from main import repository_service
-        
-        repositories = repository_service.get_all_repositories()
+
+        # Get repositories based on authentication status
+        if current_user_id:
+            # User is logged in - return their private repositories
+            repositories = repository_service.get_user_repositories(current_user_id)
+        else:
+            # User is not logged in - return all public repositories
+            repositories = repository_service.get_all_repositories()
         
         # Convert ORM objects to dictionaries and handle time conversion
         repo_list = []
@@ -132,7 +146,7 @@ async def get_repositories():
 
 
 @router.get("/repositories/{repo_path}")
-async def get_repository_details(repo_path: str):
+async def get_repository_details(repo_path: str, current_user_id: str = Depends(get_current_user_required)):
     """
     Get detailed information for a specific repository
     
@@ -149,8 +163,8 @@ async def get_repository_details(repo_path: str):
         # Replace underscores with slashes in path
         repo_path = repo_path.replace("_", "/")
         
-        # Get repository information
-        repository = repository_service.get_repository_by_path(repo_path)
+        # Get repository information from user's database
+        repository = repository_service.get_user_repository_by_path(current_user_id, repo_path)
         
         if not repository:
             raise HTTPException(status_code=404, detail=f"Repository not found: {repo_path}")
@@ -175,7 +189,7 @@ async def get_repository_details(repo_path: str):
 
 
 @router.delete("/repositories/{repo_id}")
-async def delete_repository_endpoint(repo_id: int):
+async def delete_repository_endpoint(repo_id: int, current_user_id: str = Depends(get_current_user_required)):
     """
     Delete repository
     
@@ -189,9 +203,9 @@ async def delete_repository_endpoint(repo_id: int):
         # Import global repository service from main module
         from main import repository_service
         
-        # Get repository information using RepositoryService
-        repository = repository_service.get_repository_by_id(repo_id)
-        
+        # Get repository information using RepositoryService from user's database
+        repository = repository_service.get_user_repository_by_id(current_user_id, repo_id)
+
         if not repository:
             raise HTTPException(status_code=404, detail=f"Repository does not exist: ID {repo_id}")
         
@@ -215,8 +229,8 @@ async def delete_repository_endpoint(repo_id: int):
             logger.error(f"Failed to delete vector table: {str(e)}")
             # Even if deleting vector table fails, we still try to delete database record
         
-        # Delete database record using RepositoryService
-        success = repository_service.delete_repository(repo_id)
+        # Delete database record using RepositoryService from user's database
+        success = repository_service.delete_user_repository(current_user_id, repo_id)
         
         if success:
             return {

@@ -10,12 +10,16 @@ def get_current_user_optional(
     """Optional authentication: returns user ID or None for public access"""
     if not credentials:
         return None
-    
-    # Import here to avoid circular imports
-    from main import github_oauth_service
-    
-    user_id = github_oauth_service.verify_jwt_token(credentials.credentials)
-    return user_id
+
+    try:
+        # Import here to avoid circular imports
+        from main import github_oauth_service
+
+        user_id = github_oauth_service.verify_jwt_token(credentials.credentials)
+        return user_id  # This can be None if token is invalid, which is fine for optional auth
+    except Exception:
+        # If token verification fails, treat as unauthenticated user
+        return None
 
 def get_current_user_required(
     credentials: HTTPAuthorizationCredentials = Depends(security)

@@ -1,5 +1,5 @@
 from typing import Optional, Dict
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 from config.settings import Settings
 import logging
@@ -44,7 +44,9 @@ class DatabaseRouter:
     
     def get_user_db_name(self, user_id: str) -> str:
         """Generate user-specific database name from user ID"""
-        return f"doc2dev_user_{user_id}"
+        # Replace hyphens with underscores for MySQL compatibility
+        safe_user_id = user_id.replace('-', '_')
+        return f"doc2dev_user_{safe_user_id}"
     
     def get_session(self, user_id: Optional[str] = None) -> Session:
         """Get database session based on user context (public or private)"""
@@ -74,7 +76,7 @@ class DatabaseRouter:
         try:
             # Create database using admin privileges
             admin_session = self.public_session
-            admin_session.execute(f"CREATE DATABASE {db_name}")
+            admin_session.execute(text(f"CREATE DATABASE {db_name}"))
             admin_session.commit()
             
             # Initialize table structure
@@ -91,7 +93,7 @@ class DatabaseRouter:
     def _initialize_user_tables(self, session: Session):
         """Initialize table structure in user database"""
         # Create repositories table
-        session.execute("""
+        session.execute(text("""
             CREATE TABLE repositories (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL UNIQUE,
@@ -104,7 +106,7 @@ class DatabaseRouter:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
-        """)
+        """))
         session.commit()
         logger.info("User database tables initialized successfully")
     
@@ -112,7 +114,7 @@ class DatabaseRouter:
         """Check if user database exists"""
         try:
             test_session = self._create_user_session(user_id)
-            test_session.execute("SELECT 1")
+            test_session.execute(text("SELECT 1"))
             return True
         except Exception:
             return False

@@ -19,18 +19,26 @@ class VectorStoreFactory:
     """Factory for creating vector store instances based on configuration."""
     
     @staticmethod
-    def create_vector_store(vector_store_config: VectorStoreConfig, embeddings: Embeddings, table_name: str) -> VectorStore:
+    def create_vector_store(
+        vector_store_config: VectorStoreConfig,
+        embeddings: Embeddings,
+        table_name: str,
+        user_id: Optional[str] = None,
+        db_router = None
+    ) -> VectorStore:
         """
         Create a vector store instance based on configuration.
-        
+
         Args:
             vector_store_config: Vector store configuration
             embeddings: Embedding model instance
             table_name: Table name for the vector store
-            
+            user_id: Optional user ID for user-specific database selection
+            db_router: Optional database router for multi-tenant support
+
         Returns:
             VectorStore instance
-            
+
         Raises:
             ValueError: If vector store type is not supported
         """
@@ -41,6 +49,13 @@ class VectorStoreFactory:
                 # Direct use of LangChain OceanBase implementation
                 try:
                     from langchain_oceanbase.vectorstores import OceanbaseVectorStore
+
+                    # Determine database name based on user context
+                    db_name = vector_store_config.config.db_name  # Default to public database
+                    if user_id and db_router:
+                        # Use user-specific database for authenticated users
+                        db_name = db_router.get_user_db_name(user_id)
+
                     return OceanbaseVectorStore(
                         embedding_function=embeddings,
                         table_name=table_name.replace('-', '_'),  # Ensure string type and sanitize table name
@@ -49,7 +64,7 @@ class VectorStoreFactory:
                             "port": str(vector_store_config.config.port),
                             "user": vector_store_config.config.user,
                             "password": vector_store_config.config.password,
-                            "db_name": vector_store_config.config.db_name,
+                            "db_name": db_name,
                         },
                     )
                 except ImportError:

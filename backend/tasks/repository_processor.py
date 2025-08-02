@@ -88,16 +88,17 @@ class RepositoryProcessor:
                 logger.warning(f"WebSocket connection to client {self.current_client_id} failed during embedding progress update")
                 self.current_client_id = None  # Avoid subsequent attempts to send
     
-    async def _embed_and_store_with_progress(self, documents, table_name, drop_old=False, progress_callback=None):
+    async def _embed_and_store_with_progress(self, documents, table_name, drop_old=False, progress_callback=None, user_id=None):
         """
         Embed documents and store to vector database with progress callback support
-        
+
         Args:
             documents: List of documents to embed
             table_name: Vector table name
             drop_old: Whether to drop old table
             progress_callback: Progress callback function
-            
+            user_id: User ID for user-specific database selection
+
         Returns:
             bool: Success status
         """
@@ -115,9 +116,10 @@ class RepositoryProcessor:
             # This avoids blocking the event loop
             success = await asyncio.to_thread(
                 self.document_service.embed_and_store,
-                documents, 
+                documents,
                 table_name,
-                drop_old=drop_old
+                drop_old=drop_old,
+                user_id=user_id
             )
             
             # Complete progress
@@ -130,12 +132,13 @@ class RepositoryProcessor:
                 await progress_callback(0, 1, f"Error embedding documents: {str(e)}")
             raise e
     
-    async def process_repository_background(self, repo_url: str, library_name: Optional[str] = None, client_id: Optional[str] = None):
+    async def process_repository_background(self, repo_url: str, user_id: str, library_name: Optional[str] = None, client_id: Optional[str] = None):
         """
         Process repository download and indexing in background
-        
+
         Args:
             repo_url: Repository URL
+            user_id: User ID for storing repository in user's private database
             library_name: Optional library name
             client_id: Optional client ID for WebSocket updates
         """
@@ -143,9 +146,9 @@ class RepositoryProcessor:
             # Extract organization and repository name from URL
             org, repo = extract_org_repo(str(repo_url))
             
-            # Check if repository already exists
+            # Check if repository already exists for this user
             repo_path = f"{org}/{repo}"
-            existing_repo = self.repository_service.get_repository_by_path(repo_path)
+            existing_repo = self.repository_service.get_user_repository_by_path(user_id, repo_path)
             
             # If repository already exists, return directly
             if existing_repo:
@@ -166,8 +169,9 @@ class RepositoryProcessor:
                 repo_name = repo.replace("-", " ").title()
                 repo_url_full = f"https://github.com/{org}/{repo}"
                 
-                # Add to repositories table using RepositoryService
-                repo_id = self.repository_service.create_repository(
+                # Add to user's repositories table using RepositoryService
+                repo_id = self.repository_service.create_user_repository(
+                    user_id=user_id,
                     name=repo_name,
                     description="",
                     repo=repo_path,
@@ -279,10 +283,11 @@ class RepositoryProcessor:
             try:
                 # Embed and store documents
                 vector_store = await self._embed_and_store_with_progress(
-                    docs, 
-                    table_name=table_name, 
+                    docs,
+                    table_name=table_name,
                     drop_old=True,
-                    progress_callback=self._embedding_progress_callback
+                    progress_callback=self._embedding_progress_callback,
+                    user_id=user_id
                 )
                 
                 # Completion notification
@@ -307,12 +312,12 @@ class RepositoryProcessor:
                         snippets_count = count_code_blocks_in_documents(documents)
                         
                         # Update repository status
-                        self.repository_service.update_repository_status(repo_id, RepositoryStatus.completed)
-                        logger.info(f"Updated repository status to 'completed' for ID: {repo_id}")
-                        
+                        self.repository_service.update_user_repository_status(user_id, repo_id, RepositoryStatus.completed)
+                        logger.info(f"Updated repository status to 'completed' for user {user_id} ID: {repo_id}")
+
                         # Update repository token and code snippet counts
-                        self.repository_service.update_repository_counts(repo_id, tokens_count, snippets_count)
-                        logger.info(f"Updated repository counts for ID: {repo_id} - Tokens: {tokens_count}, Snippets: {snippets_count}")
+                        self.repository_service.update_user_repository_counts(user_id, repo_id, tokens_count, snippets_count)
+                        logger.info(f"Updated repository counts for user {user_id} ID: {repo_id} - Tokens: {tokens_count}, Snippets: {snippets_count}")
                     except Exception as e:
                         logger.error(f"Error updating repository status or counts: {str(e)}")
                 

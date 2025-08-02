@@ -3,16 +3,21 @@
 Query routes for Doc2Dev API
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from core.models.api import QueryRequest, QueryResponse
 from core.services.document import DocumentService
+from core.database.router import DatabaseRouter
+from api.auth import get_current_user_optional
 from config.settings import Settings
 
 router = APIRouter()
 
 
 @router.post("/query/", response_model=QueryResponse)
-async def query_vector_database(query_request: QueryRequest):
+async def query_vector_database(
+    query_request: QueryRequest,
+    current_user_id: str = Depends(get_current_user_optional)
+):
     """
     Query the vector database for documents similar to the query.
 
@@ -23,9 +28,10 @@ async def query_vector_database(query_request: QueryRequest):
         JSON response with query results
     """
     try:
-        # Initialize DocumentService with settings
+        # Initialize DocumentService with settings and db_router
         settings = Settings()
-        document_service = DocumentService(settings)
+        db_router = DatabaseRouter(settings)
+        document_service = DocumentService(settings, db_router)
         
         # Create filter for table name (if provided)
         filter_dict = None
@@ -38,7 +44,8 @@ async def query_vector_database(query_request: QueryRequest):
                 query=query_request.query,
                 table_name=query_request.table_name,
                 k=query_request.k,
-                filter=filter_dict
+                filter=filter_dict,
+                user_id=current_user_id
             )
             
             # Format results from search_with_summary
@@ -62,7 +69,8 @@ async def query_vector_database(query_request: QueryRequest):
                 query=query_request.query,
                 table_name=query_request.table_name,
                 k=query_request.k,
-                filter=filter_dict
+                filter=filter_dict,
+                user_id=current_user_id
             )
             
             # Format results

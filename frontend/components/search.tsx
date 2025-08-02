@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Search, FileText, FileJson } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 interface Repository {
   id: string;
@@ -26,13 +27,26 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { token } = useAuth();
 
   // 从后端 API 获取仓库数据
   useEffect(() => {
     const fetchRepositories = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/`);
+
+        // 构建请求头，如果有token则包含认证头
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/`, {
+          headers,
+        });
         
         if (!response.ok) {
           throw new Error(`获取仓库数据失败: ${response.status} ${response.statusText}`);
@@ -63,7 +77,7 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
     };
     
     fetchRepositories();
-  }, []);
+  }, [token]);
 
   // 点击页面其他区域关闭建议列表
   useEffect(() => {

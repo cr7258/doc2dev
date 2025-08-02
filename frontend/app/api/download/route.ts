@@ -35,36 +35,47 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { repo_url } = body;
-    
+
     if (!repo_url) {
       return NextResponse.json(
         { status: "error", message: "Missing repository URL" },
         { status: 400 }
       );
     }
-    
+
+    // 从请求头中获取认证token
+    const authorization = request.headers.get('authorization');
+
+    if (!authorization) {
+      return NextResponse.json(
+        { status: "error", message: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     // 从 URL 中提取组织和仓库名称
     const repoInfo = extractRepoInfo(repo_url);
-    
+
     if (!repoInfo) {
       return NextResponse.json(
         { status: "error", message: "Invalid GitHub repository URL" },
         { status: 400 }
       );
     }
-    
+
     // 生成向量表名称：org_repo
     const library_name = `${repoInfo.org}_${repoInfo.repo}`;
-    
+
     // 获取客户端 ID（如果有）
     const client_id = body.client_id;
-    
+
     // 调用后端 API
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
     const response = await fetch(`${backendUrl}/download/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": authorization, // 传递认证头
       },
       body: JSON.stringify({
         repo_url: repo_url,

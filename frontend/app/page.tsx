@@ -48,6 +48,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast, Toaster } from "@/components/ui/toast";
+import { useAuth } from "@/lib/auth";
 
 interface Repository {
   id: string;
@@ -93,6 +94,7 @@ export default function Home() {
   const [repoToDelete, setRepoToDelete] = useState<Repository | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const { token, user } = useAuth();
   
   // 点击页面其他区域关闭建议列表
   useEffect(() => {
@@ -119,6 +121,10 @@ export default function Home() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repoToDelete.id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
       
       if (response.ok) {
@@ -159,7 +165,19 @@ export default function Home() {
     const fetchRepositories = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/`);
+
+        // 构建请求头，如果有token则包含认证头
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/`, {
+          headers,
+        });
         
         if (!response.ok) {
           throw new Error(`获取仓库数据失败: ${response.status} ${response.statusText}`);
@@ -199,7 +217,7 @@ export default function Home() {
     };
     
     fetchRepositories();
-  }, []);
+  }, [token]); // 当token变化时重新获取数据（登录/登出时）
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

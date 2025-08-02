@@ -43,18 +43,21 @@ class DocumentService:
         self._vector_store: Optional[VectorStore] = None
         self._summary_service: Optional[SummaryService] = None
     
-    def _initialize_vector_store(self, table_name: str):
+    def _initialize_vector_store(self, table_name: str, user_id: Optional[str] = None):
         """Initialize vector store if not already initialized
-        
+
         Args:
             table_name: Table name for the vector store
+            user_id: Optional user ID for user-specific database selection
         """
         if self._vector_store is None:
             print("Initializing vector store...")
             self._vector_store = ServiceFactory.create_vector_store(
                 self.settings.embedding,
                 self.settings.vector_store,
-                table_name
+                table_name,
+                user_id=user_id,
+                db_router=self.db_router
             )
             print("✅ Vector store initialized successfully")
     
@@ -158,25 +161,26 @@ class DocumentService:
         print(f"✅ Total chunks created: {len(split_docs)}")
         return split_docs
     
-    def embed_and_store(self, documents: List[Document], table_name: str, drop_old: bool = False) -> bool:
+    def embed_and_store(self, documents: List[Document], table_name: str, drop_old: bool = False, user_id: Optional[str] = None) -> bool:
         """
         Embed documents and store them in vector store.
-        
+
         Args:
             documents: List of documents to embed and store
             table_name: Table name for the vector store
             drop_old: Whether to drop existing data before storing
-            
+            user_id: Optional user ID for user-specific database selection
+
         Returns:
             True if successful, False otherwise
         """
         if not documents:
             print("❌ No documents to embed and store")
             return False
-        
+
         try:
             # Initialize vector store with dynamic table name
-            self._initialize_vector_store(table_name)
+            self._initialize_vector_store(table_name, user_id)
             
             print(f"Embedding and storing {len(documents)} documents...")
             
@@ -191,27 +195,29 @@ class DocumentService:
             return False
     
     def search_documents(
-        self, 
-        query: str, 
+        self,
+        query: str,
         table_name: str,
-        k: int = 5, 
-        filter: Optional[Dict[str, Any]] = None
+        k: int = 5,
+        filter: Optional[Dict[str, Any]] = None,
+        user_id: Optional[str] = None
     ) -> List[Document]:
         """
         Search for documents similar to the query.
-        
+
         Args:
             query: Search query
             table_name: Table name for the vector store
             k: Number of results to return
             filter: Optional filter to apply
-            
+            user_id: Optional user ID for user-specific database selection
+
         Returns:
             List of similar documents
         """
         try:
             # Ensure components are initialized
-            self._initialize_vector_store(table_name)
+            self._initialize_vector_store(table_name, user_id)
             
             print(f"Searching for documents similar to: '{query}'")
             
@@ -229,27 +235,29 @@ class DocumentService:
             return []
 
     def search_with_summary(
-        self, 
-        query: str, 
+        self,
+        query: str,
         table_name: str,
-        k: int = 5, 
-        filter: Optional[Dict[str, Any]] = None
+        k: int = 5,
+        filter: Optional[Dict[str, Any]] = None,
+        user_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Search for similar documents and generate a summary of the results.
-        
+
         Args:
             query: Search query string
             table_name: Table name for the vector store
             k: Number of documents to retrieve
             filter: Optional filter to apply to search
-            
+            user_id: Optional user ID for user-specific database selection
+
         Returns:
             Dictionary containing search results and summary
         """
         try:
             # First, perform the search
-            documents = self.search_documents(query, table_name, k, filter)
+            documents = self.search_documents(query, table_name, k, filter, user_id)
             
             if not documents:
                 return {

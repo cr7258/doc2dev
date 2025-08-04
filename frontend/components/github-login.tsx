@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
-import { Github } from 'lucide-react'
+import { SignInModal } from '@/components/ui/clean-minimal-sign-in'
+
 
 export function GitHubLoginButton() {
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
+  const [showModal, setShowModal] = useState(false)
+  const { } = useAuth()
 
   const handleGitHubLogin = async () => {
     setIsLoading(true)
@@ -32,14 +34,27 @@ export function GitHubLoginButton() {
     }
   }
 
+  const handleGoogleLogin = () => {
+    // Placeholder for Google login
+    alert('Google login coming soon!')
+  }
+
   return (
-    <Button 
-      onClick={handleGitHubLogin} 
-      disabled={isLoading}
-      className="flex items-center gap-2"
-    >
-      <Github className="w-4 h-4" />
-      {isLoading ? 'Connecting...' : 'Login with GitHub'}
-    </Button>
+    <>
+      <Button
+        onClick={() => setShowModal(true)}
+        disabled={isLoading}
+        className="cursor-pointer"
+      >
+        {isLoading ? 'Connecting...' : 'Sign in'}
+      </Button>
+
+      <SignInModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onGitHubLogin={handleGitHubLogin}
+        onGoogleLogin={handleGoogleLogin}
+      />
+    </>
   )
 }

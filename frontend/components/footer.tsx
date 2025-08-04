@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
               href="https://github.com/cr7258/doc2dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              className="flex items-center text-gray-500 hover:text-gray-700 transition-colors duration-200 cursor-pointer"
               aria-label="GitHub repository"
             >
               <img src="/github.svg" alt="GitHub" className="h-5 w-5" />

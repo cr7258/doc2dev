@@ -4,6 +4,7 @@ import * as React from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronRight, Circle, Github, LogOut, User, Settings, MoreHorizontal, Search, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
+import { useRouter } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -707,6 +708,12 @@ interface GitHubAvatarDropdownProps {
 }
 
 const GitHubAvatarDropdown = ({ user, onLogout }: GitHubAvatarDropdownProps) => {
+  const router = useRouter();
+
+  const handleSettingsClick = () => {
+    router.push('/settings');
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -749,7 +756,7 @@ const GitHubAvatarDropdown = ({ user, onLogout }: GitHubAvatarDropdownProps) => 
           <span>Profile</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleSettingsClick} className="cursor-pointer">
           <Settings className="w-4 h-4" />
           <span>Settings</span>
         </DropdownMenuItem>

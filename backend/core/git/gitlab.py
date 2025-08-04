@@ -28,12 +28,16 @@ logger = logging.getLogger(__name__)
 class GitLabAdapter(GitPlatformAdapter):
     """GitLab platform adapter implementation"""
     
-    def __init__(self, base_url: Optional[str] = None):
+    def __init__(self, base_url: Optional[str] = None, user_id: Optional[str] = None):
         """Initialize GitLab adapter
 
         Args:
             base_url: Optional custom GitLab base URL (for self-hosted GitLab)
+            user_id: Optional user ID for user-specific configuration lookup
         """
+        # Store user_id for user-specific configuration lookup
+        self.user_id = user_id
+
         # Use configuration manager for consistent settings
         config_manager = get_git_config_manager()
         gitlab_config = config_manager.get_platform_config('gitlab')
@@ -47,27 +51,64 @@ class GitLabAdapter(GitPlatformAdapter):
 
         self.api_url = f"{self.base_url}/api/v4"
         
-    def get_git_token(self) -> str:
-        """Get GitLab token from configuration manager
+    def get_git_token(self, repo_url: Optional[str] = None) -> str:
+        """Get GitLab token from user configuration or fallback to global configuration
+
+        Args:
+            repo_url: Optional repository URL to match against user configurations
 
         Returns:
             str: GitLab authentication token
         """
-        # Try configuration manager first
+        token = ""
+
+        # Try user-specific configuration first if user_id is available
+        if self.user_id and repo_url:
+            try:
+                from core.services.platform_config import PlatformConfigService
+                from config.settings import Settings
+
+                # Create platform config service
+                settings = Settings()
+                platform_service = PlatformConfigService(settings)
+
+                # Extract base URL from repo URL to match user configuration
+                from urllib.parse import urlparse
+                parsed_url = urlparse(repo_url)
+                repo_base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+                # Get user configuration for GitLab platform matching the base URL
+                user_config = platform_service.get_user_config_for_platform(
+                    self.user_id, 'gitlab', repo_base_url
+                )
+
+                if user_config and user_config.get('token'):
+                    token = user_config['token']
+                    masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
+                    logger.info(f"Using user-configured GitLab token for {repo_base_url}: {masked_token}")
+                    return token
+                else:
+                    logger.info(f"No user configuration found for GitLab at {repo_base_url}, falling back to global config")
+
+            except Exception as e:
+                logger.warning(f"Error loading user GitLab configuration: {str(e)}")
+
+        # Fallback to global configuration manager
         config_manager = get_git_config_manager()
         gitlab_config = config_manager.get_platform_config('gitlab')
 
         if gitlab_config and gitlab_config.token:
             token = gitlab_config.token
         else:
-            # Fallback to environment variable
+            # Final fallback to environment variable
             token = os.getenv("GITLAB_TOKEN", "")
 
         if token:
             masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
-            logger.info(f"Loaded GitLab token: {masked_token}")
+            logger.info(f"Using global GitLab token: {masked_token}")
         else:
-            logger.warning("No GitLab token found in configuration or environment variables")
+            logger.warning("No GitLab token found in user configuration, global configuration, or environment variables")
+
         return token
     
     def parse_git_url(self, url: str) -> str:
@@ -232,11 +273,11 @@ class GitLabAdapter(GitPlatformAdapter):
             print(f"Created directory: {output_dir}")
 
             # Get GitLab token
-            token = self.get_git_token()
+            token = self.get_git_token(str(repo_url))
             if not token:
-                logger.error("GitLab token not found in environment variables")
+                logger.error("GitLab token not found in user configuration, global configuration, or environment variables")
                 if progress_callback:
-                    await progress_callback(0, 1, "GitLab token not found in environment variables")
+                    await progress_callback(0, 1, "GitLab token not found in user configuration, global configuration, or environment variables")
                 return []
             
             # Create GitLab instance

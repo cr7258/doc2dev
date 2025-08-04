@@ -34,11 +34,11 @@ async def download_repository(
         # Create appropriate Git adapter based on URL or specified platform
         if repo_request.platform:
             # Use user-specified platform
-            git_adapter = GitFactory.create_adapter_by_platform(repo_request.platform)
+            git_adapter = GitFactory.create_adapter_by_platform(repo_request.platform, current_user_id)
             logger.info(f"Using specified platform '{repo_request.platform}' for URL: {repo_request.repo_url}")
         else:
             # Auto-detect platform from URL
-            git_adapter = GitFactory.create_adapter(str(repo_request.repo_url))
+            git_adapter = GitFactory.create_adapter(str(repo_request.repo_url), current_user_id)
             logger.info(f"Auto-detected platform '{git_adapter.get_git_name()}' for URL: {repo_request.repo_url}")
 
         org, repo = git_adapter.extract_org_repo(str(repo_request.repo_url))

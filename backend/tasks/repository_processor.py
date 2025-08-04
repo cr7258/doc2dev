@@ -157,11 +157,11 @@ class RepositoryProcessor:
             # Create appropriate Git adapter based on URL or specified platform
             if platform:
                 # Use user-specified platform
-                git_adapter = GitFactory.create_adapter_by_platform(platform)
+                git_adapter = GitFactory.create_adapter_by_platform(platform, user_id)
                 logger.info(f"Using specified platform '{platform}' for URL: {repo_url}")
             else:
                 # Auto-detect platform from URL
-                git_adapter = GitFactory.create_adapter(repo_url)
+                git_adapter = GitFactory.create_adapter(repo_url, user_id)
                 logger.info(f"Auto-detected platform '{git_adapter.get_git_name()}' for URL: {repo_url}")
 
             # Extract organization and repository name from URL

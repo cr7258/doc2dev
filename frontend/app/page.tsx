@@ -357,7 +357,7 @@ export default function Home() {
           <Link href="/download">
             <Button className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">
               <Plus className="mr-1 h-4 w-4" />
-              添加 GitHub 仓库
+              添加 Git 仓库
             </Button>
           </Link>
         </div>

@@ -7,7 +7,7 @@ based on URL detection or explicit platform specification.
 """
 
 import logging
-from typing import Union
+from typing import Union, Optional
 
 from core.git import GitPlatformAdapter
 from core.git.github import GitHubAdapter
@@ -21,49 +21,51 @@ class GitFactory:
     """Factory class for creating Git platform adapters"""
     
     @staticmethod
-    def create_adapter(url: str) -> GitPlatformAdapter:
+    def create_adapter(url: str, user_id: Optional[str] = None) -> GitPlatformAdapter:
         """Create appropriate adapter based on URL detection
-        
+
         Args:
             url: Repository URL to analyze
-            
+            user_id: Optional user ID for user-specific configuration lookup
+
         Returns:
             GitPlatformAdapter: Appropriate platform adapter
-            
+
         Raises:
             ValueError: If platform cannot be detected or is unsupported
         """
         try:
             platform = PlatformDetector.detect_platform(url)
             logger.info(f"Detected platform '{platform}' for URL: {url}")
-            
-            return GitFactory.create_adapter_by_platform(platform)
-            
+
+            return GitFactory.create_adapter_by_platform(platform, user_id)
+
         except Exception as e:
             logger.error(f"Failed to create adapter for URL {url}: {str(e)}")
             raise ValueError(f"Failed to create Git adapter for URL: {url}") from e
     
     @staticmethod
-    def create_adapter_by_platform(platform: str) -> GitPlatformAdapter:
+    def create_adapter_by_platform(platform: str, user_id: Optional[str] = None) -> GitPlatformAdapter:
         """Create adapter for specific platform
-        
+
         Args:
             platform: Platform name ('github' or 'gitlab')
-            
+            user_id: Optional user ID for user-specific configuration lookup
+
         Returns:
             GitPlatformAdapter: Platform-specific adapter
-            
+
         Raises:
             ValueError: If platform is unsupported
         """
         platform = platform.lower().strip()
-        
+
         if platform == "github":
             logger.info("Creating GitHub adapter")
-            return GitHubAdapter()
+            return GitHubAdapter(user_id=user_id)
         elif platform == "gitlab":
             logger.info("Creating GitLab adapter")
-            return GitLabAdapter()
+            return GitLabAdapter(user_id=user_id)
         else:
             supported_platforms = PlatformDetector.get_supported_platforms()
             raise ValueError(

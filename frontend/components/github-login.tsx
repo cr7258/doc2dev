@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
-import { SignInModal } from '@/components/ui/clean-minimal-sign-in'
+import { SignInModal } from '@/components/ui/sign-in'
 
 
 export function GitHubLoginButton() {

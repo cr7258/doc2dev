@@ -7,13 +7,13 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dropdown } from "@/components/dropdown";
+import { TableRowDropdown } from "@/components/ui/dropdown";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown";
 import {
   Table,
   TableBody,
@@ -527,34 +527,21 @@ export default function Home() {
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
                           {/* 使用下拉菜单组件 */}
-                          <Dropdown 
-                            items={[
-                              {
-                                id: 1,
-                                label: "查询",
-                                icon: Search,
-                                onClick: () => {
-                                  // 从仓库路径中提取组织和仓库名
-                                  const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
-                                  const [org, repoName] = repoPath.split('/');
-                                  // 使用下划线拼接作为表名
-                                  const tableName = `${org}_${repoName}`.toLowerCase();
-                                  router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
-                                }
-                              },
-                              {
-                                id: 2,
-                                label: "删除",
-                                icon: Trash2,
-                                onClick: () => {
-                                  setRepoToDelete(repo);
-                                  setDeleteDialogOpen(true);
-                                }
-                              }
-                            ]}
-                            position="auto"
-                            index={index}
-                            total={filteredRepositories.length}
+                          <TableRowDropdown
+                            onQuery={() => {
+                              // 从仓库路径中提取组织和仓库名
+                              const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
+                              const [org, repoName] = repoPath.split('/');
+                              // 使用下划线拼接作为表名
+                              const tableName = `${org}_${repoName}`.toLowerCase();
+                              router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
+                            }}
+                            onDelete={() => {
+                              setRepoToDelete(repo);
+                              setDeleteDialogOpen(true);
+                            }}
+                            isOpen={false}
+                            onOpenChange={() => {}}
                           />
                         </div>
                       </TableCell>

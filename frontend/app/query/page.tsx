@@ -103,12 +103,26 @@ export default function QueryPage() {
       
       const fetchRepoData = async () => {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repoPath.replace('/', '_')}`);
+          const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+          };
+
+          // 如果有认证token，添加到请求头
+          if (token) {
+            headers.authorization = `Bearer ${token}`;
+          }
+
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repoPath.replace('/', '_')}`, {
+            headers: headers,
+          });
+
           if (response.ok) {
             const data = await response.json();
             if (data.status === "success" && data.repository) {
               setRepoData(data.repository);
             }
+          } else {
+            console.error("Failed to fetch repository data:", response.status, response.statusText);
           }
         } catch (error) {
           console.error("Error fetching repository data:", error);

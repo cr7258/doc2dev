@@ -146,7 +146,7 @@ async def get_repositories(current_user_id: str = Depends(get_current_user_optio
 
 
 @router.get("/repositories/{repo_path}")
-async def get_repository_details(repo_path: str, current_user_id: str = Depends(get_current_user_required)):
+async def get_repository_details(repo_path: str, current_user_id: str = Depends(get_current_user_optional)):
     """
     Get detailed information for a specific repository
     
@@ -162,10 +162,15 @@ async def get_repository_details(repo_path: str, current_user_id: str = Depends(
         
         # Replace underscores with slashes in path
         repo_path = repo_path.replace("_", "/")
-        
-        # Get repository information from user's database
-        repository = repository_service.get_user_repository_by_path(current_user_id, repo_path)
-        
+
+        # Get repository information based on authentication status
+        if current_user_id:
+            # User is logged in - get from user's private database
+            repository = repository_service.get_user_repository_by_path(current_user_id, repo_path)
+        else:
+            # User is not logged in - get from public database
+            repository = repository_service.get_repository_by_path(repo_path)
+
         if not repository:
             raise HTTPException(status_code=404, detail=f"Repository not found: {repo_path}")
         

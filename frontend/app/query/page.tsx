@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Github, Clock, Code, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Database, Search, Copy } from "lucide-react";
 import { getRelativeTime} from "@/utils/date";
 import { Navbar } from "@/components/navbar";
+import Footer from "@/components/footer";
 import { useAuth } from "@/lib/auth";
 import {
   Card,
@@ -184,8 +185,8 @@ export default function QueryPage() {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="container mx-auto px-4 pt-6 pb-10">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      <div className="container mx-auto px-4 pt-6 flex-1">
         {/* 顶部导航栏 */}
         <Navbar />
       {/* 仓库信息区域 */}
@@ -359,6 +360,9 @@ export default function QueryPage() {
         </Button>
       </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

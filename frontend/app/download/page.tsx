@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Github, FileText, FileJson, AlertCircle, CheckCircle, Search, Database, ExternalLink } from "lucide-react";
 import SearchBar from "@/components/search";
 import { Navbar } from "@/components/navbar";
+import Footer from "@/components/footer";
 import { useAuth } from "@/lib/auth";
 
 export default function DownloadPage() {
@@ -190,8 +191,8 @@ export default function DownloadPage() {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="container mx-auto py-10 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      <div className="container mx-auto py-10 px-4 flex-1">
         {/* 顶部导航栏 */}
         <Navbar />
         
@@ -378,6 +379,9 @@ export default function DownloadPage() {
           </Button>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

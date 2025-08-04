@@ -31,17 +31,6 @@ export function Navbar({ showSearch = true, alignment = "center" }: NavbarProps)
         </div>
         
         <div className="flex items-center gap-4">
-          {/* GitHub repository link */}
-          <a 
-            href="https://github.com/cr7258/doc2dev" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center text-black hover:text-gray-700 transition-colors"
-            aria-label="GitHub repository"
-          >
-            <img src="/github.svg" alt="GitHub" className="h-7 w-7" />
-          </a>
-          
           {/* Authentication section */}
           {!isLoading && (
             <div className="flex items-center gap-2">

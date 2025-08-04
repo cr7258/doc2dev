@@ -36,6 +36,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
+import Footer from "@/components/footer";
 import { formatDateTime, getRelativeTime, formatNumber } from "@/utils/date";
 import {
   AlertDialog,
@@ -302,8 +303,8 @@ export default function Home() {
   }, [repositories]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="container mx-auto py-10 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      <div className="container mx-auto py-10 px-4 flex-1">
         {/* 顶部导航栏 - 只显示 logo，并对齐到左侧 */}
         <div className="max-w-5xl mx-auto">
           <Navbar showSearch={false} alignment="left" />
@@ -594,9 +595,12 @@ export default function Home() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       {/* Toast 通知组件 */}
       <Toaster />
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

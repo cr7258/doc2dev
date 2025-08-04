@@ -231,7 +231,7 @@ class DocumentService:
             return results
             
         except Exception as e:
-            print(f"❌ Failed to search documents: {e}")
+            logger.error(f"❌ Failed to search documents: {e}")
             return []
 
     def search_with_summary(

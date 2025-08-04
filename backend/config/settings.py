@@ -29,10 +29,20 @@ class Settings(BaseSettings):
     
     # API configuration
     api_base_url: str = "http://localhost:8000"
-    
-    # GitHub OAuth configuration
+
+    # Github OAuth configuration
     github_client_id: str = Field(default="", env="GITHUB_CLIENT_ID")
     github_client_secret: str = Field(default="", env="GITHUB_CLIENT_SECRET")
+
+    # GitHub configuration
+    github_token: str = Field(default="", env="GITHUB_TOKEN")
+    github_url: str = Field(default="https://github.com", env="GITHUB_URL")
+
+    # GitLab configuration
+    gitlab_token: str = Field(default="", env="GITLAB_TOKEN")
+    gitlab_url: str = Field(default="https://gitlab.com", env="GITLAB_URL")
+
+    # Authentication configuration
     jwt_secret_key: str = Field(default="your-secret-key-change-in-production", env="JWT_SECRET_KEY")
     
     model_config = SettingsConfigDict(

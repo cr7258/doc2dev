@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Github, FileText, FileJson, AlertCircle, CheckCircle, Search, Database, ExternalLink } from "lucide-react";
+import { Github, Gitlab, FileText, FileJson, AlertCircle, CheckCircle, Search, Database, ExternalLink } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchBar from "@/components/search";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -16,6 +17,7 @@ import { useAuth } from "@/lib/auth";
 export default function DownloadPage() {
   const { token, user } = useAuth();
   const [repoUrl, setRepoUrl] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState("github"); // 默认选择 GitHub
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", content: "", queryUrl: "", repoPath: "" });
   
@@ -130,6 +132,7 @@ export default function DownloadPage() {
         body: JSON.stringify({
           repo_url: repoUrl,
           client_id: clientId, // 传递客户端 ID 用于 WebSocket 连接
+          platform: selectedPlatform, // 传递用户选择的平台
         }),
       });
       
@@ -201,11 +204,15 @@ export default function DownloadPage() {
         <Card className="max-w-4xl mx-auto mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Github className="h-5 w-5" />
+              {selectedPlatform === "gitlab" ? (
+                <Gitlab className="h-5 w-5 text-orange-500" />
+              ) : (
+                <Github className="h-5 w-5" />
+              )}
               添加新仓库
             </CardTitle>
             <CardDescription>
-              输入 GitHub 仓库 URL，系统将自动下载并索引其中的文档
+              输入 {selectedPlatform === "gitlab" ? "GitLab" : "GitHub"} 仓库 URL，系统将自动下载并索引其中的文档
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -220,38 +227,73 @@ export default function DownloadPage() {
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                {/* 移除了 GitHub 仓库 URL 标签 */}
-                <div className="flex items-center space-x-2">
-                  <div className="relative w-3/4">
-                    <Input
-                      id="repoUrl"
-                      type="text"
-                      value={repoUrl}
-                      onChange={(e) => setRepoUrl(e.target.value)}
-                      className="px-4 bg-white border-border w-full"
-                      placeholder="https://github.com/<org>/<repo>"
-                      required
-                      disabled={!token}
-                    />
-                    {/* 移除了 GitHub 图标 */}
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={loading || !token}
-                    className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? "处理中..." : "下载并索引"}
-                  </Button>
+              <div className="space-y-4">
+                {/* 平台选择下拉框 */}
+                <div className="space-y-2">
+                  <label htmlFor="platform" className="text-sm font-medium text-gray-700">
+                    选择 Git 平台
+                  </label>
+                  <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="选择平台" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="github">
+                        <div className="flex items-center gap-2">
+                          <Github className="h-4 w-4" />
+                          <span>GitHub</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gitlab">
+                        <div className="flex items-center gap-2">
+                          <Gitlab className="h-4 w-4 text-orange-500" />
+                          <span>GitLab</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                {/* 移除了示例提示文本 */}
+
+                {/* 仓库 URL 输入 */}
+                <div className="space-y-2">
+                  <label htmlFor="repoUrl" className="text-sm font-medium text-gray-700">
+                    仓库 URL
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="repoUrl"
+                        type="text"
+                        value={repoUrl}
+                        onChange={(e) => setRepoUrl(e.target.value)}
+                        className="px-4 bg-white border-border w-full"
+                        placeholder={
+                          selectedPlatform === "gitlab"
+                            ? "https://gitlab.com/<org>/<repo>"
+                            : "https://github.com/<org>/<repo>"
+                        }
+                        required
+                        disabled={!token}
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={loading || !token}
+                      className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? "处理中..." : "下载并索引"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 消息提示 */}
                 {message.type === "info" && message.queryUrl && (
                   <div className="mt-4 text-red-500/80 text-sm flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <p>
                       {message.content.split("Check")[0]}
-                      查看 <Link 
-                        href={message.queryUrl} 
+                      查看 <Link
+                        href={message.queryUrl}
                         className="text-red-500/80 hover:underline font-medium inline-flex items-center"
                       >
                         {message.repoPath || "该仓库"}

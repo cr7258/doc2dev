@@ -96,20 +96,20 @@ Keep your summary focused, technical, and informative.
                 HumanMessage(content=prompt)
             ]
             
-            print(f"Generating summary for query: '{query}'")
+            logger.info(f"Generating summary for query: '{query}'")
             
             # Generate the summary
             response = self._chat_model.invoke(messages)
             
             # Extract the summary from the response
             summary = response.content
-            print("✅ Summary generated successfully")
+            logger.info("✅ Summary generated successfully")
             
             return summary
         
         except Exception as e:
             error_msg = f"Error generating summary: {str(e)}"
-            print(f"❌ {error_msg}")
+            logger.error(f"❌ {error_msg}")
             return error_msg
     
 

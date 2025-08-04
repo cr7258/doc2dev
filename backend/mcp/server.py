@@ -4,9 +4,12 @@ FastMCP server that provides a tool for fetching library documentation.
 This server integrates with the Doc2Dev service layer architecture.
 """
 
+import logging
 import httpx
 from typing import Dict, Any
 from fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
 
 from config.settings import Settings
 from core.services.repository import RepositoryService
@@ -117,10 +120,10 @@ async def get_library_docs(libraryID: str, question: str) -> Dict[str, Any]:
 
 def main():
     """Run the MCP server"""
-    print("🚀 Starting Doc2Dev MCP Server...")
-    print("📋 Available tools:")
-    print("  - search-library-id: Search for library IDs by name")
-    print("  - get-library-docs: Get documentation for a specific library")
+    logger.info("🚀 Starting Doc2Dev MCP Server...")
+    logger.info("📋 Available tools:")
+    logger.info("  - search-library-id: Search for library IDs by name")
+    logger.info("  - get-library-docs: Get documentation for a specific library")
     mcp.run()
 
 if __name__ == "__main__":

@@ -9,7 +9,8 @@ import tempfile
 import logging
 from typing import Optional
 
-from utils.github import extract_org_repo, download_md_files_with_progress
+from core.factories.git import GitFactory
+from core.models.repository import RepositorySource
 from utils.markdown import count_code_blocks_in_documents
 from core.services.document import DocumentService
 from core.services.repository import RepositoryService
@@ -43,7 +44,7 @@ class RepositoryProcessor:
     async def _download_progress_callback(self, current, total, message):
         """
         Handle download progress updates via WebSocket
-        
+
         Args:
             current: Current progress count
             total: Total items count
@@ -51,13 +52,22 @@ class RepositoryProcessor:
         """
         if self.current_client_id and self.websocket_connected:
             progress = int((current / total) * 100) if total > 0 else 0
+
+            # Include platform information if available
+            platform_info = {}
+            if hasattr(self, 'current_platform'):
+                platform_info["platform"] = self.current_platform
+            if hasattr(self, 'current_source'):
+                platform_info["source"] = self.current_source
+
             self.websocket_connected = await self.manager.send_json({
                 "type": "download",
                 "status": "in_progress",
                 "progress": progress,
                 "current": current,
                 "total": total,
-                "message": message
+                "message": message,
+                **platform_info
             }, self.current_client_id)
             
             # If WebSocket connection fails, log and stop trying to send
@@ -132,43 +142,58 @@ class RepositoryProcessor:
                 await progress_callback(0, 1, f"Error embedding documents: {str(e)}")
             raise e
     
-    async def process_repository_background(self, repo_url: str, user_id: str, library_name: Optional[str] = None, client_id: Optional[str] = None):
+    async def process_repository_background(self, repo_url: str, user_id: str, library_name: Optional[str] = None, client_id: Optional[str] = None, platform: Optional[str] = None):
         """
         Process repository download and indexing in background
 
         Args:
-            repo_url: Repository URL
+            repo_url: Repository URL (GitHub or GitLab)
             user_id: User ID for storing repository in user's private database
             library_name: Optional library name
             client_id: Optional client ID for WebSocket updates
+            platform: Specify platform ('github' or 'gitlab') for URL processing
         """
         try:
+            # Create appropriate Git adapter based on URL or specified platform
+            if platform:
+                # Use user-specified platform
+                git_adapter = GitFactory.create_adapter_by_platform(platform)
+                logger.info(f"Using specified platform '{platform}' for URL: {repo_url}")
+            else:
+                # Auto-detect platform from URL
+                git_adapter = GitFactory.create_adapter(repo_url)
+                logger.info(f"Auto-detected platform '{git_adapter.get_git_name()}' for URL: {repo_url}")
+
             # Extract organization and repository name from URL
-            org, repo = extract_org_repo(str(repo_url))
+            org, repo = git_adapter.extract_org_repo(str(repo_url))
             
             # Check if repository already exists for this user
             repo_path = f"{org}/{repo}"
             existing_repo = self.repository_service.get_user_repository_by_path(user_id, repo_path)
-            
+
             # If repository already exists, return directly
             if existing_repo:
                 return
-                
+
             # If no library_name provided, generate automatically
             table_name = library_name
             if not table_name:
                 table_name = f"{org}_{repo}"
-            
+
             # Ensure hyphens in table name are replaced with underscores
             table_name = table_name.replace("-", "_")
-            
+
+            # Determine repository source based on adapter
+            repo_source = RepositorySource.github if git_adapter.get_git_name() == 'github' else RepositorySource.gitlab
+
             # Set repository status to in_progress
             repo_id = None
             try:
                 # First add repository to database with in_progress status
                 repo_name = repo.replace("-", " ").title()
-                repo_url_full = f"https://github.com/{org}/{repo}"
-                
+                # Use the original repo_url instead of hardcoding GitHub
+                repo_url_full = str(repo_url)
+
                 # Add to user's repositories table using RepositoryService
                 repo_id = self.repository_service.create_user_repository(
                     user_id=user_id,
@@ -177,6 +202,7 @@ class RepositoryProcessor:
                     repo=repo_path,
                     repo_url=repo_url_full,
                     repo_status=RepositoryStatus.in_progress,
+                    source=repo_source,
                     tokens=0,
                     snippets=0
                 )
@@ -190,17 +216,21 @@ class RepositoryProcessor:
             temp_dir = tempfile.mkdtemp()
             logger.info(f"Created temporary directory: {temp_dir}")
             
-            # Set up WebSocket connection state
+            # Set up WebSocket connection state and platform information
             self.current_client_id = client_id
             self.websocket_connected = True
+            self.current_platform = git_adapter.get_git_name()
+            self.current_source = repo_source.value
             
-            # Send initial progress information
+            # Send initial progress information with platform details
             if self.current_client_id:
                 self.websocket_connected = await self.manager.send_json({
                     "type": "download",
                     "status": "started",
                     "progress": 0,
-                    "message": f"Starting download of {org}/{repo} repository..."
+                    "platform": git_adapter.get_git_name(),
+                    "source": repo_source.value,
+                    "message": f"Starting download of {org}/{repo} repository from {git_adapter.get_git_name().upper()}..."
                 }, self.current_client_id)
                 
                 # If WebSocket connection fails, log but continue processing
@@ -211,10 +241,10 @@ class RepositoryProcessor:
 
 
 
-            # Download Markdown files using progress version
-            md_files = await download_md_files_with_progress(
-                repo_url, 
-                temp_dir, 
+            # Download Markdown files using Git adapter
+            md_files = await git_adapter.download_md_files_with_progress(
+                repo_url,
+                temp_dir,
                 progress_callback=self._download_progress_callback if self.current_client_id else None
             )
             

@@ -9,7 +9,7 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from core.models.repository import Repository, RepositoryStatus
+from core.models.repository import Repository, RepositoryStatus, RepositorySource
 
 
 class RepositoryService:
@@ -181,27 +181,29 @@ class RepositoryService:
             return None
     
     def create_repository(
-        self, 
-        name: str, 
-        description: str, 
-        repo: str, 
-        repo_url: str, 
+        self,
+        name: str,
+        description: str,
+        repo: str,
+        repo_url: str,
         repo_status: RepositoryStatus = RepositoryStatus.pending,
+        source: RepositorySource = RepositorySource.github,
         tokens: int = 0,
         snippets: int = 0
     ) -> Optional[int]:
         """
         Create a new repository.
-        
+
         Args:
             name: Repository name (must be unique)
             description: Repository description
             repo: Repository path
             repo_url: Repository URL
             repo_status: Repository status
+            source: Repository source platform (github/gitlab)
             tokens: Token count
             snippets: Snippet count
-            
+
         Returns:
             Created Repository object if successful, None otherwise
         """
@@ -212,6 +214,7 @@ class RepositoryService:
                 repo=repo,
                 repo_url=repo_url,
                 repo_status=repo_status,
+                source=source,
                 tokens=tokens,
                 snippets=snippets
             )
@@ -239,6 +242,7 @@ class RepositoryService:
         repo: str,
         repo_url: str,
         repo_status: RepositoryStatus = RepositoryStatus.pending,
+        source: RepositorySource = RepositorySource.github,
         tokens: int = 0,
         snippets: int = 0
     ) -> Optional[int]:
@@ -252,6 +256,7 @@ class RepositoryService:
             repo: Repository path
             repo_url: Repository URL
             repo_status: Repository status
+            source: Repository source platform (github/gitlab)
             tokens: Token count
             snippets: Snippet count
 
@@ -266,6 +271,7 @@ class RepositoryService:
                 repo=repo,
                 repo_url=repo_url,
                 repo_status=repo_status,
+                source=source,
                 tokens=tokens,
                 snippets=snippets
             )

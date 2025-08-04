@@ -3,17 +3,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TableRowDropdown } from "@/components/ui/dropdown";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown";
 import {
   Table,
   TableBody,
@@ -27,13 +20,12 @@ import {
   ChevronUp,
   ExternalLink,
   Github,
-  MoreHorizontal,
+  Gitlab,
   Plus,
   Search,
   Database,
   FileText,
   FileJson,
-  Trash2,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -64,6 +56,7 @@ interface Repository {
   createdAt?: string; // ISO 格式的创建时间
   status: "active" | "archived" | "private";
   repo_status?: "in_progress" | "completed" | "failed" | "pending";
+  source?: "github" | "gitlab"; // 添加源类型字段
 }
 
 interface StatsCardProps {
@@ -95,7 +88,7 @@ export default function Home() {
   const [repoToDelete, setRepoToDelete] = useState<Repository | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   
   // 点击页面其他区域关闭建议列表
   useEffect(() => {
@@ -202,7 +195,8 @@ export default function Home() {
             updatedAt: repo.updated_at,
             createdAt: repo.created_at,
             status: "active",
-            repo_status: repo.repo_status || "pending"
+            repo_status: repo.repo_status || "pending",
+            source: repo.source || "github" // 添加 source 字段
           }));
           
           setRepositories(formattedRepositories);
@@ -456,7 +450,7 @@ export default function Home() {
               </TableHeader>
               <TableBody>
                 {filteredRepositories.length > 0 ? (
-                  filteredRepositories.map((repo, index) => (
+                  filteredRepositories.map((repo) => (
                     <TableRow key={repo.id}>
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
@@ -479,10 +473,14 @@ export default function Home() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center">
-                          <Github className="mr-2 h-4 w-4" />
-                          <a 
-                            href={repo.repo_url || `https://github.com${repo.repo}`} 
-                            target="_blank" 
+                          {repo.source === "gitlab" ? (
+                            <Gitlab className="mr-2 h-4 w-4 text-orange-500" />
+                          ) : (
+                            <Github className="mr-2 h-4 w-4" />
+                          )}
+                          <a
+                            href={repo.repo_url || `https://${repo.source === "gitlab" ? "gitlab.com" : "github.com"}${repo.repo}`}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline flex items-center"
                           >

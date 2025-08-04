@@ -5,7 +5,7 @@ Repository routes for Doc2Dev API
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
 from core.models.api import RepositoryRequest, DownloadResponse
-from utils.github import extract_org_repo
+from core.factories.git import GitFactory
 from core.services.repository import RepositoryService
 from api.auth import get_current_user_required, get_current_user_optional
 import logging
@@ -31,8 +31,17 @@ async def download_repository(
         JSON response with download status and embedding status
     """
     try:
-        # Extract organization and repository name from URL
-        org, repo = extract_org_repo(str(repo_request.repo_url))
+        # Create appropriate Git adapter based on URL or specified platform
+        if repo_request.platform:
+            # Use user-specified platform
+            git_adapter = GitFactory.create_adapter_by_platform(repo_request.platform)
+            logger.info(f"Using specified platform '{repo_request.platform}' for URL: {repo_request.repo_url}")
+        else:
+            # Auto-detect platform from URL
+            git_adapter = GitFactory.create_adapter(str(repo_request.repo_url))
+            logger.info(f"Auto-detected platform '{git_adapter.get_git_name()}' for URL: {repo_request.repo_url}")
+
+        org, repo = git_adapter.extract_org_repo(str(repo_request.repo_url))
         
         # Import global repository service from main module
         from main import repository_service
@@ -78,7 +87,8 @@ async def download_repository(
             str(repo_request.repo_url),
             current_user_id,
             repo_request.library_name,
-            repo_request.client_id
+            repo_request.client_id,
+            repo_request.platform
         )
         
         # Generate query page URL
@@ -133,6 +143,7 @@ async def get_repositories(current_user_id: str = Depends(get_current_user_optio
                 "repo": repo.repo,
                 "repo_url": repo.repo_url,
                 "repo_status": repo.repo_status,
+                "source": repo.source,
                 "tokens": repo.tokens,
                 "snippets": repo.snippets,
                 "created_at": repo.created_at.isoformat() if repo.created_at else None,
@@ -182,6 +193,7 @@ async def get_repository_details(repo_path: str, current_user_id: str = Depends(
             "repo": repository.repo,
             "repo_url": repository.repo_url,
             "repo_status": repository.repo_status,
+            "source": repository.source,
             "tokens": repository.tokens,
             "snippets": repository.snippets,
             "created_at": repository.created_at.isoformat() if repository.created_at else None,

@@ -21,6 +21,11 @@ class RepositoryStatus(str, Enum):
     completed = "completed"
     failed = "failed"
 
+class RepositorySource(str, Enum):
+    """Repository source platform enumeration"""
+    github = "github"
+    gitlab = "gitlab"
+
 class Repository(Base):
     """
     Repository ORM model
@@ -37,8 +42,13 @@ class Repository(Base):
     tokens = Column(Integer, default=0, nullable=False)
     snippets = Column(Integer, default=0, nullable=False)
     repo_status = Column(
-        SQLEnum(RepositoryStatus), 
-        default=RepositoryStatus.pending, 
+        SQLEnum(RepositoryStatus),
+        default=RepositoryStatus.pending,
+        nullable=False
+    )
+    source = Column(
+        SQLEnum(RepositorySource),
+        default=RepositorySource.github,
         nullable=False
     )
     created_at = Column(DateTime, default=func.now(), nullable=False)
@@ -58,6 +68,7 @@ class Repository(Base):
             'tokens': self.tokens,
             'snippets': self.snippets,
             'repo_status': self.repo_status,
+            'source': self.source,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

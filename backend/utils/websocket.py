@@ -3,8 +3,11 @@
 WebSocket connection management utilities
 """
 
+import logging
 from typing import Dict, Any
 from fastapi import WebSocket
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
@@ -31,13 +34,13 @@ class ConnectionManager:
             if client_id in self.active_connections:
                 await self.active_connections[client_id].send_json(data)
             else:
-                print(f"Warning: Client {client_id} not found in active connections")
+                logger.warning(f"Client {client_id} not found in active connections")
         except Exception as e:
-            print(f"Error sending message to client {client_id}: {str(e)}")
+            logger.error(f"Error sending message to client {client_id}: {str(e)}")
             # If sending fails, try to remove the connection
             if client_id in self.active_connections:
                 del self.active_connections[client_id]
-                print(f"Removed client {client_id} due to send error. Total connections: {len(self.active_connections)}")
+                logger.info(f"Removed client {client_id} due to send error. Total connections: {len(self.active_connections)}")
             return False
         return True
 

@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # Import route modules
 from routes import base_router, repository_router, query_router, websocket_router
 from routes.auth import router as auth_router
+from routes.platforms import router as platforms_router
 
 # Import global services
 from config.settings import Settings
@@ -71,6 +72,7 @@ app.include_router(auth_router)
 app.include_router(repository_router)
 app.include_router(query_router)
 app.include_router(websocket_router)
+app.include_router(platforms_router)
 
 def main():
     import uvicorn

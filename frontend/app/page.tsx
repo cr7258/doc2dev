@@ -52,11 +52,11 @@ interface Repository {
   tokens: number;
   snippets: number;
   lastUpdated: string;
-  updatedAt?: string; // ISO 格式的更新时间
-  createdAt?: string; // ISO 格式的创建时间
+  updatedAt?: string; // ISO format update time
+  createdAt?: string; // ISO format creation time
   status: "active" | "archived" | "private";
   repo_status?: "in_progress" | "completed" | "failed" | "pending";
-  source?: "github" | "gitlab"; // 添加源类型字段
+  source?: "github" | "gitlab"; // Add source type field
 }
 
 interface StatsCardProps {
@@ -90,7 +90,7 @@ export default function Home() {
   const router = useRouter();
   const { token } = useAuth();
   
-  // 点击页面其他区域关闭建议列表
+  // Close suggestion list when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showSuggestions) {
@@ -108,10 +108,10 @@ export default function Home() {
     };
   }, [showSuggestions]);
   
-  // 删除仓库的函数
+  // Function to delete repository
   const handleDeleteRepo = async () => {
     if (!repoToDelete) return;
-    
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repoToDelete.id}`, {
         method: 'DELETE',
@@ -120,31 +120,31 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         toast({
-          title: "删除成功",
-          description: data.message || `仓库 ${repoToDelete.name} 已成功删除`,
+          title: "Delete Successful",
+          description: data.message || `Repository ${repoToDelete.name} has been successfully deleted`,
           variant: "success",
           duration: 3000,
         });
-        // 刷新页面以更新仓库列表
+        // Refresh page to update repository list
         setTimeout(() => window.location.reload(), 1000);
       } else {
         const error = await response.json();
         toast({
-          title: "删除失败",
-          description: error.detail || '未知错误',
+          title: "Delete Failed",
+          description: error.detail || 'Unknown error',
           variant: "destructive",
           duration: 5000,
         });
       }
     } catch (error) {
-      console.error('删除仓库时出错:', error);
+      console.error('Error deleting repository:', error);
       toast({
-        title: "删除失败",
-        description: error instanceof Error ? error.message : '未知错误',
+        title: "Delete Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: "destructive",
         duration: 5000,
       });
@@ -154,13 +154,13 @@ export default function Home() {
     }
   };
   
-  // 从后端 API 获取仓库数据
+  // Fetch repository data from backend API
   useEffect(() => {
     const fetchRepositories = async () => {
       try {
         setLoading(true);
 
-        // 构建请求头，如果有token则包含认证头
+        // Build request headers, include auth header if token exists
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
@@ -172,15 +172,15 @@ export default function Home() {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/`, {
           headers,
         });
-        
+
         if (!response.ok) {
-          throw new Error(`获取仓库数据失败: ${response.status} ${response.statusText}`);
+          throw new Error(`Failed to fetch repository data: ${response.status} ${response.statusText}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.status === "success" && Array.isArray(data.repositories)) {
-          // 将后端数据转换为前端所需的格式
+          // Convert backend data to frontend format
           const formattedRepositories = data.repositories.map((repo: any) => ({
             id: repo.id.toString(),
             name: repo.name,
@@ -189,35 +189,35 @@ export default function Home() {
             repo_url: repo.repo_url,
             tokens: repo.tokens || 0,
             snippets: repo.snippets || 0,
-            // 使用相对时间计算函数
+            // Use relative time calculation function
             lastUpdated: getRelativeTime(repo.updated_at),
-            // 保存原始时间戳用于排序和详细显示
+            // Save original timestamp for sorting and detailed display
             updatedAt: repo.updated_at,
             createdAt: repo.created_at,
             status: "active",
             repo_status: repo.repo_status || "pending",
-            source: repo.source || "github" // 添加 source 字段
+            source: repo.source || "github" // Add source field
           }));
-          
+
           setRepositories(formattedRepositories);
         } else {
-          throw new Error('获取仓库数据格式不正确');
+          throw new Error('Invalid repository data format');
         }
       } catch (err) {
-        console.error('获取仓库数据失败:', err);
-        setError(err instanceof Error ? err.message : '获取仓库数据失败');
+        console.error('Failed to fetch repository data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch repository data');
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchRepositories();
-  }, [token]); // 当token变化时重新获取数据（登录/登出时）
+  }, [token]); // Re-fetch data when token changes (login/logout)
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // 跳转到查询页面，并传递搜索查询参数
+      // Navigate to query page with search query parameters
       router.push(`/query?q=${encodeURIComponent(searchQuery)}`);
     }
   };
@@ -234,7 +234,7 @@ export default function Home() {
   const filteredRepositories = useMemo(() => {
     let filtered = [...repositories];
     
-    // 搜索过滤
+    // Search filtering
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -248,36 +248,36 @@ export default function Home() {
     return filtered;
   }, [repositories, searchQuery]);
 
-  // 计算过滤后的搜索建议
+  // Calculate filtered search suggestions
   const filteredSuggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    
+
     const query = searchQuery.toLowerCase();
     return repositories
-      .filter(repo => 
+      .filter(repo =>
         repo.name.toLowerCase().includes(query) ||
         repo.description.toLowerCase().includes(query) ||
         repo.repo.toLowerCase().includes(query)
       )
-      .slice(0, 5); // 只显示前5个结果
+      .slice(0, 5); // Only show first 5 results
   }, [searchQuery, repositories]);
 
-  // 计算过滤和排序后的仓库列表
+  // Calculate filtered and sorted repository list
   const sortedRepositories = useMemo(() => {
     return [...filteredRepositories].sort((a, b) => {
-      // 对于 lastUpdated 列，使用 updatedAt 字段进行排序
+      // For lastUpdated column, use updatedAt field for sorting
       if (sortColumn === "lastUpdated") {
         const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
         const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
         return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
       }
-      // 其他字符串列的排序
+      // Sorting for other string columns
       else if (typeof a[sortColumn] === 'string' && typeof b[sortColumn] === 'string') {
         return sortDirection === "asc"
           ? (a[sortColumn] as string).localeCompare(b[sortColumn] as string)
           : (b[sortColumn] as string).localeCompare(a[sortColumn] as string);
-      } 
-      // 数字列的排序
+      }
+      // Sorting for number columns
       else {
         return sortDirection === "asc"
           ? (a[sortColumn] as number) - (b[sortColumn] as number)
@@ -286,8 +286,8 @@ export default function Home() {
     });
   }, [filteredRepositories, sortColumn, sortDirection]);
 
-  // 时间和数字格式化函数已移至 utils/date-utils.ts
-  // 计算统计数据
+  // Time and number formatting functions moved to utils/date-utils.ts
+  // Calculate statistics
   const totalTokens = useMemo(() => {
     return repositories.reduce((sum, repo) => sum + repo.tokens, 0);
   }, [repositories]);
@@ -299,38 +299,38 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
       <div className="container mx-auto py-10 px-4 flex-1">
-        {/* 顶部导航栏 - 只显示 logo，并对齐到左侧 */}
+        {/* Top navigation bar - only show logo, aligned to left */}
         <div className="max-w-5xl mx-auto">
           <Navbar showSearch={false} alignment="left" />
         </div>
 
         <div className="mb-10 text-center max-w-5xl mx-auto">
           <h1 className="text-4xl font-bold tracking-tight mb-4">
-            Doc2Dev - 为 LLM 和 AI 编程助手提供实时文档
+            Doc2Dev - Real-time Documentation for LLM and AI Programming Assistants
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-            索引并查询任何 GitHub 仓库的最新文档，通过 MCP 轻松与 Cursor、Windsurf 等 AI 编程助手集成。拒绝代码幻觉，让 AI 编写更靠谱的代码。
+            Index and query the latest documentation from any GitHub repository, easily integrate with AI programming assistants like Cursor and Windsurf through MCP. Eliminate code hallucinations and make AI write more reliable code.
           </p>
         </div>
         
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto mb-6">
-          <StatsCard 
-            title="索引的仓库" 
-            value={repositories.length} 
-            icon={<Database className="w-5 h-5 text-blue-500" />} 
+          <StatsCard
+            title="Indexed Repositories"
+            value={repositories.length}
+            icon={<Database className="w-5 h-5 text-blue-500" />}
             className="border-blue-100"
           />
-          <StatsCard 
-            title="Tokens 总数" 
-            value={totalTokens} 
-            icon={<FileText className="w-5 h-5 text-green-500" />} 
+          <StatsCard
+            title="Total Tokens"
+            value={totalTokens}
+            icon={<FileText className="w-5 h-5 text-green-500" />}
             className="border-green-100"
           />
-          <StatsCard 
-            title="Snippets 总数" 
-            value={totalSnippets} 
-            icon={<FileJson className="w-5 h-5 text-purple-500" />} 
+          <StatsCard
+            title="Total Snippets"
+            value={totalSnippets}
+            icon={<FileJson className="w-5 h-5 text-purple-500" />}
             className="border-purple-100"
           />
         </div>
@@ -342,7 +342,7 @@ export default function Home() {
               <div className="relative w-64">
                 <Input
                   className="pl-9 pr-4 bg-white border-border w-full cursor-pointer"
-                  placeholder="搜索仓库..."
+                  placeholder="Search repositories..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   type="search"
@@ -350,14 +350,14 @@ export default function Home() {
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
                   <Search size={16} strokeWidth={2} />
                 </div>
-                <button type="submit" className="sr-only">搜索</button>
+                <button type="submit" className="sr-only">Search</button>
               </div>
             </form>
           </div>
           <Link href="/download">
             <Button className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">
               <Plus className="mr-1 h-4 w-4" />
-              添加 Git 仓库
+              Add Git Repository
             </Button>
           </Link>
         </div>
@@ -366,7 +366,7 @@ export default function Home() {
           <div className="flex items-center justify-center h-64 bg-white rounded-md border max-w-5xl mx-auto">
             <div className="flex flex-col items-center gap-2">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-              <p className="text-muted-foreground">加载仓库数据中...</p>
+              <p className="text-muted-foreground">Loading repository data...</p>
             </div>
           </div>
         ) : error ? (
@@ -375,14 +375,14 @@ export default function Home() {
               <div className="rounded-full bg-destructive/10 p-3">
                 <ExternalLink className="h-6 w-6" />
               </div>
-              <p>加载仓库数据失败</p>
+              <p>Failed to load repository data</p>
               <p className="text-sm text-muted-foreground">{error}</p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => window.location.reload()}
               >
-                重试
+                Retry
               </Button>
             </div>
           </div>
@@ -391,61 +391,61 @@ export default function Home() {
             <Table>
               <TableHeader className="bg-blue-50">
                 <TableRow>
-                  <TableHead 
+                  <TableHead
                     className="w-[160px] cursor-pointer font-medium"
                     onClick={() => handleSort("name")}
                   >
                     <div className="flex items-center">
-                      名称
+                      Name
                       {sortColumn === "name" && (
-                        sortDirection === "asc" ? 
-                        <ChevronUp className="ml-1 h-4 w-4" /> : 
+                        sortDirection === "asc" ?
+                        <ChevronUp className="ml-1 h-4 w-4" /> :
                         <ChevronDown className="ml-1 h-4 w-4" />
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="w-[160px]">仓库</TableHead>
-                  <TableHead 
+                  <TableHead className="w-[160px]">Repository</TableHead>
+                  <TableHead
                     className="w-[80px] cursor-pointer"
                     onClick={() => handleSort("tokens")}
                   >
                     <div className="flex items-center">
                       Tokens
                       {sortColumn === "tokens" && (
-                        sortDirection === "asc" ? 
-                        <ChevronUp className="ml-1 h-4 w-4" /> : 
+                        sortDirection === "asc" ?
+                        <ChevronUp className="ml-1 h-4 w-4" /> :
                         <ChevronDown className="ml-1 h-4 w-4" />
                       )}
                     </div>
                   </TableHead>
-                  <TableHead 
+                  <TableHead
                     className="w-[80px] cursor-pointer"
                     onClick={() => handleSort("snippets")}
                   >
                     <div className="flex items-center">
-                      代码片段
+                      Snippets
                       {sortColumn === "snippets" && (
-                        sortDirection === "asc" ? 
-                        <ChevronUp className="ml-1 h-4 w-4" /> : 
+                        sortDirection === "asc" ?
+                        <ChevronUp className="ml-1 h-4 w-4" /> :
                         <ChevronDown className="ml-1 h-4 w-4" />
                       )}
                     </div>
                   </TableHead>
-                  <TableHead 
+                  <TableHead
                     className="w-[100px] cursor-pointer"
                     onClick={() => handleSort("lastUpdated")}
                   >
                     <div className="flex items-center">
-                      更新时间
+                      Last Updated
                       {sortColumn === "lastUpdated" && (
-                        sortDirection === "asc" ? 
-                        <ChevronUp className="ml-1 h-4 w-4" /> : 
+                        sortDirection === "asc" ?
+                        <ChevronUp className="ml-1 h-4 w-4" /> :
                         <ChevronDown className="ml-1 h-4 w-4" />
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="w-[80px] text-center">状态</TableHead>
-                  <TableHead className="w-[60px] text-center">操作</TableHead>
+                  <TableHead className="w-[80px] text-center">Status</TableHead>
+                  <TableHead className="w-[60px] text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -458,10 +458,10 @@ export default function Home() {
                             href="#" 
                             onClick={(e) => {
                               e.preventDefault();
-                              // 从仓库路径中提取组织和仓库名
+                              // Extract organization and repository name from repository path
                               const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
                               const [org, repoName] = repoPath.split('/');
-                              // 使用下划线拼接作为表名
+                              // Use underscore concatenation as table name
                               const tableName = `${org}_${repoName}`.toLowerCase();
                               router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
                             }}
@@ -503,22 +503,22 @@ export default function Home() {
                       <TableCell className="text-center">
                         {repo.repo_status === "in_progress" && (
                           <Badge className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
-                            进行中
+                            In Progress
                           </Badge>
                         )}
                         {repo.repo_status === "completed" && (
                           <Badge className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100">
-                            已完成
+                            Completed
                           </Badge>
                         )}
                         {repo.repo_status === "failed" && (
                           <Badge className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100">
-                            失败
+                            Failed
                           </Badge>
                         )}
                         {(repo.repo_status === "pending" || !repo.repo_status) && (
                           <Badge className="bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100">
-                            等待中
+                            Pending
                           </Badge>
                         )}
                       </TableCell>
@@ -527,10 +527,10 @@ export default function Home() {
                           {/* 使用下拉菜单组件 */}
                           <TableRowDropdown
                             onQuery={() => {
-                              // 从仓库路径中提取组织和仓库名
+                              // Extract organization and repository name from repository path
                               const repoPath = repo.repo.startsWith('/') ? repo.repo.substring(1) : repo.repo;
                               const [org, repoName] = repoPath.split('/');
-                              // 使用下划线拼接作为表名
+                              // Use underscore concatenation as table name
                               const tableName = `${org}_${repoName}`.toLowerCase();
                               router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
                             }}
@@ -548,7 +548,7 @@ export default function Home() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      没有找到仓库。
+                      No repositories found.
                     </TableCell>
                   </TableRow>
                 )}
@@ -558,30 +558,30 @@ export default function Home() {
         )}
       </div>
       
-      {/* 删除确认对话框 */}
+      {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>删除仓库？</AlertDialogTitle>
+            <AlertDialogTitle>Delete Repository?</AlertDialogTitle>
             <AlertDialogDescription>
               {repoToDelete && (
                 <>
-                  确定要删除仓库 <span className="font-medium">{repoToDelete.name}</span> 吗？
-                  <span className="block mt-2 text-red-500">此操作不可恢复，删除后所有相关数据将被清除。</span>
+                  Are you sure you want to delete repository <span className="font-medium">{repoToDelete.name}</span>?
+                  <span className="block mt-2 text-red-500">This action cannot be undone. All related data will be permanently deleted.</span>
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">取消</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRepo} className="bg-red-500 hover:bg-red-600 cursor-pointer">
-              删除
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Toast 通知组件 */}
+      {/* Toast notification component */}
       <Toaster />
 
       {/* Footer */}

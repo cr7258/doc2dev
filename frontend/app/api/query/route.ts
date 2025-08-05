@@ -12,16 +12,16 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // 获取认证头信息
+    // Get authentication header information
     const authorization = request.headers.get('authorization');
 
-    // 调用后端 API
+    // Call backend API
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
 
-    // 如果有认证信息，添加到请求头
+    // If authentication information exists, add to request headers
     if (authorization) {
       headers.authorization = authorization;
     }

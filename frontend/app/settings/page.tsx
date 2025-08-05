@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { Navbar } from '@/components/navbar';
 import Footer from '@/components/footer';
@@ -773,35 +774,47 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Back to homepage button */}
+        <div className="flex justify-center mt-8 mb-4">
+          <Button variant="outline" asChild>
+            <Link href="/" className="inline-flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+              Back to Homepage
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Footer 固定在底部 */}
+      {/* Footer fixed at bottom */}
       <Footer />
 
-      {/* 删除确认对话框 */}
+      {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>删除 Git 凭证？</AlertDialogTitle>
+            <AlertDialogTitle>Delete Git Credentials?</AlertDialogTitle>
             <AlertDialogDescription>
               {configToDelete && (
                 <>
-                  确定要删除凭证 <span className="font-medium">{configToDelete.name}</span> ({configToDelete.platform}) 吗？
-                  <span className="block mt-2 text-red-500">此操作不可恢复，删除后该凭证将无法使用。</span>
+                  Are you sure you want to delete credentials <span className="font-medium">{configToDelete.name}</span> ({configToDelete.platform})?
+                  <span className="block mt-2 text-red-500">This action cannot be undone. The credentials will no longer be usable after deletion.</span>
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">取消</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfig} className="bg-red-500 hover:bg-red-600 cursor-pointer">
-              删除
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Toast 通知组件 */}
+      {/* Toast notification component */}
       <Toaster />
     </div>
   );

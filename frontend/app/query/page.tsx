@@ -45,8 +45,8 @@ interface RepositoryData {
   updated_at: string;
 }
 
-// 格式化日期时间为本地时间
-// 时间和数字格式化函数已移至 utils/date-utils.ts
+// Format date time to local time
+// Time and number formatting functions moved to utils/date-utils.ts
 
 export default function QueryPage() {
   const { token } = useAuth();
@@ -56,13 +56,13 @@ export default function QueryPage() {
   const repoName = searchParams.get("repo_name") || "";
   const repoPath = searchParams.get("repo_path") || "";
   
-  // 转换表名为正确的格式
+  // Convert table name to correct format
   const formatTableName = (name: string) => {
-    // 如果表名是数字ID，我们需要获取真实的表名
+    // If table name is numeric ID, we need to get the real table name
     if (/^\d+$/.test(name)) {
-      // 根据仓库路径生成表名
+      // Generate table name based on repository path
       if (repoPath) {
-        // 将路径中的斜杠替换为下划线，并转换为小写
+        // Replace slashes with underscores and convert to lowercase
         return repoPath.toLowerCase().replace(/\//g, '_');
       }
     }
@@ -71,44 +71,44 @@ export default function QueryPage() {
   
   const [tableName, setTableName] = useState(formatTableName(initialTable));
   const [query, setQuery] = useState(initialQuery);
-  // 查询状态已在上面声明
-  
-  // 仓库数据状态
+  // Query state already declared above
+
+  // Repository data state
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [summary, setSummary] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [repoData, setRepoData] = useState<RepositoryData | null>(null);
-  
-  // 根据实际数据构建 DocumentItem
+
+  // Build DocumentItem based on actual data
   const documentItem: DocumentItem = {
     projectName: repoName,
     githubLink: `https://github.com/${repoPath}`,
-    description: repoData?.description || "一个用于文档查询和代码参考的GitHub仓库",
+    description: repoData?.description || "A GitHub repository for documentation queries and code reference",
     tokens: repoData ? repoData.tokens.toLocaleString() : "0",
     snippets: repoData ? repoData.snippets.toLocaleString() : "0",
     updatedAt: repoData?.updated_at ? getRelativeTime(repoData.updated_at) : ""
   };
   
-  // 获取仓库数据
+  // Get repository data
   useEffect(() => {
     if (repoPath) {
-      // 清空之前的查询结果和查询内容
+      // Clear previous query results and query content
       setResults([]);
       setSummary("");
       setQuery("");
-      
-      // 更新tableName为新的仓库路径
+
+      // Update tableName to new repository path
       const newTableName = repoPath.toLowerCase().replace(/\//g, '_');
       setTableName(newTableName);
-      
+
       const fetchRepoData = async () => {
         try {
           const headers: Record<string, string> = {
             "Content-Type": "application/json",
           };
 
-          // 如果有认证token，添加到请求头
+          // If there's an auth token, add it to request headers
           if (token) {
             headers.authorization = `Bearer ${token}`;
           }
@@ -233,12 +233,12 @@ export default function QueryPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <FileCode className="h-5 w-5 text-blue-500" />
-            文档查询
+            Document Query
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
-            {/* 隐藏向量库名称输入框 */}
+            {/* Hidden vector database name input */}
             <input
               id="tableName"
               type="hidden"
@@ -247,7 +247,7 @@ export default function QueryPage() {
             
             <div className="mb-6">
               <label htmlFor="query" className="block text-sm font-medium mb-2">
-                查询内容
+                Query Content
               </label>
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
@@ -257,7 +257,7 @@ export default function QueryPage() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                    placeholder="输入您的问题..."
+                    placeholder="Enter your question..."
                     required
                   />
                   {query && (
@@ -283,9 +283,9 @@ export default function QueryPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      查询中...
+                      Querying...
                     </>
-                  ) : "查询"}
+                  ) : "Query"}
                 </Button>
               </div>
             </div>
@@ -297,21 +297,21 @@ export default function QueryPage() {
         <div className="flex justify-center items-center py-10">
           <div className="flex flex-col items-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">正在查询文档，请稍候...</p>
+            <p className="mt-4 text-gray-600">Querying documents, please wait...</p>
           </div>
         </div>
       )}
       
-      {/* 已移除查询结果部分，只保留摘要 */}
-      
-      {/* 摘要部分 */}
+      {/* Removed query results section, only keep summary */}
+
+      {/* Summary section */}
       {summary && (
         <Card className="w-full max-w-4xl mx-auto mb-6 overflow-hidden shadow-sm border border-gray-100">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-500" />
-                查询结果
+                Query Results
               </CardTitle>
               <Button 
                 variant="ghost" 
@@ -319,7 +319,7 @@ export default function QueryPage() {
                 className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600 hover:bg-blue-50 cursor-pointer"
                 onClick={() => {
                   navigator.clipboard.writeText(summary);
-                  // 使用状态变量来显示复制成功提示
+                  // Use state variable to show copy success notification
                   const button = document.getElementById('copy-button');
                   if (button) {
                     const originalContent = button.innerHTML;
@@ -332,7 +332,7 @@ export default function QueryPage() {
                     }, 2000);
                   }
                 }}
-                title="复制到剪贴板"
+                title="Copy to clipboard"
                 id="copy-button"
               >
                 <Copy className="h-4 w-4" />
@@ -355,7 +355,7 @@ export default function QueryPage() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
             </svg>
-            返回首页
+            Back to Homepage
           </Link>
         </Button>
       </div>

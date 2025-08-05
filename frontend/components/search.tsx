@@ -21,7 +21,7 @@ interface SearchBarProps {
   className?: string;
 }
 
-export default function SearchBar({ placeholder = "搜索仓库...", className = "w-64" }: SearchBarProps) {
+export default function SearchBar({ placeholder = "Search repositories...", className = "w-64" }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -29,13 +29,13 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
   const router = useRouter();
   const { token } = useAuth();
 
-  // 从后端 API 获取仓库数据
+  // Fetch repository data from backend API
   useEffect(() => {
     const fetchRepositories = async () => {
       try {
         setLoading(true);
 
-        // 构建请求头，如果有token则包含认证头
+        // Build request headers, include auth header if token exists
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
@@ -49,13 +49,13 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
         });
         
         if (!response.ok) {
-          throw new Error(`获取仓库数据失败: ${response.status} ${response.statusText}`);
+          throw new Error(`Failed to fetch repository data: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
         
         if (data.status === "success" && Array.isArray(data.repositories)) {
-          // 将后端数据转换为前端所需的格式
+          // Convert backend data to frontend format
           const formattedRepositories: Repository[] = data.repositories.map((repo: any) => ({
             id: repo.id.toString(),
             name: repo.name,
@@ -70,7 +70,7 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
           setRepositories(formattedRepositories);
         }
       } catch (err) {
-        console.error('获取仓库数据失败:', err);
+        console.error('Failed to fetch repository data:', err);
       } finally {
         setLoading(false);
       }
@@ -79,7 +79,7 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
     fetchRepositories();
   }, [token]);
 
-  // 点击页面其他区域关闭建议列表
+  // Close suggestion list when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showSuggestions) {
@@ -97,7 +97,7 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
     };
   }, [showSuggestions]);
 
-  // 计算过滤后的搜索建议
+  // Calculate filtered search suggestions
   const filteredSuggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
     
@@ -108,7 +108,7 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
         repo.description.toLowerCase().includes(query) ||
         repo.repo.toLowerCase().includes(query)
       )
-      .slice(0, 5); // 只显示前5个结果
+      .slice(0, 5); // Only show first 5 results
   }, [searchQuery, repositories]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -133,9 +133,9 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
             <Search size={16} strokeWidth={2} />
           </div>
-          <button type="submit" className="sr-only">搜索</button>
+          <button type="submit" className="sr-only">Search</button>
           
-          {/* 自动提示下拉菜单 */}
+          {/* Auto-suggestion dropdown menu */}
           {showSuggestions && searchQuery.trim() !== "" && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
               {filteredSuggestions.length > 0 ? (
@@ -165,7 +165,7 @@ export default function SearchBar({ placeholder = "搜索仓库...", className =
                   </div>
                 ))
               ) : (
-                <div className="p-2 text-gray-500 text-center">无匹配结果</div>
+                <div className="p-2 text-gray-500 text-center">No matching results</div>
               )}
             </div>
           )}

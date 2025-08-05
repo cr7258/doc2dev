@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// 从 Git URL 中提取组织和仓库名称（支持 GitHub 和 GitLab）
+// Extract organization and repository name from Git URL (supports GitHub and GitLab)
 function extractRepoInfo(url: string): { org: string; repo: string } | null {
   try {
-    // 支持多种 Git URL 格式
+    // Support multiple Git URL formats
     // GitHub: https://github.com/org/repo, git@github.com:org/repo.git
     // GitLab: https://gitlab.com/org/repo, git@gitlab.com:org/repo.git
     let match;
 
     if (url.includes('github.com')) {
-      // 处理 GitHub HTTPS URL
+      // Handle GitHub HTTPS URL
       match = url.match(/github\.com[\/:]([\w.-]+)\/([\w.-]+)(?:\.git)?$/);
     } else if (url.includes('git@github.com')) {
-      // 处理 GitHub SSH URL
+      // Handle GitHub SSH URL
       match = url.match(/git@github\.com:([\w.-]+)\/([\w.-]+)(?:\.git)?$/);
     } else if (url.includes('gitlab.com')) {
-      // 处理 GitLab HTTPS URL
+      // Handle GitLab HTTPS URL
       match = url.match(/gitlab\.com[\/:]([\w.-]+)\/([\w.-]+)(?:\.git)?$/);
     } else if (url.includes('git@gitlab.com')) {
-      // 处理 GitLab SSH URL
+      // Handle GitLab SSH URL
       match = url.match(/git@gitlab\.com:([\w.-]+)\/([\w.-]+)(?:\.git)?$/);
     }
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 从请求头中获取认证token
+    // Get authentication token from request headers
     const authorization = request.headers.get('authorization');
 
     if (!authorization) {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 从 URL 中提取组织和仓库名称
+    // Extract organization and repository name from URL
     const repoInfo = extractRepoInfo(repo_url);
 
     if (!repoInfo) {
@@ -68,25 +68,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 生成向量表名称：org_repo
+    // Generate vector table name: org_repo
     const library_name = `${repoInfo.org}_${repoInfo.repo}`;
 
-    // 获取客户端 ID（如果有）
+    // Get client ID (if available)
     const client_id = body.client_id;
 
-    // 调用后端 API
+    // Call backend API
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
     const response = await fetch(`${backendUrl}/download/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": authorization, // 传递认证头
+        "Authorization": authorization, // Pass authentication header
       },
       body: JSON.stringify({
         repo_url: repo_url,
         library_name: library_name,
-        client_id: client_id, // 传递客户端 ID 用于 WebSocket 连接
-        platform: platform, // 传递平台选择
+        client_id: client_id, // Pass client ID for WebSocket connection
+        platform: platform, // Pass platform selection
       }),
     });
     

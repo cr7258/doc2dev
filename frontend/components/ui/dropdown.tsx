@@ -751,11 +751,6 @@ const GitHubAvatarDropdown = ({ user, onLogout }: GitHubAvatarDropdownProps) => 
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem>
-          <User className="w-4 h-4" />
-          <span>Profile</span>
-        </DropdownMenuItem>
-        
         <DropdownMenuItem onClick={handleSettingsClick} className="cursor-pointer">
           <Settings className="w-4 h-4" />
           <span>Settings</span>

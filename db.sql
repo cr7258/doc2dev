@@ -1,3 +1,7 @@
+CREATE DATABASE IF NOT EXISTS doc2dev;
+
+USE doc2dev;
+
 CREATE TABLE repositories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -12,9 +16,21 @@ CREATE TABLE repositories (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Migration script for existing data
--- Add source column to existing repositories table (if it doesn't exist)
--- ALTER TABLE repositories ADD COLUMN source ENUM('github', 'gitlab') NOT NULL DEFAULT 'github';
 
--- Update existing data to set source as 'github' (for backward compatibility)
--- UPDATE repositories SET source = 'github' WHERE source IS NULL;
+CREATE DATABASE IF NOT EXISTS doc2dev_users;
+
+USE doc2dev_users;
+
+CREATE TABLE users (
+    id VARCHAR(36) PRIMARY KEY,
+    github_id VARCHAR(50) UNIQUE NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100),
+    avatar_url VARCHAR(500),
+    access_token VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_github_id ON users(github_id);
+CREATE INDEX idx_username ON users(username);

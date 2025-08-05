@@ -41,7 +41,7 @@ Doc2Dev 采用前后端分离的架构设计：
   - DashScope 嵌入模型：用于生成文档的向量表示
   - OpenAI API：用于生成搜索结果摘要
 - **数据库**：使用 OceanBase 处理向量存储、元数据管理和相似度检索
-- **MCP**： 通过 MCP Server 的方式向 AI 编程助手提供查询文档的接口
+- **MCP**： 通过 MCP Streamable HTTP 协议向 AI 编程助手提供查询文档的接口，支持用户隔离和简单配置
 
 ### 数据处理流程
 
@@ -138,6 +138,55 @@ async def query_and_summarize(table_name, query_text, k=5):
 1. **首页仓库列表**：展示已索引的仓库，支持排序和搜索
 2. **仓库添加页面**：提供 GitHub 仓库 URL 输入，支持实时进度显示
 3. **文档查询页面**：提供自然语言查询界面，展示搜索结果和智能摘要
+4. **MCP 设置页面**：为每个用户提供独立的 MCP Streamable HTTP URL，支持与 AI 工具集成
+
+## MCP Streamable HTTP 集成
+
+Doc2Dev 支持 MCP (Model Context Protocol) Streamable HTTP，为每个用户提供独立的 URL，可以轻松与支持 MCP 的 AI 工具集成。
+
+### 🎯 功能特点
+
+- **用户隔离**：每个用户拥有独立的 MCP 服务器 URL
+- **标准协议**：完全符合 MCP Streamable HTTP 标准
+- **简单配置**：只需一个 URL 即可集成到 AI 工具中
+- **实时文档**：访问用户已索引的最新仓库文档
+
+### 🔗 获取您的 MCP URL
+
+1. 登录 Doc2Dev 应用
+2. 访问 **设置 > MCP** 页面
+3. 复制您的专属 MCP URL：`https://doc2dev.com/mcp/{your-user-id}`
+
+### 🛠️ 支持的 AI 工具
+
+#### Claude Desktop
+```json
+{
+  "mcpServers": {
+    "doc2dev": {
+      "url": "https://doc2dev.com/mcp/{your-user-id}"
+    }
+  }
+}
+```
+
+#### VS Code Copilot
+```json
+{
+  "mcp.servers": {
+    "doc2dev": {
+      "url": "https://doc2dev.com/mcp/{your-user-id}"
+    }
+  }
+}
+```
+
+### 🔧 可用工具
+
+- **search-library-id**：搜索库 ID，用于查找您已索引的仓库
+- **get-library-docs**：获取特定库的文档内容
+
+详细使用说明请参考 [MCP_STREAMABLE_HTTP.md](MCP_STREAMABLE_HTTP.md)
 
 ## 部署与使用
 

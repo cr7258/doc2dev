@@ -305,11 +305,11 @@ export default function Home() {
         </div>
 
         <div className="mb-10 text-center max-w-5xl mx-auto">
-          <h1 className="text-4xl font-bold tracking-tight mb-4">
-            Doc2Dev - Real-time Documentation for LLM and AI Programming Assistants
+          <h1 className="text-3xl font-bold tracking-tight mb-4">
+            Up-to-date docs for AI code assistants
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-            Index and query the latest documentation from any GitHub repository, easily integrate with AI programming assistants like Cursor and Windsurf through MCP. Eliminate code hallucinations and make AI write more reliable code.
+            Index and query GitHub/GitLab repositories, integrating with tools like Cursor, Windsurf via MCP. Eliminate code hallucinations and make AI write more reliable code.
           </p>
         </div>
         

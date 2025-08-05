@@ -30,6 +30,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Github, Gitlab, Plus, Trash2, Eye, EyeOff, Save, RefreshCw, Edit, Settings } from 'lucide-react';
+import { SettingsSidebar } from '@/components/ui/settings-sidebar';
 
 interface PlatformConfig {
   id?: string;
@@ -439,12 +440,18 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8 max-w-5xl">
-          <Navbar showSearch={false} alignment="left" />
-          <div className="flex items-center justify-center h-64">
-            <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <SettingsSidebar />
+        <div className="ml-60 flex flex-col flex-1">
+          <div className="container mx-auto px-4 py-8 max-w-5xl flex-1">
+            <Navbar showSearch={false} alignment="left" />
+            <div className="flex items-center justify-center h-64">
+              <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
           </div>
+          
+          {/* Footer */}
+          <Footer />
         </div>
       </div>
     );
@@ -452,10 +459,12 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="container mx-auto px-4 py-8 max-w-5xl flex-1">
-        <Navbar showSearch={false} alignment="left" />
+      <SettingsSidebar />
+      <div className="ml-60 flex flex-col flex-1">
+        <div className="container mx-auto px-4 py-8 max-w-5xl flex-1">
+          <Navbar showSearch={false} alignment="left" />
 
-        <div className="space-y-6">
+          <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -773,23 +782,24 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+          </div>
 
-        {/* Back to homepage button */}
-        <div className="flex justify-center mt-8 mb-4">
-          <Button variant="outline" asChild>
-            <Link href="/" className="inline-flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-              </svg>
-              Back to Homepage
-            </Link>
-          </Button>
+          {/* Back to homepage button */}
+          <div className="flex justify-center mt-8 mb-4">
+            <Button variant="outline" asChild>
+              <Link href="/" className="inline-flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+                Back to Homepage
+              </Link>
+            </Button>
+          </div>
         </div>
+        
+        {/* Footer */}
+        <Footer />
       </div>
-
-      {/* Footer fixed at bottom */}
-      <Footer />
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

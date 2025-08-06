@@ -582,6 +582,7 @@ export default function Home() {
                             }}
                             isOpen={false}
                             onOpenChange={() => {}}
+                            showDelete={!!token} // Only show delete for logged-in users
                           />
                         </div>
                       </TableCell>

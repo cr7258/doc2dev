@@ -644,6 +644,7 @@ interface TableRowDropdownProps {
   position?: { x: number; y: number };
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  showDelete?: boolean; // New prop to control delete visibility
 }
 
 const TableRowDropdown = ({ 
@@ -652,7 +653,8 @@ const TableRowDropdown = ({
   onDelete, 
   position, 
   isOpen, 
-  onOpenChange 
+  onOpenChange,
+  showDelete = true
 }: TableRowDropdownProps) => {
   const dropdownStyle = position 
     ? {
@@ -690,15 +692,19 @@ const TableRowDropdown = ({
           <span>Refresh</span>
         </DropdownMenuItem>
         
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem 
-          onClick={onDelete}
-          className="text-red-600 focus:text-red-600 focus:bg-red-50"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span>Delete</span>
-        </DropdownMenuItem>
+        {showDelete && (
+          <>
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuItem 
+              onClick={onDelete}
+              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete</span>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

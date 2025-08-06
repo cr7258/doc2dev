@@ -90,15 +90,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get authentication token from request headers
+    // Get authentication token from request headers (optional)
     const authorization = request.headers.get('authorization');
-
-    if (!authorization) {
-      return NextResponse.json(
-        { status: "error", message: "Authentication required" },
-        { status: 401 }
-      );
-    }
 
     // Extract organization and repository name from URL
     const repoInfo = extractRepoInfo(repo_url, platform);
@@ -121,12 +114,18 @@ export async function POST(request: NextRequest) {
 
     // Call backend API
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    // Only add authorization header if token exists
+    if (authorization) {
+      headers["Authorization"] = authorization;
+    }
+
     const response = await fetch(`${backendUrl}/download/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": authorization, // Pass authentication header
-      },
+      headers,
       body: JSON.stringify({
         repo_url: repo_url,
         library_name: library_name,

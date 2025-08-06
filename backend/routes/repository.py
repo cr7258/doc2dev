@@ -18,7 +18,7 @@ router = APIRouter()
 async def download_repository(
     repo_request: RepositoryRequest,
     background_tasks: BackgroundTasks,
-    current_user_id: str = Depends(get_current_user_required)
+    current_user_id: str = Depends(get_current_user_optional)
 ):
     """
     Download markdown files from a GitHub repository directly to the project directory
@@ -47,9 +47,14 @@ async def download_repository(
         # Import global repository service from main module
         from main import repository_service
         
-        # Check if repository already exists for this user
+        # Check if repository already exists
         repo_path = f"{org}/{repo}"
-        existing_repo = repository_service.get_user_repository_by_path(current_user_id, repo_path)
+        if current_user_id:
+            # For logged-in users, check their private repositories
+            existing_repo = repository_service.get_user_repository_by_path(current_user_id, repo_path)
+        else:
+            # For non-logged-in users, check public repositories
+            existing_repo = repository_service.get_repository_by_path(repo_path)
         
         # If no library_name provided, auto-generate
         table_name = repo_request.library_name
@@ -210,7 +215,7 @@ async def get_repository_details(repo_path: str, current_user_id: str = Depends(
 async def refresh_repository_endpoint(
     repo_id: int, 
     background_tasks: BackgroundTasks,
-    current_user_id: str = Depends(get_current_user_required)
+    current_user_id: str = Depends(get_current_user_optional)
 ):
     """
     Refresh repository by re-downloading and re-indexing
@@ -225,8 +230,13 @@ async def refresh_repository_endpoint(
         # Import global repository service from main module
         from main import repository_service
         
-        # Get repository information using RepositoryService from user's database
-        repository = repository_service.get_user_repository_by_id(current_user_id, repo_id)
+        # Get repository information
+        if current_user_id:
+            # For logged-in users, get from their private database
+            repository = repository_service.get_user_repository_by_id(current_user_id, repo_id)
+        else:
+            # For non-logged-in users, get from public database
+            repository = repository_service.get_repository_by_id(repo_id)
 
         if not repository:
             raise HTTPException(status_code=404, detail=f"Repository does not exist: ID {repo_id}")
@@ -242,7 +252,10 @@ async def refresh_repository_endpoint(
             repo_url = f"{base_url}{repo_path}"
         
         # Update repository status to in_progress
-        repository_service.update_user_repository_status(current_user_id, repo_id, "in_progress")
+        if current_user_id:
+            repository_service.update_user_repository_status(current_user_id, repo_id, "in_progress")
+        else:
+            repository_service.update_repository_status(repo_id, "in_progress")
         
         # Process repository refresh in background task
         # Import global repository_processor from main module

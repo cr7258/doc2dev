@@ -96,17 +96,6 @@ export default function DownloadPage() {
 
     if (!repoUrl) return;
 
-    // Check if user is logged in
-    if (!token) {
-      setMessage({
-        type: "error",
-        content: "Please log in before downloading repositories.",
-        queryUrl: "",
-        repoPath: ""
-      });
-      return;
-    }
-
     // Reset all states
     setLoading(true);
     setMessage({ type: "", content: "", queryUrl: "", repoPath: "" });
@@ -216,16 +205,6 @@ export default function DownloadPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!token && (
-              <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center gap-2 text-yellow-800">
-                  <AlertCircle className="h-4 w-4" />
-                  <p className="text-sm">
-                    Please <Link href="/auth/login" className="text-blue-600 hover:underline font-medium">log in</Link> before downloading repositories.
-                  </p>
-                </div>
-              </div>
-            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-4">
                 {/* Platform selection dropdown */}
@@ -273,12 +252,11 @@ export default function DownloadPage() {
                             : "https://github.com/<org>/<repo>"
                         }
                         required
-                        disabled={!token}
                       />
                     </div>
                     <Button
                       type="submit"
-                      disabled={loading || !token}
+                      disabled={loading}
                       className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? "Processing..." : "Download & Index"}

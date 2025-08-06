@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     
     # API configuration
-    api_base_url: str = "http://localhost:8000"
+    api_base_url: str = Field(default="http://localhost:8000", env="API_BASE_URL")
 
     # Github OAuth configuration
     github_client_id: str = Field(default="", env="GITHUB_CLIENT_ID")

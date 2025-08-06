@@ -17,13 +17,16 @@ def count_code_blocks(markdown_text: str) -> int:
     Returns:
         int: Number of code blocks
     """
+    if not markdown_text or not isinstance(markdown_text, str):
+        return 0
+        
     md = MarkdownIt()
     tokens = md.parse(markdown_text)
 
     code_block_count = 0
 
     for token in tokens:
-        if token.type == 'fence':  # ``` fenced code block
+        if token.type in ('fence', 'code_block'):  # ``` fenced or 4-space indented code blocks
             code_block_count += 1
 
     return code_block_count

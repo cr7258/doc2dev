@@ -6,7 +6,7 @@ This module contains factories for document loading and splitting operations.
 
 from typing import List
 
-from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 
 
@@ -19,7 +19,7 @@ class DocumentLoaderFactory:
         
         match file_type:
             case "markdown" | "md":
-                return UnstructuredMarkdownLoader
+                return TextLoader  # Use TextLoader to preserve markdown formatting for code block counting
                 
             case "txt" | "text":
                 return TextLoader

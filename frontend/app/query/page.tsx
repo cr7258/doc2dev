@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Github, Clock, Code, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Database, Search, Copy } from "lucide-react";
+import { Github, Clock, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Copy } from "lucide-react";
 import { getRelativeTime} from "@/utils/date";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -19,11 +19,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-interface QueryResult {
-  id: string;
-  source: string;
-  content: string;
-}
 
 interface DocumentItem {
   projectName: string;
@@ -50,7 +45,7 @@ interface RepositoryData {
 // Format date time to local time
 // Time and number formatting functions moved to utils/date-utils.ts
 
-export default function QueryPage() {
+function QueryPageContent() {
   const { token } = useAuth();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -78,9 +73,14 @@ export default function QueryPage() {
 
   // Repository data state
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [results, setResults] = useState<{
+    id: string;
+    source: string;
+    content: string;
+    distance?: number;
+  }[]>([]);
   const [summary, setSummary] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [repoData, setRepoData] = useState<RepositoryData | null>(null);
 
   // Get status badge component like homepage
@@ -174,7 +174,7 @@ export default function QueryPage() {
       
       fetchRepoData();
     }
-  }, [repoPath]);
+  }, [repoPath, token]);
 
   // Function to refresh repository
   const handleRefreshRepo = async () => {
@@ -509,4 +509,19 @@ export default function QueryPage() {
       <Toaster />
     </div>
   );
+}
+
+export default function QueryPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-lg">Loading...</p>
+        </div>
+      </div>
+    }>
+      <QueryPageContent />
+    </Suspense>
+  )
 }

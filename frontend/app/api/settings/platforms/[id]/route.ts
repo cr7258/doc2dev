@@ -39,7 +39,7 @@ export async function PUT(
             errorMessage = errorText || errorMessage;
           }
         }
-      } catch (parseError) {
+      } catch {
         errorMessage = `Server error (${response.status}). Please check the server logs.`;
       }
       
@@ -97,7 +97,7 @@ export async function DELETE(
             errorMessage = errorText || errorMessage;
           }
         }
-      } catch (parseError) {
+      } catch {
         errorMessage = `Server error (${response.status}). Please check the server logs.`;
       }
       

@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Navbar } from '@/components/navbar';
 import Footer from '@/components/footer';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SettingsSidebar } from '@/components/ui/settings-sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,9 +47,9 @@ export default function ProfilePage() {
                 {/* Avatar Section */}
                 <div className="flex items-start gap-4 mb-6">
                   <Avatar className="w-16 h-16">
-                    <AvatarImage src={user?.avatar_url} alt={user?.name || 'User'} />
+                    <AvatarImage src={user?.avatar_url} alt={user?.username || 'User'} />
                     <AvatarFallback className="text-lg">
-                      {user?.name?.charAt(0) || 'U'}
+                      {user?.username?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
 

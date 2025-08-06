@@ -222,7 +222,19 @@ export default function Home() {
 
         if (data.status === "success" && Array.isArray(data.repositories)) {
           // Convert backend data to frontend format
-          const formattedRepositories = data.repositories.map((repo: any) => ({
+          const formattedRepositories = data.repositories.map((repo: {
+            id: number;
+            name: string;
+            description?: string;
+            repo: string;
+            repo_url: string;
+            tokens?: number;
+            snippets?: number;
+            updated_at: string;
+            created_at: string;
+            repo_status?: string;
+            source?: string;
+          }) => ({
             id: repo.id.toString(),
             name: repo.name,
             description: repo.description || '',
@@ -289,22 +301,9 @@ export default function Home() {
     return filtered;
   }, [repositories, searchQuery]);
 
-  // Calculate filtered search suggestions
-  const filteredSuggestions = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-
-    const query = searchQuery.toLowerCase();
-    return repositories
-      .filter(repo =>
-        repo.name.toLowerCase().includes(query) ||
-        repo.description.toLowerCase().includes(query) ||
-        repo.repo.toLowerCase().includes(query)
-      )
-      .slice(0, 5); // Only show first 5 results
-  }, [searchQuery, repositories]);
 
   // Calculate filtered and sorted repository list
-  const sortedRepositories = useMemo(() => {
+  const sortedFilteredRepositories = useMemo(() => {
     return [...filteredRepositories].sort((a, b) => {
       // For lastUpdated column, use updatedAt field for sorting
       if (sortColumn === "lastUpdated") {
@@ -490,8 +489,8 @@ export default function Home() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRepositories.length > 0 ? (
-                  filteredRepositories.map((repo) => (
+                {sortedFilteredRepositories.length > 0 ? (
+                  sortedFilteredRepositories.map((repo) => (
                     <TableRow key={repo.id}>
                       <TableCell className="font-medium">
                         <div className="flex flex-col">

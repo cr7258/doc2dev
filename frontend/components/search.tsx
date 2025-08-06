@@ -25,6 +25,7 @@ export default function SearchBar({ placeholder = "Search repositories...", clas
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [repositories, setRepositories] = useState<Repository[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { token } = useAuth();
@@ -56,7 +57,15 @@ export default function SearchBar({ placeholder = "Search repositories...", clas
         
         if (data.status === "success" && Array.isArray(data.repositories)) {
           // Convert backend data to frontend format
-          const formattedRepositories: Repository[] = data.repositories.map((repo: any) => ({
+          const formattedRepositories: Repository[] = data.repositories.map((repo: {
+            id: number;
+            name: string;
+            description?: string;
+            repo: string;
+            repo_url?: string;
+            tokens?: number;
+            snippets?: number;
+          }) => ({
             id: repo.id.toString(),
             name: repo.name,
             description: repo.description || '',

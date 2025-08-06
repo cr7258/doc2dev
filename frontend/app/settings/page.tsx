@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Github, Gitlab, Plus, Trash2, Eye, EyeOff, Save, RefreshCw, Edit, Settings } from 'lucide-react';
+import { Github, Gitlab, Plus, Trash2, Eye, EyeOff, Save, RefreshCw, Edit } from 'lucide-react';
 import { SettingsSidebar } from '@/components/ui/settings-sidebar';
 
 interface PlatformConfig {
@@ -42,7 +42,7 @@ interface PlatformConfig {
 }
 
 export default function SettingsPage() {
-  const { token: authToken, user } = useAuth();
+  const { token: authToken } = useAuth();
   const { toast } = useToast();
   const [configs, setConfigs] = useState<PlatformConfig[]>([]);
   const [savedConfigs, setSavedConfigs] = useState<PlatformConfig[]>([]);
@@ -109,7 +109,7 @@ export default function SettingsPage() {
     setShowAddForm(true);
   };
 
-  const updateConfig = (index: number, field: keyof PlatformConfig, value: any) => {
+  const updateConfig = (index: number, field: keyof PlatformConfig, value: string | boolean) => {
     const updatedConfigs = [...configs];
     updatedConfigs[index] = { ...updatedConfigs[index], [field]: value };
     setConfigs(updatedConfigs);
@@ -258,46 +258,6 @@ export default function SettingsPage() {
     }
   };
 
-  const deleteConfiguration = async (configId: string) => {
-    try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (authToken) {
-        headers.authorization = `Bearer ${authToken}`;
-      }
-
-      const response = await fetch(`/api/settings?id=${configId}`, {
-        method: 'DELETE',
-        headers,
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Configuration deleted successfully",
-          variant: "success",
-        });
-        // Reload configurations
-        await loadConfigurations();
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Error",
-          description: errorData.detail || "Failed to delete configuration",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error deleting configuration:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete configuration",
-        variant: "destructive",
-      });
-    }
-  };
 
   const startInlineEdit = (config: PlatformConfig) => {
     setEditingConfig(config.id || '');
@@ -397,7 +357,7 @@ export default function SettingsPage() {
               errorMessage = errorText || errorMessage;
             }
           }
-        } catch (parseError) {
+        } catch {
           errorMessage = `Server error (${response.status}). Please check the server logs.`;
         }
         throw new Error(errorMessage);
@@ -429,14 +389,6 @@ export default function SettingsPage() {
     }
   };
 
-  const editConfiguration = (config: PlatformConfig) => {
-    // Add the configuration to the editing list if it's not already there
-    const existingIndex = configs.findIndex(c => c.id === config.id);
-    if (existingIndex === -1) {
-      setConfigs([...configs, { ...config }]);
-    }
-    setShowAddForm(true);
-  };
 
   if (loading) {
     return (
@@ -773,7 +725,7 @@ export default function SettingsPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                          No configurations saved yet. Click "Add GitHub" or "Add GitLab" to get started.
+                          No configurations saved yet. Click &quot;Add GitHub&quot; or &quot;Add GitLab&quot; to get started.
                         </TableCell>
                       </TableRow>
                     )}

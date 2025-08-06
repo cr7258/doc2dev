@@ -7,22 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Github, Gitlab, FileText, FileJson, AlertCircle, CheckCircle, Search, Database, ExternalLink } from "lucide-react";
+import { Github, Gitlab, FileText, FileJson, AlertCircle, CheckCircle, ExternalLink } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import SearchBar from "@/components/search";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 import { useAuth } from "@/lib/auth";
 
 export default function DownloadPage() {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [repoUrl, setRepoUrl] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("github"); // Default to GitHub
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", content: "", queryUrl: "", repoPath: "" });
 
   // WebSocket and progress state
-  const [connected, setConnected] = useState(false);
   const [clientId, setClientId] = useState("");
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadStatus, setDownloadStatus] = useState("");
@@ -53,7 +51,6 @@ export default function DownloadPage() {
     
     ws.onopen = () => {
       console.log('WebSocket connected');
-      setConnected(true);
     };
     
     ws.onmessage = (event) => {
@@ -77,7 +74,6 @@ export default function DownloadPage() {
     
     ws.onclose = () => {
       console.log('WebSocket disconnected');
-      setConnected(false);
     };
     
     ws.onerror = (error) => {
@@ -173,14 +169,6 @@ export default function DownloadPage() {
   };
   
   // Search functionality
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      window.location.href = `/?search=${encodeURIComponent(searchQuery)}`;
-    }
-  };
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">

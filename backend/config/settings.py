@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     # Authentication configuration
     jwt_secret_key: str = Field(default="your-secret-key-change-in-production", env="JWT_SECRET_KEY")
     
+    # CORS configuration
+    cors_origins: str = Field(
+        default="http://localhost:3000,http://127.0.0.1:3000",
+        env="CORS_ORIGINS",
+        description="Comma-separated list of allowed origins for CORS"
+    )
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding='utf-8',

@@ -60,9 +60,13 @@ github_oauth_service = GitHubOAuthService(
 repository_processor = RepositoryProcessor(manager, repository_service, document_service)
 
 # Configure CORS
+# Parse CORS origins from settings (comma-separated string to list)
+cors_origins = [origin.strip() for origin in settings.cors_origins.split(",")]
+logger.info(f"CORS allowed origins: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -27,7 +27,7 @@ export default function ProfilePage() {
   const remainingChars = bioCharacterLimit - bio.length;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
       <SettingsSidebar />
       <div className="ml-60 flex flex-col flex-1">
         <div className="container mx-auto px-4 py-8 max-w-3xl flex-1">

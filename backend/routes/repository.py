@@ -206,6 +206,66 @@ async def get_repository_details(repo_path: str, current_user_id: str = Depends(
         raise HTTPException(status_code=500, detail=f"Failed to get repository detailed information: {str(e)}")
 
 
+@router.post("/repositories/{repo_id}/refresh")
+async def refresh_repository_endpoint(
+    repo_id: int, 
+    background_tasks: BackgroundTasks,
+    current_user_id: str = Depends(get_current_user_required)
+):
+    """
+    Refresh repository by re-downloading and re-indexing
+    
+    Args:
+        repo_id: Repository ID
+        
+    Returns:
+        JSON response with refresh status
+    """
+    try:
+        # Import global repository service from main module
+        from main import repository_service
+        
+        # Get repository information using RepositoryService from user's database
+        repository = repository_service.get_user_repository_by_id(current_user_id, repo_id)
+
+        if not repository:
+            raise HTTPException(status_code=404, detail=f"Repository does not exist: ID {repo_id}")
+        
+        # Get repository path and URL
+        repo_path = repository.repo
+        repo_url = repository.repo_url
+        
+        if not repo_url:
+            # Construct repo URL based on source
+            source = repository.source or "github"
+            base_url = "https://gitlab.com" if source == "gitlab" else "https://github.com"
+            repo_url = f"{base_url}{repo_path}"
+        
+        # Update repository status to in_progress
+        repository_service.update_user_repository_status(current_user_id, repo_id, "in_progress")
+        
+        # Process repository refresh in background task
+        # Import global repository_processor from main module
+        from main import repository_processor
+        background_tasks.add_task(
+            repository_processor.process_repository_refresh,
+            repo_url,
+            current_user_id,
+            repo_id
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Repository refresh started for: {repository.name}. The repository will be re-downloaded and re-indexed."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to refresh repository: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to refresh repository: {str(e)}")
+
+
 @router.delete("/repositories/{repo_id}")
 async def delete_repository_endpoint(repo_id: int, current_user_id: str = Depends(get_current_user_required)):
     """

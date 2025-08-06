@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
-import { Check, ChevronRight, Circle, Github, LogOut, User, Settings, MoreHorizontal, Search, Trash2 } from 'lucide-react';
+import { Check, ChevronRight, Circle, Github, LogOut, Settings, MoreHorizontal, Search, Trash2, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { useRouter } from 'next/navigation';
 
@@ -639,6 +639,7 @@ DropdownMenuShortcut.displayName = 'DropdownMenuShortcut';
 // Table Row Dropdown Component
 interface TableRowDropdownProps {
   onQuery: () => void;
+  onRefresh: () => void;
   onDelete: () => void;
   position?: { x: number; y: number };
   isOpen: boolean;
@@ -647,6 +648,7 @@ interface TableRowDropdownProps {
 
 const TableRowDropdown = ({ 
   onQuery, 
+  onRefresh,
   onDelete, 
   position, 
   isOpen, 
@@ -681,6 +683,11 @@ const TableRowDropdown = ({
         <DropdownMenuItem onClick={onQuery}>
           <Search className="w-4 h-4" />
           <span>Query</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={onRefresh}>
+          <RotateCcw className="w-4 h-4" />
+          <span>Refresh</span>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />

@@ -6,6 +6,7 @@ It provides a unified interface for repository CRUD operations using SQLAlchemy 
 """
 
 from typing import List, Optional, Dict, Any
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -444,6 +445,7 @@ class RepositoryService:
                 return False
 
             repository.repo_status = status
+            repository.updated_at = datetime.now()
             user_session.commit()
 
             print(f"✅ Updated repository status for user {user_id}: ID {repo_id} -> {status.value}")
@@ -476,6 +478,7 @@ class RepositoryService:
 
             repository.tokens = tokens
             repository.snippets = snippets
+            repository.updated_at = datetime.now()
             user_session.commit()
 
             print(f"✅ Updated repository counts for user {user_id}: ID {repo_id} -> tokens: {tokens}, snippets: {snippets}")

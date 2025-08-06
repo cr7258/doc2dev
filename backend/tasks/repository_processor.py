@@ -402,3 +402,119 @@ class RepositoryProcessor:
                     "type": "error",
                     "message": f"Error processing repository: {str(e)}"
                 }, self.current_client_id)
+
+    async def process_repository_refresh(self, repo_url: str, user_id: str, repo_id: int):
+        """
+        Process repository refresh by re-downloading and re-indexing
+        
+        Args:
+            repo_url: Repository URL (GitHub or GitLab)
+            user_id: User ID for storing repository in user's private database
+            repo_id: Repository ID to refresh
+        """
+        try:
+            # Get repository information
+            repository = self.repository_service.get_user_repository_by_id(user_id, repo_id)
+            if not repository:
+                logger.error(f"Repository not found for refresh: user_id={user_id}, repo_id={repo_id}")
+                return
+            
+            # Auto-detect platform from URL
+            git_adapter = GitFactory.create_adapter(repo_url, user_id)
+            logger.info(f"Refreshing repository using platform '{git_adapter.get_git_name()}' for URL: {repo_url}")
+
+            # Extract organization and repository name from URL
+            org, repo = git_adapter.extract_org_repo(str(repo_url))
+            repo_path = f"{org}/{repo}"
+            
+            # Generate table name from repository path
+            table_name = repo_path.replace('/', '_').replace('-', '_')
+
+            # Delete existing vector table
+            try:
+                vector_table_deleted = self.repository_service.delete_vector_table(table_name)
+                if vector_table_deleted:
+                    logger.info(f"Deleted existing vector table: {table_name}")
+                else:
+                    logger.warning(f"Failed to delete existing vector table: {table_name}")
+            except Exception as e:
+                logger.error(f"Error deleting existing vector table: {str(e)}")
+            
+            # Create temporary directory
+            temp_dir = tempfile.mkdtemp()
+            logger.info(f"Created temporary directory for refresh: {temp_dir}")
+            
+            try:
+                # Download Markdown files using Git adapter
+                md_files = await git_adapter.download_md_files_with_progress(
+                    repo_url,
+                    temp_dir,
+                    progress_callback=None  # No WebSocket progress for refresh
+                )
+                
+                if not md_files:
+                    logger.warning(f"No Markdown files found during refresh for repository {repo_path}")
+                    # Update repository status to failed
+                    self.repository_service.update_user_repository_status(user_id, repo_id, RepositoryStatus.failed)
+                    return
+
+                logger.info(f"Downloaded {len(md_files)} Markdown files for refresh")
+                
+                # Load Markdown files using DocumentLoaderFactory
+                loader_class = DocumentLoaderFactory.get_loader("markdown")
+                documents = []
+                for file_path in md_files:
+                    loader = loader_class(file_path)
+                    docs = loader.load()
+                    documents.extend(docs)
+                
+                # Split documents using DocumentSplitterFactory
+                splitter = DocumentSplitterFactory.get_splitter("recursive")
+                docs = splitter.split_documents(documents)
+
+                logger.info(f"Processing {len(docs)} document chunks for refresh")
+
+                # Embed and store documents
+                success = await self._embed_and_store_with_progress(
+                    docs,
+                    table_name=table_name,
+                    drop_old=True,
+                    progress_callback=None,
+                    user_id=user_id
+                )
+                
+                if success:
+                    # Calculate token count and code block count in documents
+                    tokens_count = sum(len(doc.page_content.split()) for doc in documents)
+                    snippets_count = count_code_blocks_in_documents(documents)
+                    
+                    # Update repository status and counts
+                    self.repository_service.update_user_repository_status(user_id, repo_id, RepositoryStatus.completed)
+                    self.repository_service.update_user_repository_counts(user_id, repo_id, tokens_count, snippets_count)
+                    
+                    logger.info(f"Successfully refreshed repository {repo_path} - Tokens: {tokens_count}, Snippets: {snippets_count}")
+                else:
+                    # Update repository status to failed
+                    self.repository_service.update_user_repository_status(user_id, repo_id, RepositoryStatus.failed)
+                    logger.error(f"Failed to embed documents during refresh for repository {repo_path}")
+                    
+            except Exception as e:
+                logger.error(f"Error during repository refresh: {str(e)}")
+                # Update repository status to failed
+                self.repository_service.update_user_repository_status(user_id, repo_id, RepositoryStatus.failed)
+                
+            finally:
+                # Clean up temporary directory
+                try:
+                    shutil.rmtree(temp_dir)
+                    logger.info(f"Cleaned up temporary directory: {temp_dir}")
+                except Exception as e:
+                    logger.error(f"Error cleaning up temporary directory: {str(e)}")
+                    
+        except Exception as e:
+            logger.error(f"Repository refresh error: {str(e)}")
+            # Update repository status to failed
+            try:
+                self.repository_service.update_user_repository_status(user_id, repo_id, RepositoryStatus.failed)
+            except Exception as status_err:
+                logger.error(f"Error updating repository status to failed: {str(status_err)}")

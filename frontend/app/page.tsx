@@ -108,6 +108,47 @@ export default function Home() {
     };
   }, [showSuggestions]);
   
+  // Function to refresh repository
+  const handleRefreshRepo = async (repo: Repository) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repo.id}/refresh`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "Refresh Started",
+          description: data.message || `Repository ${repo.name} refresh started`,
+          variant: "success",
+          duration: 3000,
+        });
+        // Refresh page to show updated status
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Refresh Failed",
+          description: error.detail || 'Failed to start refresh',
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing repository:', error);
+      toast({
+        title: "Refresh Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+  };
+
   // Function to delete repository
   const handleDeleteRepo = async () => {
     if (!repoToDelete) return;
@@ -534,6 +575,7 @@ export default function Home() {
                               const tableName = `${org}_${repoName}`.toLowerCase();
                               router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
                             }}
+                            onRefresh={() => handleRefreshRepo(repo)}
                             onDelete={() => {
                               setRepoToDelete(repo);
                               setDeleteDialogOpen(true);

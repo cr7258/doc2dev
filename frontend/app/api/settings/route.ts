@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Determine endpoint based on action parameter
-    let endpoint = 'http://localhost:8000/settings/platforms';
+    let endpoint = `${process.env.NEXT_PUBLIC_API_URL}/settings/platforms`;
     if (action === 'platform') {
-      endpoint = 'http://localhost:8000/settings/platform';
+      endpoint = `${process.env.NEXT_PUBLIC_API_URL}/settings/platform`;
     }
 
     const response = await fetch(endpoint, {
@@ -60,9 +60,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine endpoint based on action parameter
-    let endpoint = 'http://localhost:8000/settings/platforms';
+    let endpoint = `${process.env.NEXT_PUBLIC_API_URL}/settings/platforms`;
     if (action === 'platform') {
-      endpoint = 'http://localhost:8000/settings/platform';
+      endpoint = `${process.env.NEXT_PUBLIC_API_URL}/settings/platform`;
     }
 
     const response = await fetch(endpoint, {
@@ -114,7 +114,7 @@ export async function DELETE(request: NextRequest) {
       headers.authorization = authHeader;
     }
 
-    const response = await fetch(`http://localhost:8000/settings/platforms/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/platforms/${id}`, {
       method: 'DELETE',
       headers,
     });

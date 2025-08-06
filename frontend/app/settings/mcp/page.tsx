@@ -20,7 +20,7 @@ export default function MCPPage() {
   const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
   const [copiedConfig, setCopiedConfig] = useState<string | null>(null);
 
-  const mcpUrl = user ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/mcp/${user.id}` : '';
+  const mcpUrl = user ? `${process.env.NEXT_PUBLIC_API_URL}/mcp/${user.id}` : '';
 
   const handleCopyUrl = async () => {
     await navigator.clipboard.writeText(mcpUrl);

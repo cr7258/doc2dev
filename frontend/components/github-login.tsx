@@ -17,7 +17,7 @@ export function GitHubLoginButton() {
     try {
       // Get GitHub OAuth authorization URL
       const redirectUri = `${window.location.origin}/auth/callback`
-      const response = await fetch(`http://localhost:8000/auth/github/login?redirect_uri=${encodeURIComponent(redirectUri)}`)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/github/login?redirect_uri=${encodeURIComponent(redirectUri)}`)
       
       if (!response.ok) {
         throw new Error('Failed to get authorization URL')

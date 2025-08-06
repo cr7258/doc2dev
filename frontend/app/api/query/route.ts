@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const authorization = request.headers.get('authorization');
 
     // Call backend API
-    const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };

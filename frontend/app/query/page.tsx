@@ -155,7 +155,7 @@ function QueryPageContent() {
             headers.authorization = `Bearer ${token}`;
           }
 
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/repositories/${repoPath.replace('/', '_')}`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/repositories/${repoPath.replace('/', '_')}`, {
             headers: headers,
           });
 
@@ -198,7 +198,7 @@ function QueryPageContent() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/repositories/${repoData.id}/refresh`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/repositories/${repoData.id}/refresh`, {
         method: 'POST',
         headers: headers,
       });
@@ -224,7 +224,7 @@ function QueryPageContent() {
                 headers.authorization = `Bearer ${token}`;
               }
 
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/repositories/${repoPath.replace('/', '_')}`, {
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/repositories/${repoPath.replace('/', '_')}`, {
                 headers: headers,
               });
 

@@ -45,7 +45,7 @@ export default function SearchBar({ placeholder = "Search repositories...", clas
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/repositories/`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/repositories/`, {
           headers,
         });
         

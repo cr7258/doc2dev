@@ -17,7 +17,7 @@ export async function PUT(
       headers.authorization = authHeader;
     }
 
-    const response = await fetch(`http://localhost:8000/settings/platforms/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/platforms/${id}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(body),
@@ -76,7 +76,7 @@ export async function DELETE(
       headers.authorization = authHeader;
     }
 
-    const response = await fetch(`http://localhost:8000/settings/platforms/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/platforms/${id}`, {
       method: 'DELETE',
       headers,
     });

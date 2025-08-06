@@ -27,7 +27,7 @@ function AuthCallbackContent() {
 
       try {
         const redirectUri = `${window.location.origin}/auth/callback`
-        const callbackUrl = `http://localhost:8000/auth/github/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`
+        const callbackUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/github/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`
         
         const response = await fetch(callbackUrl)
         

@@ -8,6 +8,7 @@ import { getRelativeTime} from "@/utils/date";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 import { useAuth } from "@/lib/auth";
+import { useToast, Toaster } from "@/components/ui/toast";
 import {
   Card,
   CardContent,
@@ -43,6 +44,7 @@ interface RepositoryData {
   snippets: number;
   created_at: string;
   updated_at: string;
+  repo_status?: "in_progress" | "completed" | "failed" | "pending";
 }
 
 // Format date time to local time
@@ -50,6 +52,7 @@ interface RepositoryData {
 
 export default function QueryPage() {
   const { token } = useAuth();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const initialTable = searchParams.get("table") || "";
   const initialQuery = searchParams.get("q") || "";
@@ -79,6 +82,45 @@ export default function QueryPage() {
   const [summary, setSummary] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [repoData, setRepoData] = useState<RepositoryData | null>(null);
+
+  // Get status badge component like homepage
+  const getStatusBadge = () => {
+    if (!repoData || !repoData.repo_status) {
+      return (
+        <Badge className="bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100">
+          Pending
+        </Badge>
+      );
+    }
+    
+    switch (repoData.repo_status) {
+      case 'completed':
+        return (
+          <Badge className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100">
+            Completed
+          </Badge>
+        );
+      case 'in_progress':
+        return (
+          <Badge className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
+            In Progress
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100">
+            Failed
+          </Badge>
+        );
+      case 'pending':
+      default:
+        return (
+          <Badge className="bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100">
+            Pending
+          </Badge>
+        );
+    }
+  };
 
   // Build DocumentItem based on actual data
   const documentItem: DocumentItem = {
@@ -133,6 +175,86 @@ export default function QueryPage() {
       fetchRepoData();
     }
   }, [repoPath]);
+
+  // Function to refresh repository
+  const handleRefreshRepo = async () => {
+    if (!repoData) {
+      toast({
+        title: "Refresh Failed",
+        description: "Repository data not available for refresh",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repoData.id}/refresh`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "Refresh Started",
+          description: data.message || `Repository ${repoData.name} refresh started`,
+          variant: "success",
+          duration: 3000,
+        });
+        
+        // Refresh repository data after a short delay
+        setTimeout(async () => {
+          const fetchRepoData = async () => {
+            try {
+              const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+              };
+
+              if (token) {
+                headers.authorization = `Bearer ${token}`;
+              }
+
+              const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/repositories/${repoPath.replace('/', '_')}`, {
+                headers: headers,
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                if (data.status === "success" && data.repository) {
+                  setRepoData(data.repository);
+                }
+              }
+            } catch (error) {
+              console.error("Error refreshing repository data:", error);
+            }
+          };
+          
+          fetchRepoData();
+        }, 1000);
+        
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Refresh Failed",
+          description: error.detail || 'Failed to start refresh',
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing repository:', error);
+      toast({
+        title: "Refresh Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,8 +315,9 @@ export default function QueryPage() {
       {documentItem.projectName && (
         <Card className="w-full max-w-4xl mx-auto mb-6 overflow-hidden shadow-sm border border-gray-100">
           <CardHeader className="pb-2">
-            <div className="flex flex-col">
-              <CardTitle className="text-xl font-bold">{documentItem.projectName}</CardTitle>
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col flex-1">
+                <CardTitle className="text-xl font-bold">{documentItem.projectName}</CardTitle>
               <CardDescription className="mt-1 mb-2 line-clamp-2">
                 {documentItem.description}
               </CardDescription>
@@ -208,10 +331,22 @@ export default function QueryPage() {
                 <span>{repoPath}</span>
                 <ExternalLink className="h-3 w-3" />
               </a>
+              </div>
+              <Button
+                onClick={handleRefreshRepo}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                disabled={!repoData}
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="pb-3">
             <div className="flex flex-wrap gap-3">
+              {getStatusBadge()}
               <Badge variant="outline" className="flex items-center gap-1.5 bg-blue-50 px-3 py-1 text-blue-700 border-blue-100">
                 <FileText className="h-3.5 w-3.5" />
                 <span>{documentItem.tokens} tokens</span>
@@ -363,6 +498,9 @@ export default function QueryPage() {
 
       {/* Footer */}
       <Footer />
+      
+      {/* Toast notification component */}
+      <Toaster />
     </div>
   );
 }

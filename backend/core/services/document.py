@@ -6,6 +6,7 @@ It provides a unified interface for working with different document types (md, t
 """
 
 import glob
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -17,6 +18,8 @@ from sqlalchemy.orm import Session
 from core.factories.document import DocumentLoaderFactory, DocumentSplitterFactory
 from core.factories.service import ServiceFactory
 from .summary import SummaryService
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentService:

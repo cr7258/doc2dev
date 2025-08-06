@@ -18,44 +18,72 @@ class GitUrlParser:
     @staticmethod
     def is_github_url(url: str) -> bool:
         """Check if URL is a GitHub URL
-        
+
         Args:
             url: Repository URL to check
-            
+
         Returns:
             bool: True if URL is from GitHub (including custom domains)
         """
-        github_domains = [
-            'github.com',
-            # Support custom GitHub Enterprise domains
-            GitUrlParser._extract_domain_from_env('GITHUB_URL')
+        url_lower = url.lower()
+
+        # Standard GitHub.com
+        if 'github.com' in url_lower:
+            return True
+
+        # Custom GitHub Enterprise domains from environment
+        env_domain = GitUrlParser._extract_domain_from_env('GITHUB_URL')
+        if env_domain and env_domain in url_lower:
+            return True
+
+        # Common GitHub Enterprise domain patterns
+        github_patterns = [
+            'github.',  # github.company.com, github.tools.sap, etc.
+            'git.github',  # git.github.company.com
+            'ghe.',  # ghe.company.com (GitHub Enterprise)
+            'enterprise.github',  # enterprise.github.company.com
         ]
-        
-        # Filter out None/empty domains
-        github_domains = [domain for domain in github_domains if domain]
-        
-        return any(domain in url.lower() for domain in github_domains)
+
+        # Check if URL contains GitHub-like patterns
+        for pattern in github_patterns:
+            if pattern in url_lower:
+                return True
+
+        return False
     
     @staticmethod
     def is_gitlab_url(url: str) -> bool:
         """Check if URL is a GitLab URL
-        
+
         Args:
             url: Repository URL to check
-            
+
         Returns:
             bool: True if URL is from GitLab (including self-hosted)
         """
-        gitlab_domains = [
-            'gitlab.com',
-            # Support self-hosted GitLab domains
-            GitUrlParser._extract_domain_from_env('GITLAB_URL')
+        url_lower = url.lower()
+
+        # Standard GitLab.com
+        if 'gitlab.com' in url_lower:
+            return True
+
+        # Custom GitLab domains from environment
+        env_domain = GitUrlParser._extract_domain_from_env('GITLAB_URL')
+        if env_domain and env_domain in url_lower:
+            return True
+
+        # Common GitLab self-hosted domain patterns
+        gitlab_patterns = [
+            'gitlab.',  # gitlab.company.com, gitlab.internal, etc.
+            'git.gitlab',  # git.gitlab.company.com
         ]
-        
-        # Filter out None/empty domains
-        gitlab_domains = [domain for domain in gitlab_domains if domain]
-        
-        return any(domain in url.lower() for domain in gitlab_domains)
+
+        # Check if URL contains GitLab-like patterns
+        for pattern in gitlab_patterns:
+            if pattern in url_lower:
+                return True
+
+        return False
     
     @staticmethod
     def _extract_domain_from_env(env_var: str) -> Optional[str]:

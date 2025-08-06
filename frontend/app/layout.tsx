@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Doc2Dev - 为 LLM 和 AI 编程助手提供实时文档",
-  description: "索引并查询任何 GitHub 仓库的最新文档，通过 MCP 轻松与 Cursor、Windsurf 等 AI 编程助手集成。",
+  title: "Doc2Dev - Up-to-date docs for AI code assistants",
+  description: "Index and query the latest documentation from any GitHub repository, and easily integrate with AI programming assistants like Cursor and Windsurf via MCP.",
 };
 
 export default function RootLayout({

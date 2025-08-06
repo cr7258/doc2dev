@@ -38,19 +38,23 @@ class GitFactory:
             platform = PlatformDetector.detect_platform(url)
             logger.info(f"Detected platform '{platform}' for URL: {url}")
 
-            return GitFactory.create_adapter_by_platform(platform, user_id)
+            # Extract base URL for enterprise instances
+            base_url = GitFactory._extract_base_url(url, platform)
+
+            return GitFactory.create_adapter_by_platform(platform, user_id, base_url)
 
         except Exception as e:
             logger.error(f"Failed to create adapter for URL {url}: {str(e)}")
             raise ValueError(f"Failed to create Git adapter for URL: {url}") from e
     
     @staticmethod
-    def create_adapter_by_platform(platform: str, user_id: Optional[str] = None) -> GitPlatformAdapter:
+    def create_adapter_by_platform(platform: str, user_id: Optional[str] = None, base_url: Optional[str] = None) -> GitPlatformAdapter:
         """Create adapter for specific platform
 
         Args:
             platform: Platform name ('github' or 'gitlab')
             user_id: Optional user ID for user-specific configuration lookup
+            base_url: Optional base URL for enterprise instances
 
         Returns:
             GitPlatformAdapter: Platform-specific adapter
@@ -61,11 +65,11 @@ class GitFactory:
         platform = platform.lower().strip()
 
         if platform == "github":
-            logger.info("Creating GitHub adapter")
-            return GitHubAdapter(user_id=user_id)
+            logger.info(f"Creating GitHub adapter with base_url: {base_url}")
+            return GitHubAdapter(base_url=base_url, user_id=user_id)
         elif platform == "gitlab":
-            logger.info("Creating GitLab adapter")
-            return GitLabAdapter(user_id=user_id)
+            logger.info(f"Creating GitLab adapter with base_url: {base_url}")
+            return GitLabAdapter(base_url=base_url, user_id=user_id)
         else:
             supported_platforms = PlatformDetector.get_supported_platforms()
             raise ValueError(
@@ -73,6 +77,50 @@ class GitFactory:
                 f"Supported platforms: {', '.join(supported_platforms)}"
             )
     
+    @staticmethod
+    def _extract_base_url(url: str, platform: str) -> Optional[str]:
+        """Extract base URL from repository URL for enterprise instances
+
+        Args:
+            url: Repository URL
+            platform: Platform name ('github' or 'gitlab')
+
+        Returns:
+            Optional[str]: Base URL for enterprise instances, None for public instances
+        """
+        try:
+            from urllib.parse import urlparse
+            import re
+
+            # Handle SSH URLs (git@domain:org/repo)
+            ssh_match = re.match(r'git@([^:]+):', url)
+            if ssh_match:
+                domain = ssh_match.group(1)
+                base_url = f"https://{domain}"
+            else:
+                # Handle HTTPS URLs
+                parsed = urlparse(url)
+                if not parsed.scheme:
+                    # URL might be missing scheme
+                    url = f"https://{url}"
+                    parsed = urlparse(url)
+                base_url = f"{parsed.scheme}://{parsed.netloc}"
+                domain = parsed.netloc
+
+            # Check if it's a public instance
+            if platform == "github" and domain == "github.com":
+                return None  # Use default GitHub.com
+            elif platform == "gitlab" and domain == "gitlab.com":
+                return None  # Use default GitLab.com
+            else:
+                # Enterprise or custom instance
+                logger.info(f"Detected enterprise {platform} instance: {base_url}")
+                return base_url
+
+        except Exception as e:
+            logger.warning(f"Error extracting base URL from {url}: {str(e)}")
+            return None
+
     @staticmethod
     def get_supported_platforms() -> list:
         """Get list of supported platforms

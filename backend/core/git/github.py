@@ -51,7 +51,7 @@ class GitHubAdapter(GitPlatformAdapter):
         self.api_url = self._get_api_url()
         
     def get_git_token(self, repo_url: Optional[str] = None) -> str:
-        """Get GitHub token from user configuration or fallback to global configuration
+        """Get GitHub token based on URL matching logic
 
         Args:
             repo_url: Optional repository URL to match against user configurations
@@ -61,36 +61,48 @@ class GitHubAdapter(GitPlatformAdapter):
         """
         token = ""
 
-        # Try user-specific configuration first if user_id is available
-        if self.user_id and repo_url:
-            try:
-                from core.services.platform_config import PlatformConfigService
-                from config.settings import Settings
+        if repo_url:
+            # Extract base URL from repo URL
+            from urllib.parse import urlparse
+            parsed_url = urlparse(repo_url)
+            repo_base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            repo_domain = parsed_url.netloc
 
-                # Create platform config service
-                settings = Settings()
-                platform_service = PlatformConfigService(settings)
-
-                # Extract base URL from repo URL to match user configuration
-                from urllib.parse import urlparse
-                parsed_url = urlparse(repo_url)
-                repo_base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-
-                # Get user configuration for GitHub platform matching the base URL
-                user_config = platform_service.get_user_config_for_platform(
-                    self.user_id, 'github', repo_base_url
-                )
-
-                if user_config and user_config.get('token'):
-                    token = user_config['token']
-                    masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
-                    logger.info(f"Using user-configured GitHub token for {repo_base_url}: {masked_token}")
-                    return token
+            # For public GitHub (github.com), prioritize environment variable
+            if repo_domain == "github.com":
+                env_token = os.getenv("GITHUB_TOKEN", "")
+                if env_token:
+                    masked_token = '*' * (len(env_token) - 4) + env_token[-4:] if len(env_token) > 4 else '****'
+                    logger.info(f"Using environment GITHUB_TOKEN for public GitHub: {masked_token}")
+                    return env_token
                 else:
-                    logger.info(f"No user configuration found for GitHub at {repo_base_url}, falling back to global config")
+                    logger.info("No GITHUB_TOKEN found in environment for public GitHub")
 
-            except Exception as e:
-                logger.warning(f"Error loading user GitHub configuration: {str(e)}")
+            # For enterprise GitHub, try user-specific configuration first
+            if self.user_id:
+                try:
+                    from core.services.platform_config import PlatformConfigService
+                    from config.settings import Settings
+
+                    # Create platform config service
+                    settings = Settings()
+                    platform_service = PlatformConfigService(settings)
+
+                    # Get user configuration for GitHub platform matching the base URL
+                    user_config = platform_service.get_user_config_for_platform(
+                        self.user_id, 'github', repo_base_url
+                    )
+
+                    if user_config and user_config.get('token'):
+                        token = user_config['token']
+                        masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
+                        logger.info(f"Using user-configured GitHub token for {repo_base_url}: {masked_token}")
+                        return token
+                    else:
+                        logger.info(f"No user configuration found for GitHub at {repo_base_url}")
+
+                except Exception as e:
+                    logger.warning(f"Error loading user GitHub configuration: {str(e)}")
 
         # Fallback to global configuration manager
         config_manager = get_git_config_manager()
@@ -98,14 +110,16 @@ class GitHubAdapter(GitPlatformAdapter):
 
         if github_config and github_config.token:
             token = github_config.token
-        else:
-            # Final fallback to environment variable
-            token = os.getenv("GITHUB_TOKEN", "")
-
-        if token:
             masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
-            logger.info(f"Using global GitHub token: {masked_token}")
+            logger.info(f"Using global GitHub configuration token: {masked_token}")
         else:
+            # Final fallback to environment variable (if not already tried)
+            token = os.getenv("GITHUB_TOKEN", "")
+            if token:
+                masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
+                logger.info(f"Using fallback environment GITHUB_TOKEN: {masked_token}")
+
+        if not token:
             logger.warning("No GitHub token found in user configuration, global configuration, or environment variables")
 
         return token

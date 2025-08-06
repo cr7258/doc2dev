@@ -216,14 +216,14 @@ class PlatformConfigService:
 
     def get_user_config_for_platform(self, user_id: str, platform: str, base_url: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Get platform configuration for a specific platform and URL
-        
+
         Args:
             user_id: User identifier
             platform: Platform name ('github' or 'gitlab')
             base_url: Optional base URL to match
-            
+
         Returns:
-            Platform configuration or None
+            Platform configuration or None (only returns exact base_url matches)
         """
         try:
             session = self.db_router.get_users_session()
@@ -235,12 +235,38 @@ class PlatformConfigService:
             )
 
             if base_url:
-                # Try to find exact match first
+                # Only return exact base_url matches
                 config = query.filter(UserPlatformConfig.base_url == base_url).first()
                 if config:
                     return config.to_dict()
 
-            # Fall back to default for this platform
+            # No fallback - only return exact matches
+            return None
+
+        except Exception as e:
+            logger.error(f"Error getting user config for platform: {str(e)}")
+            return None
+
+    def get_user_default_config_for_platform(self, user_id: str, platform: str) -> Optional[Dict[str, Any]]:
+        """Get default platform configuration for a specific platform
+
+        Args:
+            user_id: User identifier
+            platform: Platform name ('github' or 'gitlab')
+
+        Returns:
+            Default platform configuration or None
+        """
+        try:
+            session = self.db_router.get_users_session()
+            query = session.query(UserPlatformConfig).filter(
+                and_(
+                    UserPlatformConfig.user_id == user_id,
+                    UserPlatformConfig.platform == platform
+                )
+            )
+
+            # Get default for this platform
             config = query.filter(UserPlatformConfig.is_default == True).first()
             if config:
                 return config.to_dict()
@@ -251,9 +277,9 @@ class PlatformConfigService:
                 return config.to_dict()
 
             return None
-                
+
         except Exception as e:
-            logger.error(f"Error getting user config for platform: {str(e)}")
+            logger.error(f"Error getting user default config for platform: {str(e)}")
             return None
     
     def delete_user_config(self, user_id: str, config_id: int) -> bool:

@@ -4,6 +4,7 @@ Summary Service
 This service handles document summarization using OpenAI API via LangChain.
 """
 
+import logging
 from typing import List, Optional
 from langchain_core.documents import Document
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -11,6 +12,8 @@ from langchain_core.language_models.base import BaseLanguageModel
 
 from config.settings import Settings
 from core.factories.llm import LLMFactory
+
+logger = logging.getLogger(__name__)
 
 
 class SummaryService:

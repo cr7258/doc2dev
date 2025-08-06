@@ -52,7 +52,7 @@ class GitLabAdapter(GitPlatformAdapter):
         self.api_url = f"{self.base_url}/api/v4"
         
     def get_git_token(self, repo_url: Optional[str] = None) -> str:
-        """Get GitLab token from user configuration or fallback to global configuration
+        """Get GitLab token based on URL matching logic
 
         Args:
             repo_url: Optional repository URL to match against user configurations
@@ -62,36 +62,48 @@ class GitLabAdapter(GitPlatformAdapter):
         """
         token = ""
 
-        # Try user-specific configuration first if user_id is available
-        if self.user_id and repo_url:
-            try:
-                from core.services.platform_config import PlatformConfigService
-                from config.settings import Settings
+        if repo_url:
+            # Extract base URL from repo URL
+            from urllib.parse import urlparse
+            parsed_url = urlparse(repo_url)
+            repo_base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            repo_domain = parsed_url.netloc
 
-                # Create platform config service
-                settings = Settings()
-                platform_service = PlatformConfigService(settings)
-
-                # Extract base URL from repo URL to match user configuration
-                from urllib.parse import urlparse
-                parsed_url = urlparse(repo_url)
-                repo_base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-
-                # Get user configuration for GitLab platform matching the base URL
-                user_config = platform_service.get_user_config_for_platform(
-                    self.user_id, 'gitlab', repo_base_url
-                )
-
-                if user_config and user_config.get('token'):
-                    token = user_config['token']
-                    masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
-                    logger.info(f"Using user-configured GitLab token for {repo_base_url}: {masked_token}")
-                    return token
+            # For public GitLab (gitlab.com), prioritize environment variable
+            if repo_domain == "gitlab.com":
+                env_token = os.getenv("GITLAB_TOKEN", "")
+                if env_token:
+                    masked_token = '*' * (len(env_token) - 4) + env_token[-4:] if len(env_token) > 4 else '****'
+                    logger.info(f"Using environment GITLAB_TOKEN for public GitLab: {masked_token}")
+                    return env_token
                 else:
-                    logger.info(f"No user configuration found for GitLab at {repo_base_url}, falling back to global config")
+                    logger.info("No GITLAB_TOKEN found in environment for public GitLab")
 
-            except Exception as e:
-                logger.warning(f"Error loading user GitLab configuration: {str(e)}")
+            # For enterprise/self-hosted GitLab, try user-specific configuration first
+            if self.user_id:
+                try:
+                    from core.services.platform_config import PlatformConfigService
+                    from config.settings import Settings
+
+                    # Create platform config service
+                    settings = Settings()
+                    platform_service = PlatformConfigService(settings)
+
+                    # Get user configuration for GitLab platform matching the base URL
+                    user_config = platform_service.get_user_config_for_platform(
+                        self.user_id, 'gitlab', repo_base_url
+                    )
+
+                    if user_config and user_config.get('token'):
+                        token = user_config['token']
+                        masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
+                        logger.info(f"Using user-configured GitLab token for {repo_base_url}: {masked_token}")
+                        return token
+                    else:
+                        logger.info(f"No user configuration found for GitLab at {repo_base_url}")
+
+                except Exception as e:
+                    logger.warning(f"Error loading user GitLab configuration: {str(e)}")
 
         # Fallback to global configuration manager
         config_manager = get_git_config_manager()
@@ -99,14 +111,16 @@ class GitLabAdapter(GitPlatformAdapter):
 
         if gitlab_config and gitlab_config.token:
             token = gitlab_config.token
-        else:
-            # Final fallback to environment variable
-            token = os.getenv("GITLAB_TOKEN", "")
-
-        if token:
             masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
-            logger.info(f"Using global GitLab token: {masked_token}")
+            logger.info(f"Using global GitLab configuration token: {masked_token}")
         else:
+            # Final fallback to environment variable (if not already tried)
+            token = os.getenv("GITLAB_TOKEN", "")
+            if token:
+                masked_token = '*' * (len(token) - 4) + token[-4:] if len(token) > 4 else '****'
+                logger.info(f"Using fallback environment GITLAB_TOKEN: {masked_token}")
+
+        if not token:
             logger.warning("No GitLab token found in user configuration, global configuration, or environment variables")
 
         return token
@@ -280,9 +294,9 @@ class GitLabAdapter(GitPlatformAdapter):
                     await progress_callback(0, 1, "GitLab token not found in user configuration, global configuration, or environment variables")
                 return []
             
-            # Create GitLab instance
+            # Create GitLab instance with SSL verification disabled
             try:
-                gl = gitlab.Gitlab(self.base_url, private_token=token)
+                gl = gitlab.Gitlab(self.base_url, private_token=token, ssl_verify=False)
                 # Test authentication
                 gl.auth()
                 logger.info(f"Successfully authenticated with GitLab at {self.base_url}")

@@ -12,8 +12,8 @@ CREATE TABLE repositories (
     snippets INT NOT NULL,
     repo_status ENUM('in_progress', 'completed', 'failed', 'pending') NOT NULL,
     source ENUM('github', 'gitlab') NOT NULL DEFAULT 'github',
-    created_at TIMESTAMP DEFAULT UTC_TIMESTAMP(),
-    updated_at TIMESTAMP DEFAULT UTC_TIMESTAMP() ON UPDATE UTC_TIMESTAMP()
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 
@@ -28,8 +28,8 @@ CREATE TABLE users (
     email VARCHAR(100),
     avatar_url VARCHAR(500),
     access_token VARCHAR(255),
-    created_at TIMESTAMP DEFAULT UTC_TIMESTAMP(),
-    updated_at TIMESTAMP DEFAULT UTC_TIMESTAMP() ON UPDATE UTC_TIMESTAMP()
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_github_id ON users(github_id);

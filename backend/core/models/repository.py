@@ -51,8 +51,8 @@ class Repository(Base):
         default=RepositorySource.github,
         nullable=False
     )
-    created_at = Column(DateTime, default=func.utc_timestamp(), nullable=False)
-    updated_at = Column(DateTime, default=func.utc_timestamp(), onupdate=func.utc_timestamp(), nullable=False)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
     
     def __repr__(self):
         return f"<Repository(id={self.id}, name='{self.name}', repo='{self.repo}', status='{self.repo_status}')>"

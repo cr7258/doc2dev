@@ -23,8 +23,8 @@ class UserPlatformConfig(Base):
     base_url = Column(String(500), nullable=False)  # Base URL of the platform
     token = Column(Text, nullable=False)  # Encrypted access token
     is_default = Column(Boolean, default=False, nullable=False)  # Default config for this platform
-    created_at = Column(DateTime, default=func.utc_timestamp(), nullable=False)
-    updated_at = Column(DateTime, default=func.utc_timestamp(), onupdate=func.utc_timestamp(), nullable=False)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
     # Add unique constraints for user-level uniqueness
     __table_args__ = (
@@ -80,8 +80,8 @@ CREATE TABLE IF NOT EXISTS user_platform_configs (
     base_url VARCHAR(500) NOT NULL,
     token TEXT NOT NULL,
     is_default BOOLEAN DEFAULT FALSE NOT NULL,
-    created_at TIMESTAMP DEFAULT UTC_TIMESTAMP() NOT NULL,
-    updated_at TIMESTAMP DEFAULT UTC_TIMESTAMP() ON UPDATE UTC_TIMESTAMP() NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
     INDEX idx_user_id (user_id),
     INDEX idx_platform (platform),
     UNIQUE KEY uq_user_platform_name (user_id, name),

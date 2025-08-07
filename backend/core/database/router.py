@@ -104,8 +104,8 @@ class DatabaseRouter:
                 snippets INT NOT NULL,
                 repo_status ENUM('in_progress', 'completed', 'failed', 'pending') NOT NULL,
                 source ENUM('github', 'gitlab') NOT NULL DEFAULT 'github',
-                created_at TIMESTAMP DEFAULT UTC_TIMESTAMP(),
-                updated_at TIMESTAMP DEFAULT UTC_TIMESTAMP() ON UPDATE UTC_TIMESTAMP()
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
         """))
         session.commit()

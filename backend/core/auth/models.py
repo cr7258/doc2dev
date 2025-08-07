@@ -15,8 +15,8 @@ class User(Base):
     email = Column(String(100), nullable=True)  # GitHub email (optional)
     avatar_url = Column(String(500), nullable=True)  # GitHub avatar URL
     access_token = Column(String(255), nullable=True)  # GitHub access token (encrypted)
-    created_at = Column(DateTime, default=func.utc_timestamp(), nullable=False)
-    updated_at = Column(DateTime, default=func.utc_timestamp(), onupdate=func.utc_timestamp(), nullable=False)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
     
     def to_dict(self):
         """Convert user object to dictionary for API responses"""

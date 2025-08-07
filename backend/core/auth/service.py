@@ -109,7 +109,7 @@ class GitHubOAuthService:
                 existing_user.email = github_user_data.get("email")
                 existing_user.avatar_url = github_user_data.get("avatar_url")
                 existing_user.access_token = access_token
-                existing_user.updated_at = datetime.utcnow()
+                # updated_at will be automatically set by database UTC_TIMESTAMP()
                 
                 self.users_session.commit()
                 logger.info(f"Updated existing user: {existing_user.username}")

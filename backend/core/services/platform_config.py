@@ -197,7 +197,7 @@ class PlatformConfigService:
             existing_config.base_url = config_data.get('base_url', existing_config.base_url)
             existing_config.token = config_data.get('token', existing_config.token)
             existing_config.is_default = config_data.get('is_default', existing_config.is_default)
-            existing_config.updated_at = datetime.utcnow()
+            # updated_at will be automatically set by database UTC_TIMESTAMP()
 
             # Ensure only one default per platform per user
             self._ensure_single_default_per_platform(session, user_id)

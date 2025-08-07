@@ -70,9 +70,9 @@
       "warning": "此操作无法撤销。所有相关数据将被永久删除。"
     },
     "deleteCredentials": {
-      "title": "删除 Git 凭据？",
-      "description": "确定要删除凭据 {{name}} ({{platform}}) 吗？",
-      "warning": "此操作无法撤销。删除后该凭据将无法使用。"
+      "title": "删除 Git 凭证？",
+      "description": "确定要删除凭证 {{name}} ({{platform}}) 吗？",
+      "warning": "此操作无法撤销。删除后该凭证将无法使用。"
     },
     "confirmAction": {
       "title": "确认操作",
@@ -135,8 +135,8 @@
       "description": "名称 \"{{name}}\" 已被使用。请选择不同的名称。"
     },
     "duplicateUrl": {
-      "title": "基础 URL 重复",
-      "description": "基础 URL \"{{url}}\" 已被配置。请使用不同的 URL。"
+      "title": "Base URL 重复",
+      "description": "Base URL \"{{url}}\" 已被配置。请使用不同的 URL。"
     }
   }
 }

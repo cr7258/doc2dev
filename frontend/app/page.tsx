@@ -90,6 +90,7 @@ export default function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [repoToDelete, setRepoToDelete] = useState<Repository | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const { token } = useAuth();
@@ -556,15 +557,22 @@ export default function Home() {
                               const [org, repoName] = repoPath.split('/');
                               // Use underscore concatenation as table name
                               const tableName = `${org}_${repoName}`.toLowerCase();
+                              setOpenDropdownId(null); // Close dropdown before navigation
                               router.push(`/query?table=${tableName}&repo_name=${repo.name}&repo_path=${repoPath}`);
                             }}
-                            onRefresh={() => handleRefreshRepo(repo)}
+                            onRefresh={() => {
+                              handleRefreshRepo(repo);
+                              setOpenDropdownId(null); // Close dropdown after action
+                            }}
                             onDelete={() => {
                               setRepoToDelete(repo);
                               setDeleteDialogOpen(true);
+                              setOpenDropdownId(null); // Close dropdown after action
                             }}
-                            isOpen={false}
-                            onOpenChange={() => {}}
+                            isOpen={openDropdownId === repo.id}
+                            onOpenChange={(open) => {
+                              setOpenDropdownId(open ? repo.id : null);
+                            }}
                             showDelete={!!token} // Only show delete for logged-in users
                           />
                         </div>

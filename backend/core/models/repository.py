@@ -55,7 +55,7 @@ class Repository(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
     
     def __repr__(self):
-        return f"<Repository(id={self.id}, name='{self.name}', status='{self.repo_status}')>"
+        return f"<Repository(id={self.id}, name='{self.name}', repo='{self.repo}', status='{self.repo_status}')>"
     
     def to_dict(self) -> dict:
         """Convert repository to dictionary for API responses"""

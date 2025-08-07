@@ -47,6 +47,7 @@ class RepositoryService:
         try:
             repositories = self._db_session.query(Repository).order_by(Repository.name).all()
             print(f"✅ Retrieved {len(repositories)} repositories")
+            print(f"Repositories: {repositories}")
             return repositories
         except Exception as e:
             print(f"❌ Failed to get repositories: {e}")
@@ -67,6 +68,7 @@ class RepositoryService:
             user_session = self.db_router.get_session(user_id)
             repositories = user_session.query(Repository).order_by(Repository.name).all()
             print(f"✅ Retrieved {len(repositories)} repositories for user {user_id}")
+            print(f"Repositories: {repositories}")
             return repositories
         except Exception as e:
             print(f"❌ Failed to get repositories for user {user_id}: {e}")

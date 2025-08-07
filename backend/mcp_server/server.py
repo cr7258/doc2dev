@@ -5,7 +5,6 @@ Provides isolated MCP services for each user with access to their repositories.
 """
 
 import logging
-import httpx
 from typing import Dict, Any, List
 from fastmcp import FastMCP
 
@@ -35,12 +34,12 @@ class UserMCPServer:
                 Dictionary containing matching library IDs and their descriptions
             """
             try:
-                repositories = await self.get_user_repositories()
-                
-                # Filter repositories based on library name
+                repositories = await self.get_user_repositories()       
+                # Filter repositories based on library name (search both name and repo fields)
                 filtered_repos = [
-                    repo for repo in repositories 
-                    if libraryName.lower() in repo.get("name", "").lower()
+                    repo for repo in repositories
+                    if libraryName.lower() in repo.get("name", "").lower() or 
+                       libraryName.lower() in repo.get("repo", "").lower()
                 ]
                 
                 # Format the results
@@ -101,18 +100,17 @@ class UserMCPServer:
         """
         Get repositories accessible to this user.
         
-        For now, this returns all repositories. In the future, this can be enhanced
-        to filter based on user permissions, ownership, or access rights.
+        Returns user-specific repositories from their private database.
         
         Returns:
-            List of repository dictionaries
+            List of repository dictionaries for this user
         """
         try:
             # Import here to avoid circular imports
             from main import repository_service
             
-            # Get all repositories (future: filter by user access)
-            repositories = repository_service.get_all_repositories()
+            # Get user-specific repositories from their private database
+            repositories = repository_service.get_user_repositories(self.user_id)
             
             # Convert to dictionary format
             repo_list = []
@@ -140,44 +138,42 @@ class UserMCPServer:
     async def query_user_library(self, library_id: str, question: str) -> Dict[str, Any]:
         """
         Query a specific library's documentation for the user.
-        
+
         Args:
             library_id: The library ID (table name)
             question: The question to ask about the library
-            
+
         Returns:
             Dictionary containing query results
         """
         try:
             # Import here to avoid circular imports
-            from main import settings
-            
-            # Call the query API
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    f"{settings.api_base_url}/query/",
-                    json={
-                        "table_name": library_id,
-                        "query": question,
-                        "k": 5,
-                        "summarize": True
-                    },
-                    timeout=30.0
-                )
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    return {
-                        "status": "success",
-                        "message": f"Retrieved documentation from table '{library_id}' for user {self.user_id}",
-                        "documentation": data.get("summary", "No summary available"),
-                        "results": data.get("results", [])
-                    }
-                else:
-                    return {
-                        "error": f"API request failed with status code {response.status_code}",
-                        "message": response.text
-                    }
+            from main import document_service
+
+            # Call the document service directly with user_id to search user's repositories
+            result = document_service.search_with_summary(
+                query=question,
+                table_name=library_id,
+                k=5,
+                filter=None,
+                user_id=self.user_id
+            )
+
+            # Format results to match expected response structure
+            formatted_results = []
+            for i, doc_data in enumerate(result.get("documents", [])):
+                formatted_results.append({
+                    "id": str(i + 1),
+                    "source": doc_data.get("metadata", {}).get("source", "Unknown"),
+                    "content": doc_data.get("content", "")
+                })
+
+            return {
+                "status": "success",
+                "message": f"Retrieved documentation from table '{library_id}' for user {self.user_id}",
+                "documentation": result.get("summary", "No summary available"),
+                "results": formatted_results
+            }
                     
         except Exception as e:
             logger.error(f"Error querying library {library_id} for user {self.user_id}: {e}")

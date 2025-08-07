@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from 'react-i18next';
 import { LogIn, Lock, Mail, X } from "lucide-react";
 
 interface SignInModalProps {
@@ -13,6 +14,7 @@ interface SignInModalProps {
 }
 
 const SignInModal = ({ isOpen, onClose, onGitHubLogin, onGoogleLogin }: SignInModalProps) => {
+  const { t } = useTranslation('auth'); // Specify the namespace directly
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -28,15 +30,15 @@ const SignInModal = ({ isOpen, onClose, onGitHubLogin, onGoogleLogin }: SignInMo
 
   const handleSignIn = () => {
     if (!email || !password) {
-      setError("Please enter both email and password.");
+      setError(t('enterEmailPassword'));
       return;
     }
     if (!validateEmail(email)) {
-      setError("Please enter a valid email address.");
+      setError(t('enterValidEmail'));
       return;
     }
     setError("");
-    alert("Sign in successful! (Demo)");
+    alert(t('signInSuccessDemo'));
   };
 
   if (!isOpen || !mounted) return null;
@@ -48,7 +50,7 @@ const SignInModal = ({ isOpen, onClose, onGitHubLogin, onGoogleLogin }: SignInMo
 
       {/* Modal content */}
       <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999]">
-        <div className="w-full max-w-sm bg-gradient-to-b from-sky-50/50 to-white rounded-3xl shadow-2xl p-8 flex flex-col items-center border border-blue-100 text-black relative">
+        <div className="w-96 min-h-[520px] bg-gradient-to-b from-sky-50/50 to-white rounded-3xl shadow-2xl p-8 flex flex-col items-center border border-blue-100 text-black relative">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -62,10 +64,10 @@ const SignInModal = ({ isOpen, onClose, onGitHubLogin, onGoogleLogin }: SignInMo
         </div>
         
         <h2 className="text-2xl font-semibold mb-2 text-center">
-          Sign in with email
+          {t('signInWithEmail')}
         </h2>
         <p className="text-gray-500 text-sm mb-6 text-center">
-          Access your repositories and start querying documentation
+          {t('signInDescription')}
         </p>
         
         <div className="w-full flex flex-col gap-3 mb-2">
@@ -74,7 +76,7 @@ const SignInModal = ({ isOpen, onClose, onGitHubLogin, onGoogleLogin }: SignInMo
               <Mail className="w-4 h-4" />
             </span>
             <input
-              placeholder="Email"
+              placeholder={t('email')}
               type="email"
               value={email}
               className="w-full pl-10 pr-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-gray-50 text-black text-sm"
@@ -86,7 +88,7 @@ const SignInModal = ({ isOpen, onClose, onGitHubLogin, onGoogleLogin }: SignInMo
               <Lock className="w-4 h-4" />
             </span>
             <input
-              placeholder="Password"
+              placeholder={t('password')}
               type="password"
               value={password}
               className="w-full pl-10 pr-10 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-gray-50 text-black text-sm"
@@ -98,7 +100,7 @@ const SignInModal = ({ isOpen, onClose, onGitHubLogin, onGoogleLogin }: SignInMo
               <div className="text-sm text-red-500">{error}</div>
             )}
             <button className="text-xs hover:underline font-medium ml-auto cursor-pointer">
-              Forgot password?
+              {t('forgotPassword')}
             </button>
           </div>
         </div>
@@ -107,12 +109,12 @@ const SignInModal = ({ isOpen, onClose, onGitHubLogin, onGoogleLogin }: SignInMo
           onClick={handleSignIn}
           className="w-full bg-gradient-to-b from-gray-700 to-gray-900 text-white font-medium py-2 rounded-xl shadow hover:brightness-105 cursor-pointer transition mb-4 mt-2"
         >
-          Get Started
+          {t('getStarted')}
         </button>
-        
+
         <div className="flex items-center w-full my-2">
           <div className="flex-grow border-t border-dashed border-gray-200"></div>
-          <span className="mx-2 text-xs text-gray-400">Or sign in with</span>
+          <span className="mx-2 text-xs text-gray-400">{t('orSignInWith')}</span>
           <div className="flex-grow border-t border-dashed border-gray-200"></div>
         </div>
         

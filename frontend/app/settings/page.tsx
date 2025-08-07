@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth';
 import { Navbar } from '@/components/navbar';
 import Footer from '@/components/footer';
@@ -42,6 +43,7 @@ interface PlatformConfig {
 }
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const { token: authToken } = useAuth();
   const { toast } = useToast();
   const [configs, setConfigs] = useState<PlatformConfig[]>([]);
@@ -89,8 +91,8 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error loading configurations:', error);
       toast({
-        title: "Error",
-        description: "Failed to load platform configurations",
+        title: t('pages:gitCredentials.error'),
+        description: t('pages:gitCredentials.loadFailed'),
         variant: "destructive",
       });
     } finally {
@@ -150,8 +152,8 @@ export default function SettingsPage() {
         );
         if (duplicateName) {
           toast({
-            title: "Duplicate Configuration Name",
-            description: `The name "${config.name}" is already used. Please choose a different name.`,
+            title: t('pages:gitCredentials.duplicateName'),
+            description: `${t('pages:gitCredentials.duplicateNameDesc')} "${config.name}" ${t('pages:gitCredentials.duplicateNameDesc')}`,
             variant: "destructive"
           });
           return;
@@ -163,8 +165,8 @@ export default function SettingsPage() {
         );
         if (duplicateUrl) {
           toast({
-            title: "Duplicate Base URL",
-            description: `The base URL "${config.base_url}" is already configured. Please use a different URL.`,
+            title: t('pages:gitCredentials.duplicateUrl'),
+            description: `${t('pages:gitCredentials.duplicateUrlDesc')} "${config.base_url}" ${t('pages:gitCredentials.duplicateUrlDesc')}`,
             variant: "destructive"
           });
           return;
@@ -187,8 +189,8 @@ export default function SettingsPage() {
 
       // All configurations saved successfully
       toast({
-        title: "Success",
-        description: "Platform configurations saved successfully",
+        title: t('pages:gitCredentials.success'),
+        description: t('pages:gitCredentials.configSaved'),
         variant: "success",
       });
       await loadConfigurations(); // Reload to get IDs
@@ -197,8 +199,8 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error saving configurations:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save configurations",
+        title: t('pages:gitCredentials.error'),
+        description: error instanceof Error ? error.message : t('pages:gitCredentials.saveFailed'),
         variant: "destructive",
       });
     } finally {
@@ -225,14 +227,14 @@ export default function SettingsPage() {
 
       if (response.ok) {
         toast({
-          title: "Success",
-          description: "Configuration deleted successfully",
+          title: t('toast.configDeleteSuccessful.title'),
+          description: t('toast.configDeleteSuccessful.description'),
           variant: "success",
         });
         // Reload configurations
         await loadConfigurations();
       } else {
-        let errorMessage = "Failed to delete configuration";
+        let errorMessage = t('toast.configDeleteFailed.description');
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorData.detail || errorMessage;
@@ -240,7 +242,7 @@ export default function SettingsPage() {
           console.error('Error parsing error response:', e);
         }
         toast({
-          title: "Error",
+          title: t('toast.configDeleteFailed.title'),
           description: errorMessage,
           variant: "destructive",
         });
@@ -248,8 +250,8 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error deleting configuration:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete configuration",
+        title: t('toast.configDeleteFailed.title'),
+        description: t('toast.configDeleteFailed.description'),
         variant: "destructive",
       });
     } finally {
@@ -278,8 +280,8 @@ export default function SettingsPage() {
   const saveInlineEdit = async (configId: string) => {
     if (!authToken || !editingValues.name || !editingValues.base_url || !editingValues.token) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
+        title: t('toast.validationError.title'),
+        description: t('toast.validationError.description'),
         variant: "destructive"
       });
       return;
@@ -289,8 +291,8 @@ export default function SettingsPage() {
     const originalConfig = savedConfigs.find(c => c.id === configId);
     if (!originalConfig) {
       toast({
-        title: "Error",
-        description: "Configuration not found",
+        title: t('toast.configNotFound.title'),
+        description: t('toast.configNotFound.description'),
         variant: "destructive"
       });
       return;
@@ -302,8 +304,8 @@ export default function SettingsPage() {
     );
     if (duplicateName) {
       toast({
-        title: "Duplicate Configuration Name",
-        description: `The name "${editingValues.name}" is already used. Please choose a different name.`,
+        title: t('toast.duplicateName.title'),
+        description: t('toast.duplicateName.description', { name: editingValues.name }),
         variant: "destructive"
       });
       return;
@@ -314,8 +316,8 @@ export default function SettingsPage() {
     );
     if (duplicateUrl) {
       toast({
-        title: "Duplicate Base URL",
-        description: `The base URL "${editingValues.base_url}" is already configured. Please use a different URL.`,
+        title: t('toast.duplicateUrl.title'),
+        description: t('toast.duplicateUrl.description', { url: editingValues.base_url }),
         variant: "destructive"
       });
       return;
@@ -364,8 +366,8 @@ export default function SettingsPage() {
       }
 
       toast({
-        title: "Success",
-        description: "Configuration updated successfully",
+        title: t('toast.configUpdateSuccessful.title'),
+        description: t('toast.configUpdateSuccessful.description'),
         variant: "success",
       });
 
@@ -380,8 +382,8 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error updating configuration:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update configuration",
+        title: t('toast.configUpdateFailed.title'),
+        description: error instanceof Error ? error.message : t('toast.configUpdateFailed.description'),
         variant: "destructive",
       });
     } finally {
@@ -420,10 +422,10 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Add Git Credentials
+                {t('pages:gitCredentials.addTitle')}
               </CardTitle>
               <CardDescription>
-                Add and manage multiple GitHub and GitLab credentials. You can configure different tokens and URLs for various Git instances.
+                {t('pages:gitCredentials.addDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -436,7 +438,7 @@ export default function SettingsPage() {
                 >
                   <Plus className="h-4 w-4 mr-0.2" />
                   <Github className="h-4 w-4 mr-0.2" />
-                  Add GitHub
+                  {t('pages:gitCredentials.addGithub')}
                 </Button>
                 <Button
                   variant="outline"
@@ -445,7 +447,7 @@ export default function SettingsPage() {
                 >
                   <Plus className="h-4 w-4 mr-0.2" />
                   <Gitlab className="h-4 w-4 mr-0.2 text-orange-500" />
-                  Add GitLab
+                  {t('pages:gitCredentials.addGitlab')}
                 </Button>
               </div>
 
@@ -461,7 +463,7 @@ export default function SettingsPage() {
                       )}
                       <span className="font-medium capitalize">{config.platform}</span>
                       {config.is_default && (
-                        <Badge variant="secondary">Default</Badge>
+                        <Badge variant="secondary">{t('pages:gitCredentials.default')}</Badge>
                       )}
                     </div>
                     <Button
@@ -476,35 +478,35 @@ export default function SettingsPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor={`name-${index}`}>Name</Label>
+                      <Label htmlFor={`name-${index}`}>{t('pages:gitCredentials.name')}</Label>
                       <Input
                         id={`name-${index}`}
                         value={config.name}
                         onChange={(e) => updateConfig(index, 'name', e.target.value)}
-                        placeholder="Enter a descriptive name"
+                        placeholder={t('pages:gitCredentials.namePlaceholder')}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor={`url-${index}`}>Base URL</Label>
+                      <Label htmlFor={`url-${index}`}>{t('pages:gitCredentials.baseUrl')}</Label>
                       <Input
                         id={`url-${index}`}
                         value={config.base_url}
                         onChange={(e) => updateConfig(index, 'base_url', e.target.value)}
-                        placeholder="Enter the base URL"
+                        placeholder={t('pages:gitCredentials.baseUrlPlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor={`token-${index}`}>Access Token</Label>
+                    <Label htmlFor={`token-${index}`}>{t('pages:gitCredentials.accessToken')}</Label>
                     <div className="relative">
                       <Input
                         id={`token-${index}`}
                         type={showTokens[index] ? 'text' : 'password'}
                         value={config.token}
                         onChange={(e) => updateConfig(index, 'token', e.target.value)}
-                        placeholder="Enter your access token"
+                        placeholder={t('pages:gitCredentials.tokenPlaceholder')}
                         className="pr-10"
                       />
                       <Button
@@ -540,7 +542,7 @@ export default function SettingsPage() {
                     ) : (
                       <Save className="h-4 w-4 mr-2" />
                     )}
-                    {saving ? 'Saving...' : 'Save Configurations'}
+                    {saving ? t('pages:gitCredentials.saving') : t('pages:gitCredentials.saveConfigurations')}
                   </Button>
                 </div>
               )}
@@ -551,10 +553,10 @@ export default function SettingsPage() {
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Saved Git Credentials
+                {t('pages:gitCredentials.savedTitle')}
               </CardTitle>
               <CardDescription>
-                Manage your existing Git Credentials
+                {t('pages:gitCredentials.savedDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -562,11 +564,11 @@ export default function SettingsPage() {
                 <Table>
                   <TableHeader className="bg-blue-50">
                     <TableRow>
-                      <TableHead className="w-[120px] font-medium">Platform</TableHead>
-                      <TableHead className="w-[150px] font-medium">Name</TableHead>
-                      <TableHead className="w-[250px] font-medium">Base URL</TableHead>
-                      <TableHead className="w-[200px] font-medium text-left">Token</TableHead>
-                      <TableHead className="w-[100px] text-center font-medium">Actions</TableHead>
+                      <TableHead className="w-[120px] font-medium">{t('pages:gitCredentials.platform')}</TableHead>
+                      <TableHead className="w-[150px] font-medium">{t('pages:gitCredentials.name')}</TableHead>
+                      <TableHead className="w-[250px] font-medium">{t('pages:gitCredentials.baseUrl')}</TableHead>
+                      <TableHead className="w-[200px] font-medium text-left">{t('pages:gitCredentials.token')}</TableHead>
+                      <TableHead className="w-[100px] text-center font-medium">{t('pages:gitCredentials.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -598,7 +600,7 @@ export default function SettingsPage() {
                                   {config.name}
                                   {config.is_default && (
                                     <Badge variant="secondary" className="ml-2 text-xs">
-                                      Default
+                                      {t('pages:gitCredentials.default')}
                                     </Badge>
                                   )}
                                 </>
@@ -725,7 +727,7 @@ export default function SettingsPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                          No configurations saved yet. Click &quot;Add GitHub&quot; or &quot;Add GitLab&quot; to get started.
+                          {t('pages:gitCredentials.noConfigurations')}
                         </TableCell>
                       </TableRow>
                     )}
@@ -743,7 +745,7 @@ export default function SettingsPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
                 </svg>
-                Back to Homepage
+                {t('pages:gitCredentials.backToHomepage')}
               </Link>
             </Button>
           </div>
@@ -757,20 +759,20 @@ export default function SettingsPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Git Credentials?</AlertDialogTitle>
+            <AlertDialogTitle>{t('dialogs.deleteCredentials.title')}</AlertDialogTitle>
             <AlertDialogDescription>
               {configToDelete && (
                 <>
-                  Are you sure you want to delete credentials <span className="font-medium">{configToDelete.name}</span> ({configToDelete.platform})?
-                  <span className="block mt-2 text-red-500">This action cannot be undone. The credentials will no longer be usable after deletion.</span>
+                  {t('dialogs.deleteCredentials.description', { name: configToDelete.name, platform: configToDelete.platform })}
+                  <span className="block mt-2 text-red-500">{t('dialogs.deleteCredentials.warning')}</span>
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">{t('buttons.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfig} className="bg-red-500 hover:bg-red-600 cursor-pointer">
-              Delete
+              {t('buttons.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

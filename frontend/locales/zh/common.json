@@ -1,0 +1,142 @@
+{
+  "nav": {
+    "home": "首页",
+    "query": "查询",
+    "settings": "设置"
+  },
+  "buttons": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "add": "添加",
+    "search": "搜索",
+    "submit": "提交",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "confirm": "确认",
+    "close": "关闭"
+  },
+  "messages": {
+    "success": "操作成功",
+    "error": "操作失败",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "confirmDelete": "确认删除此项？",
+    "saved": "已保存",
+    "copied": "已复制",
+    "processing": "处理中...",
+    "completed": "已完成",
+    "failed": "失败",
+    "retry": "重试",
+    "refresh": "刷新"
+  },
+  "status": {
+    "active": "活跃",
+    "inactive": "非活跃",
+    "pending": "处理中",
+    "completed": "已完成",
+    "failed": "失败",
+    "inProgress": "进行中"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}} 分钟前",
+    "hoursAgo": "{{count}} 小时前",
+    "daysAgo": "{{count}} 天前",
+    "monthsAgo": "{{count}} 个月前"
+  },
+  "common": {
+    "user": "用户",
+    "locale": "zh-CN"
+  },
+  "actions": {
+    "query": "查询",
+    "refresh": "刷新",
+    "delete": "删除",
+    "edit": "编辑",
+    "view": "查看",
+    "copy": "复制",
+    "download": "下载",
+    "upload": "上传",
+    "export": "导出",
+    "import": "导入"
+  },
+  "dialogs": {
+    "deleteRepository": {
+      "title": "删除仓库？",
+      "description": "确定要删除仓库 {{name}} 吗？",
+      "warning": "此操作无法撤销。所有相关数据将被永久删除。"
+    },
+    "deleteCredentials": {
+      "title": "删除 Git 凭据？",
+      "description": "确定要删除凭据 {{name}} ({{platform}}) 吗？",
+      "warning": "此操作无法撤销。删除后该凭据将无法使用。"
+    },
+    "confirmAction": {
+      "title": "确认操作",
+      "description": "确定要执行此操作吗？",
+      "warning": "请确认您的操作。"
+    }
+  },
+  "toast": {
+    "refreshStarted": {
+      "title": "刷新已开始",
+      "description": "仓库 {{name}} 刷新已开始"
+    },
+    "refreshFailed": {
+      "title": "刷新失败",
+      "description": "启动刷新失败"
+    },
+    "deleteSuccessful": {
+      "title": "删除成功",
+      "description": "仓库 {{name}} 已成功删除"
+    },
+    "deleteFailed": {
+      "title": "删除失败",
+      "description": "删除操作失败"
+    },
+    "operationSuccessful": {
+      "title": "操作成功",
+      "description": "操作已成功完成"
+    },
+    "operationFailed": {
+      "title": "操作失败",
+      "description": "操作执行失败"
+    },
+    "unknownError": "未知错误",
+    "configDeleteSuccessful": {
+      "title": "删除成功",
+      "description": "配置已成功删除"
+    },
+    "configDeleteFailed": {
+      "title": "删除失败",
+      "description": "删除配置失败"
+    },
+    "configUpdateSuccessful": {
+      "title": "更新成功",
+      "description": "配置已成功更新"
+    },
+    "configUpdateFailed": {
+      "title": "更新失败",
+      "description": "更新配置失败"
+    },
+    "validationError": {
+      "title": "验证错误",
+      "description": "请填写所有必填字段"
+    },
+    "configNotFound": {
+      "title": "错误",
+      "description": "未找到配置"
+    },
+    "duplicateName": {
+      "title": "配置名称重复",
+      "description": "名称 \"{{name}}\" 已被使用。请选择不同的名称。"
+    },
+    "duplicateUrl": {
+      "title": "基础 URL 重复",
+      "description": "基础 URL \"{{url}}\" 已被配置。请使用不同的 URL。"
+    }
+  }
+}

@@ -23,11 +23,14 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.9.7",
+    "i18next": "^25.3.2",
+    "i18next-browser-languagedetector": "^8.2.0",
     "lucide-react": "^0.503.0",
     "motion": "^12.23.12",
     "next": "15.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-i18next": "^15.6.1",
     "tailwind-merge": "^3.2.0"
   },
   "devDependencies": {
@@ -36,6 +39,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-i18next": "^7.8.3",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
     "tailwindcss": "^4",

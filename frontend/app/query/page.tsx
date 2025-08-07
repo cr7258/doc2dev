@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from "next/navigation";
 import { Github, Clock, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Copy } from "lucide-react";
 import { getRelativeTime} from "@/utils/date";
@@ -18,6 +19,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RelativeTime } from "@/components/ui/relative-time";
 
 
 interface DocumentItem {
@@ -46,6 +49,7 @@ interface RepositoryData {
 // Time and number formatting functions moved to utils/date-utils.ts
 
 function QueryPageContent() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -85,41 +89,11 @@ function QueryPageContent() {
 
   // Get status badge component like homepage
   const getStatusBadge = () => {
-    if (!repoData || !repoData.repo_status) {
-      return (
-        <Badge className="bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100">
-          Pending
-        </Badge>
-      );
-    }
-    
-    switch (repoData.repo_status) {
-      case 'completed':
-        return (
-          <Badge className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100">
-            Completed
-          </Badge>
-        );
-      case 'in_progress':
-        return (
-          <Badge className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
-            In Progress
-          </Badge>
-        );
-      case 'failed':
-        return (
-          <Badge className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100">
-            Failed
-          </Badge>
-        );
-      case 'pending':
-      default:
-        return (
-          <Badge className="bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100">
-            Pending
-          </Badge>
-        );
-    }
+    return (
+      <StatusBadge
+        status={repoData?.repo_status || 'pending'}
+      />
+    );
   };
 
   // Build DocumentItem based on actual data
@@ -129,7 +103,7 @@ function QueryPageContent() {
     description: repoData?.description || "A GitHub repository for documentation queries and code reference",
     tokens: repoData ? repoData.tokens.toLocaleString() : "0",
     snippets: repoData ? repoData.snippets.toLocaleString() : "0",
-    updatedAt: repoData?.updated_at ? getRelativeTime(repoData.updated_at) : ""
+    updatedAt: repoData?.updated_at || ""
   };
   
   // Get repository data
@@ -180,8 +154,8 @@ function QueryPageContent() {
   const handleRefreshRepo = async () => {
     if (!repoData) {
       toast({
-        title: "Refresh Failed",
-        description: "Repository data not available for refresh",
+        title: t('toast.refreshFailed.title'),
+        description: t('toast.refreshFailed.description'),
         variant: "destructive",
         duration: 3000,
       });
@@ -206,8 +180,8 @@ function QueryPageContent() {
       if (response.ok) {
         const data = await response.json();
         toast({
-          title: "Refresh Started",
-          description: data.message || `Repository ${repoData.name} refresh started`,
+          title: t('toast.refreshStarted.title'),
+          description: data.message || t('toast.refreshStarted.description', { name: repoData.name }),
           variant: "success",
           duration: 3000,
         });
@@ -245,8 +219,8 @@ function QueryPageContent() {
       } else {
         const error = await response.json();
         toast({
-          title: "Refresh Failed",
-          description: error.detail || 'Failed to start refresh',
+          title: t('toast.refreshFailed.title'),
+          description: error.detail || t('toast.refreshFailed.description'),
           variant: "destructive",
           duration: 5000,
         });
@@ -254,8 +228,8 @@ function QueryPageContent() {
     } catch (error) {
       console.error('Error refreshing repository:', error);
       toast({
-        title: "Refresh Failed",
-        description: error instanceof Error ? error.message : 'Unknown error',
+        title: t('toast.refreshFailed.title'),
+        description: error instanceof Error ? error.message : t('toast.unknownError'),
         variant: "destructive",
         duration: 5000,
       });
@@ -346,7 +320,7 @@ function QueryPageContent() {
                 disabled={!repoData}
               >
                 <RefreshCw className="h-4 w-4" />
-                Refresh
+                {t('components:repositoryCard.refresh')}
               </Button>
             </div>
           </CardHeader>
@@ -355,16 +329,21 @@ function QueryPageContent() {
               {getStatusBadge()}
               <Badge variant="outline" className="flex items-center gap-1.5 bg-blue-50 px-3 py-1 text-blue-700 border-blue-100">
                 <FileText className="h-3.5 w-3.5" />
-                <span>{documentItem.tokens} tokens</span>
+                <span>{documentItem.tokens} {t('pages:query.tokens')}</span>
               </Badge>
               <Badge variant="outline" className="flex items-center gap-1.5 bg-purple-50 px-3 py-1 text-purple-700 border-purple-100">
                 <FileJson className="h-3.5 w-3.5" />
-                <span>{documentItem.snippets} snippets</span>
+                <span>{documentItem.snippets} {t('pages:query.snippets')}</span>
               </Badge>
-              <Badge variant="outline" className="flex items-center gap-1.5 bg-green-50 px-3 py-1 text-green-700 border-green-100">
+              <div className="flex items-center gap-1.5 bg-green-50 px-3 py-1 text-green-700 border border-green-100 rounded-md">
                 <Clock className="h-3.5 w-3.5" />
-                <span>Updated {documentItem.updatedAt}</span>
-              </Badge>
+                <span>{t('pages:query.lastUpdated')} </span>
+                <RelativeTime
+                  dateString={documentItem.updatedAt}
+                  className="bg-transparent border-none p-0 text-green-700"
+                  showTooltip={true}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -374,7 +353,7 @@ function QueryPageContent() {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <FileCode className="h-5 w-5 text-blue-500" />
-            Document Query
+            {t('pages:query.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -388,7 +367,7 @@ function QueryPageContent() {
             
             <div className="mb-6">
               <label htmlFor="query" className="block text-sm font-medium mb-2">
-                Query Content
+                {t('pages:query.title')}
               </label>
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
@@ -398,7 +377,7 @@ function QueryPageContent() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                    placeholder="Enter your question..."
+                    placeholder={t('pages:query.queryPlaceholder')}
                     required
                   />
                   {query && (
@@ -424,9 +403,9 @@ function QueryPageContent() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Querying...
+                      {t('pages:query.querying')}
                     </>
-                  ) : "Query"}
+                  ) : t('pages:query.queryButton')}
                 </Button>
               </div>
             </div>
@@ -438,7 +417,7 @@ function QueryPageContent() {
         <div className="flex justify-center items-center py-10">
           <div className="flex flex-col items-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Querying documents, please wait...</p>
+            <p className="mt-4 text-gray-600">{t('pages:query.queryingDocuments')}</p>
           </div>
         </div>
       )}
@@ -452,7 +431,7 @@ function QueryPageContent() {
             <div className="flex justify-between items-center">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-500" />
-                Query Results
+                {t('pages:query.queryResults')}
               </CardTitle>
               <Button 
                 variant="ghost" 
@@ -496,7 +475,7 @@ function QueryPageContent() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
             </svg>
-            Back to Homepage
+            {t('pages:query.backToHome')}
           </Link>
         </Button>
       </div>
@@ -511,16 +490,23 @@ function QueryPageContent() {
   );
 }
 
+// Loading fallback component with translation support
+function QueryPageFallback() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+        <p className="text-lg">{t('messages.loading')}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function QueryPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-lg">Loading...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<QueryPageFallback />}>
       <QueryPageContent />
     </Suspense>
   )

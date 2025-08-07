@@ -1,0 +1,142 @@
+{
+  "nav": {
+    "home": "Home",
+    "query": "Query",
+    "settings": "Settings"
+  },
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "close": "Close"
+  },
+  "messages": {
+    "success": "Operation successful",
+    "error": "Operation failed",
+    "loading": "Loading...",
+    "noData": "No data available",
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "saved": "Saved",
+    "copied": "Copied",
+    "processing": "Processing...",
+    "completed": "Completed",
+    "failed": "Failed",
+    "retry": "Retry",
+    "refresh": "Refresh"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed",
+    "failed": "Failed",
+    "inProgress": "In Progress"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago",
+    "daysAgo": "{{count}} days ago",
+    "monthsAgo": "{{count}} months ago"
+  },
+  "common": {
+    "user": "User",
+    "locale": "en-US"
+  },
+  "actions": {
+    "query": "Query",
+    "refresh": "Refresh",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "copy": "Copy",
+    "download": "Download",
+    "upload": "Upload",
+    "export": "Export",
+    "import": "Import"
+  },
+  "dialogs": {
+    "deleteRepository": {
+      "title": "Delete Repository?",
+      "description": "Are you sure you want to delete repository {{name}}?",
+      "warning": "This action cannot be undone. All related data will be permanently deleted."
+    },
+    "deleteCredentials": {
+      "title": "Delete Git Credentials?",
+      "description": "Are you sure you want to delete credentials {{name}} ({{platform}})?",
+      "warning": "This action cannot be undone. The credentials will no longer be usable after deletion."
+    },
+    "confirmAction": {
+      "title": "Confirm Action",
+      "description": "Are you sure you want to perform this action?",
+      "warning": "Please confirm your action."
+    }
+  },
+  "toast": {
+    "refreshStarted": {
+      "title": "Refresh Started",
+      "description": "Repository {{name}} refresh started"
+    },
+    "refreshFailed": {
+      "title": "Refresh Failed",
+      "description": "Failed to start refresh"
+    },
+    "deleteSuccessful": {
+      "title": "Delete Successful",
+      "description": "Repository {{name}} has been successfully deleted"
+    },
+    "deleteFailed": {
+      "title": "Delete Failed",
+      "description": "Delete operation failed"
+    },
+    "operationSuccessful": {
+      "title": "Operation Successful",
+      "description": "Operation completed successfully"
+    },
+    "operationFailed": {
+      "title": "Operation Failed",
+      "description": "Operation execution failed"
+    },
+    "unknownError": "Unknown error",
+    "configDeleteSuccessful": {
+      "title": "Success",
+      "description": "Configuration deleted successfully"
+    },
+    "configDeleteFailed": {
+      "title": "Error",
+      "description": "Failed to delete configuration"
+    },
+    "configUpdateSuccessful": {
+      "title": "Success",
+      "description": "Configuration updated successfully"
+    },
+    "configUpdateFailed": {
+      "title": "Error",
+      "description": "Failed to update configuration"
+    },
+    "validationError": {
+      "title": "Validation Error",
+      "description": "Please fill in all required fields"
+    },
+    "configNotFound": {
+      "title": "Error",
+      "description": "Configuration not found"
+    },
+    "duplicateName": {
+      "title": "Duplicate Configuration Name",
+      "description": "The name \"{{name}}\" is already used. Please choose a different name."
+    },
+    "duplicateUrl": {
+      "title": "Duplicate Base URL",
+      "description": "The base URL \"{{url}}\" is already configured. Please use a different URL."
+    }
+  }
+}

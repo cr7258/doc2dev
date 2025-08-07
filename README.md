@@ -2,6 +2,30 @@
 
 Doc2Dev 可以为 LLM 和 AI 编程助手提供实时的文档查询。Doc2Dev 可对任意 GitHub 仓库进行文档索引与查询，并通过 MCP 轻松集成至 Cursor、Windsurf 等 AI 编程工具。
 
+## 🌍 多语言支持计划
+
+本项目正在实施多语言支持，将提供中文和英文两种界面语言：
+
+### 📋 前端国际化方案
+
+**技术选型：** `next-intl` (Next.js 15 推荐的现代化 i18n 解决方案)
+
+**主要特性：**
+- ✅ 完美支持 Next.js App Router
+- ✅ 类型安全的翻译管理
+- ✅ 服务端渲染支持
+- ✅ SEO 友好的多语言 URL
+- ✅ 用户语言偏好记忆
+
+**实施计划：**
+1. 安装和配置 next-intl
+2. 创建翻译文件结构 (`/messages/en.json`, `/messages/zh.json`)
+3. 重构路由支持语言前缀 (`/en/`, `/zh/`)
+4. 实现语言切换组件
+5. 翻译所有 UI 文本
+6. 用户语言偏好功能
+7. 测试和优化
+
 ![](https://chengzw258.oss-cn-beijing.aliyuncs.com/Article/202505051236933.png)
 
 ## 开发者面临的痛点

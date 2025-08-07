@@ -5,6 +5,7 @@ import SearchBar from "./search";
 import { useAuth } from "@/lib/auth";
 import { GitHubLoginButton } from "./github-login";
 import { GitHubAvatarDropdown } from '@/components/ui/dropdown';
+import { LanguageSwitcher } from './language-switcher';
 
 interface NavbarProps {
   showSearch?: boolean;
@@ -30,13 +31,16 @@ export function Navbar({ showSearch = true, alignment = "center" }: NavbarProps)
         </div>
         
         <div className="flex items-center gap-4">
+          {/* Language switcher */}
+          <LanguageSwitcher />
+
           {/* Authentication section */}
           {!isLoading && (
             <div className="flex items-center gap-2">
               {user ? (
-                <GitHubAvatarDropdown 
-                  user={user} 
-                  onLogout={handleLogout} 
+                <GitHubAvatarDropdown
+                  user={user}
+                  onLogout={handleLogout}
                 />
               ) : (
                 <GitHubLoginButton />

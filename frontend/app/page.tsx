@@ -2,11 +2,14 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from 'react-i18next';
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TableRowDropdown } from "@/components/ui/dropdown";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RelativeTime } from "@/components/ui/relative-time";
 import {
   Table,
   TableBody,
@@ -77,6 +80,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, className }) 
 };
 
 export default function Home() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortColumn, setSortColumn] = useState<keyof Repository>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -122,8 +126,8 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         toast({
-          title: "Refresh Started",
-          description: data.message || `Repository ${repo.name} refresh started`,
+          title: t('toast.refreshStarted.title'),
+          description: data.message || t('toast.refreshStarted.description', { name: repo.name }),
           variant: "success",
           duration: 3000,
         });
@@ -132,8 +136,8 @@ export default function Home() {
       } else {
         const error = await response.json();
         toast({
-          title: "Refresh Failed",
-          description: error.detail || 'Failed to start refresh',
+          title: t('toast.refreshFailed.title'),
+          description: error.detail || t('toast.refreshFailed.description'),
           variant: "destructive",
           duration: 5000,
         });
@@ -141,8 +145,8 @@ export default function Home() {
     } catch (error) {
       console.error('Error refreshing repository:', error);
       toast({
-        title: "Refresh Failed",
-        description: error instanceof Error ? error.message : 'Unknown error',
+        title: t('toast.refreshFailed.title'),
+        description: error instanceof Error ? error.message : t('toast.unknownError'),
         variant: "destructive",
         duration: 5000,
       });
@@ -165,8 +169,8 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         toast({
-          title: "Delete Successful",
-          description: data.message || `Repository ${repoToDelete.name} has been successfully deleted`,
+          title: t('toast.deleteSuccessful.title'),
+          description: data.message || t('toast.deleteSuccessful.description', { name: repoToDelete.name }),
           variant: "success",
           duration: 3000,
         });
@@ -175,8 +179,8 @@ export default function Home() {
       } else {
         const error = await response.json();
         toast({
-          title: "Delete Failed",
-          description: error.detail || 'Unknown error',
+          title: t('toast.deleteFailed.title'),
+          description: error.detail || t('toast.unknownError'),
           variant: "destructive",
           duration: 5000,
         });
@@ -184,8 +188,8 @@ export default function Home() {
     } catch (error) {
       console.error('Error deleting repository:', error);
       toast({
-        title: "Delete Failed",
-        description: error instanceof Error ? error.message : 'Unknown error',
+        title: t('toast.deleteFailed.title'),
+        description: error instanceof Error ? error.message : t('toast.unknownError'),
         variant: "destructive",
         duration: 5000,
       });
@@ -242,8 +246,8 @@ export default function Home() {
             repo_url: repo.repo_url,
             tokens: repo.tokens || 0,
             snippets: repo.snippets || 0,
-            // Use relative time calculation function
-            lastUpdated: getRelativeTime(repo.updated_at),
+            // Keep original timestamp for component
+            lastUpdated: repo.updated_at,
             // Save original timestamp for sorting and detailed display
             updatedAt: repo.updated_at,
             createdAt: repo.created_at,
@@ -346,29 +350,29 @@ export default function Home() {
 
         <div className="mb-10 text-center max-w-5xl mx-auto">
           <h1 className="text-3xl font-bold tracking-tight mb-4">
-            Up-to-date docs for AI code assistants
+            {t('pages:home.title')}
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-            Index and query GitHub/GitLab repositories, integrating with tools like Cursor, Windsurf via MCP. Eliminate code hallucinations and make AI write more reliable code.
+            {t('pages:home.description')}
           </p>
         </div>
         
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto mb-6">
           <StatsCard
-            title="Indexed Repositories"
+            title={t('pages:home.stats.indexedRepositories')}
             value={repositories.length}
             icon={<Database className="w-5 h-5 text-blue-500" />}
             className="border-blue-100"
           />
           <StatsCard
-            title="Total Tokens"
+            title={t('pages:home.stats.totalTokens')}
             value={totalTokens}
             icon={<FileText className="w-5 h-5 text-green-500" />}
             className="border-green-100"
           />
           <StatsCard
-            title="Total Snippets"
+            title={t('pages:home.stats.totalSnippets')}
             value={totalSnippets}
             icon={<FileJson className="w-5 h-5 text-purple-500" />}
             className="border-purple-100"
@@ -382,7 +386,7 @@ export default function Home() {
               <div className="relative w-64">
                 <Input
                   className="pl-9 pr-4 bg-white border-border w-full cursor-pointer"
-                  placeholder="Search repositories..."
+                  placeholder={t('pages:home.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   type="search"
@@ -390,14 +394,14 @@ export default function Home() {
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
                   <Search size={16} strokeWidth={2} />
                 </div>
-                <button type="submit" className="sr-only">Search</button>
+                <button type="submit" className="sr-only">{t('buttons.search')}</button>
               </div>
             </form>
           </div>
           <Link href="/download">
             <Button className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">
               <Plus className="mr-1 h-4 w-4" />
-              Add Git Repository
+              {t('pages:home.addRepository')}
             </Button>
           </Link>
         </div>
@@ -406,7 +410,7 @@ export default function Home() {
           <div className="flex items-center justify-center h-64 bg-white rounded-md border max-w-5xl mx-auto">
             <div className="flex flex-col items-center gap-2">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-              <p className="text-muted-foreground">Loading repository data...</p>
+              <p className="text-muted-foreground">{t('pages:home.loading')}</p>
             </div>
           </div>
         ) : error ? (
@@ -415,14 +419,14 @@ export default function Home() {
               <div className="rounded-full bg-destructive/10 p-3">
                 <ExternalLink className="h-6 w-6" />
               </div>
-              <p>Failed to load repository data</p>
+              <p>{t('pages:home.error')}</p>
               <p className="text-sm text-muted-foreground">{error}</p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => window.location.reload()}
               >
-                Retry
+                {t('pages:home.tryAgain')}
               </Button>
             </div>
           </div>
@@ -436,7 +440,7 @@ export default function Home() {
                     onClick={() => handleSort("name")}
                   >
                     <div className="flex items-center">
-                      Name
+                      {t('pages:home.table.name')}
                       {sortColumn === "name" && (
                         sortDirection === "asc" ?
                         <ChevronUp className="ml-1 h-4 w-4" /> :
@@ -444,13 +448,13 @@ export default function Home() {
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="w-[160px]">Repository</TableHead>
+                  <TableHead className="w-[160px]">{t('pages:home.table.repository')}</TableHead>
                   <TableHead
                     className="w-[80px] cursor-pointer"
                     onClick={() => handleSort("tokens")}
                   >
                     <div className="flex items-center">
-                      Tokens
+                      {t('pages:home.table.tokens')}
                       {sortColumn === "tokens" && (
                         sortDirection === "asc" ?
                         <ChevronUp className="ml-1 h-4 w-4" /> :
@@ -463,7 +467,7 @@ export default function Home() {
                     onClick={() => handleSort("snippets")}
                   >
                     <div className="flex items-center">
-                      Snippets
+                      {t('pages:home.table.snippets')}
                       {sortColumn === "snippets" && (
                         sortDirection === "asc" ?
                         <ChevronUp className="ml-1 h-4 w-4" /> :
@@ -476,7 +480,7 @@ export default function Home() {
                     onClick={() => handleSort("lastUpdated")}
                   >
                     <div className="flex items-center">
-                      Last Updated
+                      {t('pages:home.table.lastUpdated')}
                       {sortColumn === "lastUpdated" && (
                         sortDirection === "asc" ?
                         <ChevronUp className="ml-1 h-4 w-4" /> :
@@ -484,8 +488,8 @@ export default function Home() {
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="w-[80px] text-center">Status</TableHead>
-                  <TableHead className="w-[60px] text-center">Actions</TableHead>
+                  <TableHead className="w-[80px] text-center">{t('pages:home.table.status')}</TableHead>
+                  <TableHead className="w-[60px] text-center">{t('pages:home.table.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -532,35 +536,15 @@ export default function Home() {
                       <TableCell>{formatNumber(repo.tokens)}</TableCell>
                       <TableCell>{formatNumber(repo.snippets)}</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className="font-normal"
-                          title={repo.updatedAt ? formatDateTime(repo.updatedAt) : ''}
-                        >
-                          {repo.lastUpdated}
-                        </Badge>
+                        <RelativeTime
+                          dateString={repo.lastUpdated}
+                          showTooltip={true}
+                        />
                       </TableCell>
                       <TableCell className="text-center">
-                        {repo.repo_status === "in_progress" && (
-                          <Badge className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
-                            In Progress
-                          </Badge>
-                        )}
-                        {repo.repo_status === "completed" && (
-                          <Badge className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100">
-                            Completed
-                          </Badge>
-                        )}
-                        {repo.repo_status === "failed" && (
-                          <Badge className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100">
-                            Failed
-                          </Badge>
-                        )}
-                        {(repo.repo_status === "pending" || !repo.repo_status) && (
-                          <Badge className="bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100">
-                            Pending
-                          </Badge>
-                        )}
+                        <StatusBadge
+                          status={repo.repo_status || 'pending'}
+                        />
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
@@ -590,7 +574,7 @@ export default function Home() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      No repositories found.
+                      {t('pages:home.noRepositories')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -604,20 +588,20 @@ export default function Home() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Repository?</AlertDialogTitle>
+            <AlertDialogTitle>{t('dialogs.deleteRepository.title')}</AlertDialogTitle>
             <AlertDialogDescription>
               {repoToDelete && (
                 <>
-                  Are you sure you want to delete repository <span className="font-medium">{repoToDelete.name}</span>?
-                  <span className="block mt-2 text-red-500">This action cannot be undone. All related data will be permanently deleted.</span>
+                  {t('dialogs.deleteRepository.description', { name: repoToDelete.name })}
+                  <span className="block mt-2 text-red-500">{t('dialogs.deleteRepository.warning')}</span>
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">{t('buttons.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRepo} className="bg-red-500 hover:bg-red-600 cursor-pointer">
-              Delete
+              {t('buttons.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

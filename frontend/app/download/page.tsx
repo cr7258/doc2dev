@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -14,6 +15,7 @@ import Footer from "@/components/footer";
 import { useAuth } from "@/lib/auth";
 
 export default function DownloadPage() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [repoUrl, setRepoUrl] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("github"); // Default to GitHub
@@ -186,10 +188,10 @@ export default function DownloadPage() {
               ) : (
                 <Github className="h-5 w-5" />
               )}
-              Add New Repository
+              {t('pages:download.title')}
             </CardTitle>
             <CardDescription>
-              Enter {selectedPlatform === "gitlab" ? "GitLab" : "GitHub"} repository URL, the system will automatically download and index the documentation
+              {t('pages:download.description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -198,11 +200,11 @@ export default function DownloadPage() {
                 {/* Platform selection dropdown */}
                 <div className="space-y-2">
                   <label htmlFor="platform" className="text-sm font-medium text-gray-700">
-                    Select Git Platform
+                    {t('pages:download.platformLabel')}
                   </label>
                   <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select Platform" />
+                      <SelectValue placeholder={t('pages:download.platformLabel')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="github">
@@ -224,7 +226,7 @@ export default function DownloadPage() {
                 {/* Repository URL input */}
                 <div className="space-y-2">
                   <label htmlFor="repoUrl" className="text-sm font-medium text-gray-700">
-                    Repository URL
+                    {t('pages:download.urlLabel')}
                   </label>
                   <div className="flex items-center space-x-2">
                     <div className="relative flex-1">
@@ -234,11 +236,7 @@ export default function DownloadPage() {
                         value={repoUrl}
                         onChange={(e) => setRepoUrl(e.target.value)}
                         className="px-4 bg-white border-border w-full"
-                        placeholder={
-                          selectedPlatform === "gitlab"
-                            ? "https://gitlab.com/<org>/<repo>"
-                            : "https://github.com/<org>/<repo>"
-                        }
+                        placeholder={t('pages:download.urlPlaceholder')}
                         required
                       />
                     </div>
@@ -247,7 +245,7 @@ export default function DownloadPage() {
                       disabled={loading}
                       className="bg-blue-500 hover:bg-blue-600 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {loading ? "Processing..." : "Download & Index"}
+                      {loading ? t('messages.processing') : t('pages:download.downloadButton')}
                     </Button>
                   </div>
                 </div>
@@ -362,15 +360,15 @@ export default function DownloadPage() {
         {/* 使用说明 */}
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
-            <CardTitle>Usage Instructions</CardTitle>
+            <CardTitle>{t('pages:download.usageInstructions')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ol className="list-decimal pl-5 space-y-2 text-sm">
-              <li>Enter the complete GitHub repository URL</li>
-              <li>Click the“Download & Index”button</li>
-              <li>Wait for the system to download and process Markdown files in the repository</li>
-              <li>After processing is complete, you can view the newly added library on the homepage</li>
-              <li>Click on library cards or use the query page to search documentation</li>
+              <li>{t('pages:download.step1')}</li>
+              <li>{t('pages:download.step2')}</li>
+              <li>{t('pages:download.step3')}</li>
+              <li>{t('pages:download.step4')}</li>
+              <li>{t('pages:download.step5')}</li>
             </ol>
           </CardContent>
         </Card>

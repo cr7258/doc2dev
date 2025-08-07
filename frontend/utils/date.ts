@@ -2,6 +2,8 @@
  * Date and time processing utility functions
  */
 
+import i18n from '@/lib/i18n';
+
 /**
  * Format date time to local time
  * @param dateString Date time string (UTC time returned from backend)
@@ -55,6 +57,41 @@ export function getRelativeTime(dateString: string): string {
   } else {
     // Show date if more than 30 days
     return utcDate.toLocaleDateString('en-US');
+  }
+}
+
+/**
+ * Calculate relative time with i18n support
+ * @param dateString Date time string (UTC time returned from backend)
+ * @returns Relative time string with i18n
+ */
+export function getRelativeTimeI18n(dateString: string): string {
+  if (!dateString) return '-';
+
+  // Parse backend returned time string as UTC time
+  // Add 'Z' to indicate this is UTC time
+  const utcDate = new Date(dateString + 'Z');
+  const now = new Date();
+
+  // Calculate time difference (milliseconds)
+  const timeDiff = now.getTime() - utcDate.getTime();
+  const secondsDiff = Math.floor(timeDiff / 1000);
+
+  // Convert to relative time with i18n support
+  if (secondsDiff < 60) {
+    return i18n.t('time.justNow');
+  } else if (secondsDiff < 3600) {
+    const minutes = Math.floor(secondsDiff / 60);
+    return i18n.t('time.minutesAgo', { count: minutes });
+  } else if (secondsDiff < 86400) {
+    const hours = Math.floor(secondsDiff / 3600);
+    return i18n.t('time.hoursAgo', { count: hours });
+  } else if (secondsDiff < 2592000) {
+    const days = Math.floor(secondsDiff / 86400);
+    return i18n.t('time.daysAgo', { count: days });
+  } else {
+    // Show date if more than 30 days
+    return utcDate.toLocaleDateString(i18n.language === 'zh' ? 'zh-CN' : 'en-US');
   }
 }
 

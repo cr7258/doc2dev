@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
+import { useTranslation } from 'react-i18next';
 import {
   Settings,
   UserCircle,
@@ -56,6 +57,7 @@ const staggerVariants = {
 };
 
 export function SettingsSidebar() {
+  const { t } = useTranslation();
   const [isCollapsed] = useState(false);
   const pathname = usePathname();
   
@@ -80,7 +82,7 @@ export function SettingsSidebar() {
                 <Settings className="h-5 w-5" />
                 <motion.div variants={variants}>
                   {!isCollapsed && (
-                    <p className="text-sm font-medium">Settings</p>
+                    <p className="text-sm font-medium">{t('common:nav.settings')}</p>
                   )}
                 </motion.div>
               </div>
@@ -101,7 +103,7 @@ export function SettingsSidebar() {
                       <UserCircle className="h-4 w-4" />
                       <motion.li variants={variants}>
                         {!isCollapsed && (
-                          <p className="ml-2 text-sm font-medium">Profile</p>
+                          <p className="ml-2 text-sm font-medium">{t('pages:profile.title')}</p>
                         )}
                       </motion.li>
                     </Link>
@@ -117,7 +119,7 @@ export function SettingsSidebar() {
                       <GitBranch className="h-4 w-4" />
                       <motion.li variants={variants}>
                         {!isCollapsed && (
-                          <p className="ml-2 text-sm font-medium">Git Credentials</p>
+                          <p className="ml-2 text-sm font-medium">{t('pages:gitCredentials.addTitle')}</p>
                         )}
                       </motion.li>
                     </Link>

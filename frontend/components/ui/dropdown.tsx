@@ -5,6 +5,7 @@ import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronRight, Circle, Github, LogOut, Settings, MoreHorizontal, Search, Trash2, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -647,16 +648,18 @@ interface TableRowDropdownProps {
   showDelete?: boolean; // New prop to control delete visibility
 }
 
-const TableRowDropdown = ({ 
-  onQuery, 
+const TableRowDropdown = ({
+  onQuery,
   onRefresh,
-  onDelete, 
-  position, 
-  isOpen, 
+  onDelete,
+  position,
+  isOpen,
   onOpenChange,
   showDelete = true
 }: TableRowDropdownProps) => {
-  const dropdownStyle = position 
+  const { t } = useTranslation('common');
+
+  const dropdownStyle = position
     ? {
         position: 'fixed' as const,
         left: `${position.x}px`,
@@ -684,24 +687,24 @@ const TableRowDropdown = ({
       >
         <DropdownMenuItem onClick={onQuery}>
           <Search className="w-4 h-4" />
-          <span>Query</span>
+          <span>{t('actions.query')}</span>
         </DropdownMenuItem>
-        
+
         <DropdownMenuItem onClick={onRefresh}>
           <RotateCcw className="w-4 h-4" />
-          <span>Refresh</span>
+          <span>{t('actions.refresh')}</span>
         </DropdownMenuItem>
-        
+
         {showDelete && (
           <>
             <DropdownMenuSeparator />
-            
-            <DropdownMenuItem 
+
+            <DropdownMenuItem
               onClick={onDelete}
               className="text-red-600 focus:text-red-600 focus:bg-red-50"
             >
               <Trash2 className="w-4 h-4" />
-              <span>Delete</span>
+              <span>{t('actions.delete')}</span>
             </DropdownMenuItem>
           </>
         )}
@@ -722,6 +725,7 @@ interface GitHubAvatarDropdownProps {
 
 const GitHubAvatarDropdown = ({ user, onLogout }: GitHubAvatarDropdownProps) => {
   const router = useRouter();
+  const { t } = useTranslation('common');
 
   const handleSettingsClick = () => {
     router.push('/settings');
@@ -766,17 +770,17 @@ const GitHubAvatarDropdown = ({ user, onLogout }: GitHubAvatarDropdownProps) => 
         
         <DropdownMenuItem onClick={handleSettingsClick} className="cursor-pointer">
           <Settings className="w-4 h-4" />
-          <span>Settings</span>
+          <span>{t('nav.settings')}</span>
         </DropdownMenuItem>
-        
+
         <DropdownMenuSeparator />
-        
-        <DropdownMenuItem 
+
+        <DropdownMenuItem
           onClick={onLogout}
           className="text-red-600 focus:text-red-600 focus:bg-red-50"
         >
           <LogOut className="w-4 h-4" />
-          <span>Log out</span>
+          <span>{t('auth:logout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

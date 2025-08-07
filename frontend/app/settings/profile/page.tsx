@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Navbar } from '@/components/navbar';
 import Footer from '@/components/footer';
 import { SettingsSidebar } from '@/components/ui/settings-sidebar';
@@ -13,6 +14,7 @@ import { Camera } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [displayName, setDisplayName] = useState('Se7en');
   const [username, setUsername] = useState('cr7258');
@@ -35,36 +37,36 @@ export default function ProfilePage() {
           <div className="space-y-8">
             {/* Header */}
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-              <p className="text-gray-600 mt-1">Manage how others see you on the platform</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t('pages:profile.title')}</h1>
+              <p className="text-gray-600 mt-1">{t('pages:profile.description')}</p>
             </div>
 
             {/* Basic Information */}
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic information</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('pages:profile.basicInfo')}</h2>
 
                 {/* Avatar Section */}
                 <div className="flex items-start gap-4 mb-6">
                   <Avatar className="w-16 h-16">
-                    <AvatarImage src={user?.avatar_url} alt={user?.username || 'User'} />
+                    <AvatarImage src={user?.avatar_url} alt={user?.username || t('common.user')} />
                     <AvatarFallback className="text-lg">
-                      {user?.username?.charAt(0) || 'U'}
+                      {user?.username?.charAt(0) || t('common.user').charAt(0)}
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="flex-1">
                     <Button variant="outline" className="mb-2">
                       <Camera className="w-4 h-4 mr-2" />
-                      Change Avatar
+                      {t('pages:profile.changeAvatar')}
                     </Button>
-                    <p className="text-sm text-gray-500">Or drag and drop an image anywhere on the page</p>
+                    <p className="text-sm text-gray-500">{t('pages:profile.dragDropImage')}</p>
                   </div>
                 </div>
 
                 {/* Display Name */}
                 <div className="space-y-2 mb-4">
-                  <Label htmlFor="displayName" className="text-sm font-medium">Display Name</Label>
+                  <Label htmlFor="displayName" className="text-sm font-medium">{t('pages:profile.displayName')}</Label>
                   <Input
                     id="displayName"
                     value={displayName}
@@ -75,7 +77,7 @@ export default function ProfilePage() {
 
                 {/* Username */}
                 <div className="space-y-2 mb-4">
-                  <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+                  <Label htmlFor="username" className="text-sm font-medium">{t('pages:profile.username')}</Label>
                   <Input
                     id="username"
                     value={username}
@@ -93,39 +95,39 @@ export default function ProfilePage() {
                     onChange={(e) => setUseCustomUsername(e.target.checked)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <Label htmlFor="useCustomUsername" className="text-sm">Use custom username</Label>
+                  <Label htmlFor="useCustomUsername" className="text-sm">{t('pages:profile.useCustomUsername')}</Label>
                 </div>
 
                 {/* Bio */}
                 <div className="space-y-2">
-                  <Label htmlFor="bio" className="text-sm font-medium">Bio</Label>
+                  <Label htmlFor="bio" className="text-sm font-medium">{t('pages:profile.bio')}</Label>
                   <textarea
                     id="bio"
-                    placeholder="Tell us about yourself"
+                    placeholder={t('pages:profile.bioPlaceholder')}
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     maxLength={bioCharacterLimit}
                     className="w-full min-h-[100px] resize-none flex rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
-                  <p className="text-sm text-gray-500">{remainingChars} characters remaining</p>
+                  <p className="text-sm text-gray-500">{remainingChars} {t('pages:profile.charactersRemaining')}</p>
                 </div>
               </div>
             </div>
 
             {/* Social Links */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900">Social links</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('pages:profile.socialLinks')}</h2>
 
               {/* Website */}
               <div className="space-y-2">
-                <Label htmlFor="website" className="text-sm font-medium">Website</Label>
+                <Label htmlFor="website" className="text-sm font-medium">{t('pages:profile.website')}</Label>
                 <div className="flex">
                   <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">
                     https://
                   </span>
                   <Input
                     id="website"
-                    placeholder="yourwebsite.com"
+                    placeholder={t('pages:profile.websitePlaceholder')}
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     className="rounded-l-none"
@@ -135,14 +137,14 @@ export default function ProfilePage() {
 
               {/* GitHub URL */}
               <div className="space-y-2">
-                <Label htmlFor="github" className="text-sm font-medium">GitHub URL</Label>
+                <Label htmlFor="github" className="text-sm font-medium">{t('pages:profile.githubUrl')}</Label>
                 <div className="flex">
                   <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">
                     https://
                   </span>
                   <Input
                     id="github"
-                    placeholder="github.com/username"
+                    placeholder={t('pages:profile.githubPlaceholder')}
                     value={githubUrl}
                     onChange={(e) => setGithubUrl(e.target.value)}
                     className="rounded-l-none"
@@ -152,14 +154,14 @@ export default function ProfilePage() {
 
               {/* Twitter URL */}
               <div className="space-y-2">
-                <Label htmlFor="twitter" className="text-sm font-medium">Twitter URL</Label>
+                <Label htmlFor="twitter" className="text-sm font-medium">{t('pages:profile.twitterUrl')}</Label>
                 <div className="flex">
                   <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">
                     https://
                   </span>
                   <Input
                     id="twitter"
-                    placeholder="twitter.com/username"
+                    placeholder={t('pages:profile.twitterPlaceholder')}
                     value={twitterUrl}
                     onChange={(e) => setTwitterUrl(e.target.value)}
                     className="rounded-l-none"
@@ -170,7 +172,7 @@ export default function ProfilePage() {
 
             {/* Save Button */}
             <div className="flex justify-end pt-6">
-              <Button className="px-6">Save Changes</Button>
+              <Button className="px-6">{t('pages:profile.saveChanges')}</Button>
             </div>
           </div>
         </div>

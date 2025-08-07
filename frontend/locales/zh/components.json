@@ -1,0 +1,30 @@
+{
+  "languageSwitcher": {
+    "chinese": "中文",
+    "english": "English"
+  },
+  "repositoryCard": {
+    "viewDocs": "查看文档",
+    "lastUpdated": "最后更新",
+    "tokens": "令牌数",
+    "snippets": "代码片段",
+    "refresh": "刷新",
+    "delete": "删除",
+    "edit": "编辑",
+    "copy": "复制链接"
+  },
+  "authButton": {
+    "login": "登录",
+    "logout": "退出登录",
+    "profile": "个人资料"
+  },
+  "searchBar": {
+    "placeholder": "搜索...",
+    "noResults": "无搜索结果",
+    "searching": "搜索中..."
+  },
+  "footer": {
+    "copyright": "版权所有",
+    "poweredBy": "技术支持"
+  }
+}

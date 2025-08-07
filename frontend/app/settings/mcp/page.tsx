@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Navbar } from '@/components/navbar';
 import Footer from '@/components/footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,7 @@ import { Copy, Check, Hammer, CheckCircle, XCircle, ChevronDown, ChevronRight } 
 import { useAuth } from '@/lib/auth';
 
 export default function MCPPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -103,24 +105,24 @@ export default function MCPPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  MCP Server
+                  {t('pages:mcp.title')}
                   <Badge variant="secondary">Streamable HTTP</Badge>
                   {testResult === 'success' && (
                     <Badge variant="outline" className="text-green-600 border-green-600">
                       <CheckCircle className="h-3 w-3 mr-1" />
-                      Online
+                      {t('pages:mcp.online')}
                     </Badge>
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Access your document libraries in AI tools through Model Context Protocol.
+                  {t('pages:mcp.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {user ? (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="mcp-url" className="text-base font-semibold">Your MCP URL</Label>
+                      <Label htmlFor="mcp-url" className="text-base font-semibold">{t('pages:mcp.yourMcpUrl')}</Label>
                       <div className="flex gap-2">
                         <Input
                           id="mcp-url"
@@ -155,18 +157,18 @@ export default function MCPPage() {
                         </Button>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        This is your personal MCP server URL that can be used in MCP-compatible AI tools.
+                        {t('pages:mcp.personalUrl')}
                         {testResult === 'success' && (
-                          <span className="text-green-600 ml-2">✓ Connection test successful</span>
+                          <span className="text-green-600 ml-2">{t('pages:mcp.connectionSuccess')}</span>
                         )}
                         {testResult === 'error' && (
-                          <span className="text-red-600 ml-2">✗ Connection test failed</span>
+                          <span className="text-red-600 ml-2">{t('pages:mcp.connectionFailed')}</span>
                         )}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-base font-semibold">Integration Configuration Example</Label>
+                      <Label className="text-base font-semibold">{t('pages:mcp.configExample')}</Label>
                       <div className="relative">
                         <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
                           <code>{configExample}</code>
@@ -184,15 +186,15 @@ export default function MCPPage() {
                   </>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">Please sign in to get your MCP URL</p>
+                    <p className="text-muted-foreground">{t('pages:mcp.signInRequired')}</p>
                   </div>
                 )}
 
                 {user && (
                   <>
                     <div className="space-y-3">
-                      <Label className="text-base font-semibold">Installation</Label>
-                      <p className="text-sm text-muted-foreground">Click to copy config</p>
+                      <Label className="text-base font-semibold">{t('pages:mcp.installation')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('pages:mcp.clickToCopy')}</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div
                           className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
@@ -235,7 +237,7 @@ export default function MCPPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-base font-semibold">Available Tools</Label>
+                      <Label className="text-base font-semibold">{t('pages:mcp.availableTools')}</Label>
                       <div className="space-y-3">
                         <div className="p-3 bg-muted/50 rounded-lg">
                           <div
@@ -243,7 +245,7 @@ export default function MCPPage() {
                             onClick={() => toggleToolExpansion('search-library-id')}
                           >
                             <Badge variant="outline">search-library-id</Badge>
-                            <span className="text-sm font-medium">Search library IDs</span>
+                            <span className="text-sm font-medium">{t('pages:mcp.searchLibraryId')}</span>
                             <div className="ml-auto">
                               {expandedTools['search-library-id'] ? (
                                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -255,10 +257,10 @@ export default function MCPPage() {
                           {expandedTools['search-library-id'] && (
                             <div className="space-y-2">
                               <p className="text-xs text-muted-foreground">
-                                Search for library IDs by name within your accessible repositories
+                                {t('pages:mcp.searchLibraryDesc')}
                               </p>
                               <div className="text-xs">
-                                <span className="font-medium">Parameters:</span>
+                                <span className="font-medium">{t('pages:mcp.parameters')}:</span>
                                 <ul className="ml-4 mt-1 space-y-1">
                                   <li>• <code className="bg-muted px-1 rounded">libraryName</code> (string) - Name of the library to search for</li>
                                 </ul>
@@ -273,7 +275,7 @@ export default function MCPPage() {
                             onClick={() => toggleToolExpansion('get-library-docs')}
                           >
                             <Badge variant="outline">get-library-docs</Badge>
-                            <span className="text-sm font-medium">Get library documentation</span>
+                            <span className="text-sm font-medium">{t('pages:mcp.getLibraryDocs')}</span>
                             <div className="ml-auto">
                               {expandedTools['get-library-docs'] ? (
                                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -285,10 +287,10 @@ export default function MCPPage() {
                           {expandedTools['get-library-docs'] && (
                             <div className="space-y-2">
                               <p className="text-xs text-muted-foreground">
-                                Get documentation for a specific library accessible to the user
+                                {t('pages:mcp.getLibraryDocsDesc')}
                               </p>
                               <div className="text-xs">
-                                <span className="font-medium">Parameters:</span>
+                                <span className="font-medium">{t('pages:mcp.parameters')}:</span>
                                 <ul className="ml-4 mt-1 space-y-1">
                                   <li>• <code className="bg-muted px-1 rounded">libraryID</code> (string) - Table name in the vector database</li>
                                   <li>• <code className="bg-muted px-1 rounded">question</code> (string) - Question to ask about the library</li>

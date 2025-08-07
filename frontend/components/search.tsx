@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from 'react-i18next';
 import { Input } from "@/components/ui/input";
 import { Search, FileText, FileJson } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -21,7 +22,8 @@ interface SearchBarProps {
   className?: string;
 }
 
-export default function SearchBar({ placeholder = "Search repositories...", className = "w-64" }: SearchBarProps) {
+export default function SearchBar({ placeholder, className = "w-64" }: SearchBarProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -29,6 +31,9 @@ export default function SearchBar({ placeholder = "Search repositories...", clas
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { token } = useAuth();
+
+  // Use translation for default placeholder
+  const searchPlaceholder = placeholder || t('pages:home.searchPlaceholder');
 
   // Fetch repository data from backend API
   useEffect(() => {
@@ -133,7 +138,7 @@ export default function SearchBar({ placeholder = "Search repositories...", clas
         <div className={`relative ${className}`}>
           <Input
             className="pl-9 pr-4 bg-white border-border w-full cursor-pointer"
-            placeholder={placeholder}
+            placeholder={searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             type="search"
@@ -142,7 +147,7 @@ export default function SearchBar({ placeholder = "Search repositories...", clas
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
             <Search size={16} strokeWidth={2} />
           </div>
-          <button type="submit" className="sr-only">Search</button>
+          <button type="submit" className="sr-only">{t('buttons.search')}</button>
           
           {/* Auto-suggestion dropdown menu */}
           {showSuggestions && searchQuery.trim() !== "" && (
@@ -164,17 +169,17 @@ export default function SearchBar({ placeholder = "Search repositories...", clas
                     <div className="flex items-center text-xs text-gray-500 mt-1 gap-3">
                       <span className="flex items-center gap-1">
                         <FileText className="h-3 w-3" />
-                        <span className="font-bold text-gray-800">{repo.tokens.toLocaleString()}</span> tokens
+                        <span className="font-bold text-gray-800">{repo.tokens.toLocaleString()}</span> {t('components:repositoryCard.tokens')}
                       </span>
                       <span className="flex items-center gap-1">
                         <FileJson className="h-3 w-3" />
-                        <span className="font-bold text-gray-800">{repo.snippets.toLocaleString()}</span> snippets
+                        <span className="font-bold text-gray-800">{repo.snippets.toLocaleString()}</span> {t('components:repositoryCard.snippets')}
                       </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="p-2 text-gray-500 text-center">No matching results</div>
+                <div className="p-2 text-gray-500 text-center">{t('components:searchBar.noResults')}</div>
               )}
             </div>
           )}

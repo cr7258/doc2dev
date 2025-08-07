@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { SignInModal } from '@/components/ui/sign-in'
 
 
 export function GitHubLoginButton() {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const { } = useAuth()
@@ -36,7 +38,7 @@ export function GitHubLoginButton() {
 
   const handleGoogleLogin = () => {
     // Placeholder for Google login
-    alert('Google login coming soon!')
+    alert(t('auth:googleComingSoon'))
   }
 
   return (
@@ -46,7 +48,7 @@ export function GitHubLoginButton() {
         disabled={isLoading}
         className="cursor-pointer"
       >
-        {isLoading ? 'Connecting...' : 'Sign in'}
+        {isLoading ? t('auth:connecting') : t('components:authButton.login')}
       </Button>
 
       <SignInModal

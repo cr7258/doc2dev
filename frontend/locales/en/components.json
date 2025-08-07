@@ -1,0 +1,30 @@
+{
+  "languageSwitcher": {
+    "chinese": "中文",
+    "english": "English"
+  },
+  "repositoryCard": {
+    "viewDocs": "View Docs",
+    "lastUpdated": "Last Updated",
+    "tokens": "Tokens",
+    "snippets": "Snippets",
+    "refresh": "Refresh",
+    "delete": "Delete",
+    "edit": "Edit",
+    "copy": "Copy Link"
+  },
+  "authButton": {
+    "login": "Login",
+    "logout": "Logout",
+    "profile": "Profile"
+  },
+  "searchBar": {
+    "placeholder": "Search...",
+    "noResults": "No search results",
+    "searching": "Searching..."
+  },
+  "footer": {
+    "copyright": "Copyright",
+    "poweredBy": "Powered by"
+  }
+}

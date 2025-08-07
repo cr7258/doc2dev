@@ -3,8 +3,10 @@
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
+import { useTranslation } from 'react-i18next'
 
 function AuthCallbackContent() {
+  const { t } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { login } = useAuth()
@@ -21,7 +23,7 @@ function AuthCallbackContent() {
 
       if (!code) {
         setStatus('error')
-        setError('No authorization code received')
+        setError(t('auth.noAuthCode'))
         return
       }
 
@@ -68,7 +70,7 @@ function AuthCallbackContent() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-lg">Completing GitHub authentication...</p>
+          <p className="text-lg">{t('auth.completing')}</p>
         </div>
       </div>
     )
@@ -79,8 +81,8 @@ function AuthCallbackContent() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-green-600 text-6xl mb-4">✓</div>
-          <p className="text-lg text-green-600">Authentication successful!</p>
-          <p className="text-sm text-gray-600">Redirecting to home page...</p>
+          <p className="text-lg text-green-600">{t('auth.success')}</p>
+          <p className="text-sm text-gray-600">{t('auth.redirecting')}</p>
         </div>
       </div>
     )
@@ -91,13 +93,13 @@ function AuthCallbackContent() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 text-6xl mb-4">✗</div>
-          <p className="text-lg text-red-600">Authentication failed</p>
+          <p className="text-lg text-red-600">{t('auth.failed')}</p>
           <p className="text-sm text-gray-600 mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => router.push('/')}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
-            Return to Home
+            {t('auth.returnHome')}
           </button>
         </div>
       </div>
@@ -107,16 +109,23 @@ function AuthCallbackContent() {
   return null
 }
 
+// Loading fallback component with translation support
+function AuthCallbackFallback() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+        <p className="text-lg">{t('messages.loading')}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function AuthCallback() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-lg">Loading...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<AuthCallbackFallback />}>
       <AuthCallbackContent />
     </Suspense>
   )

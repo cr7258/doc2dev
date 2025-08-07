@@ -154,16 +154,10 @@ class RepositoryProcessor:
             platform: Specify platform ('github' or 'gitlab') for URL processing
         """
         try:
-            # Create appropriate Git adapter based on URL or specified platform
-            if platform:
-                # Use user-specified platform with base URL extraction
-                base_url = GitFactory._extract_base_url(str(repo_url), platform)
-                git_adapter = GitFactory.create_adapter_by_platform(platform, user_id, base_url)
-                logger.info(f"Using specified platform '{platform}' with base_url '{base_url}' for URL: {repo_url}")
-            else:
-                # Auto-detect platform from URL
-                git_adapter = GitFactory.create_adapter(repo_url, user_id)
-                logger.info(f"Auto-detected platform '{git_adapter.get_git_name()}' for URL: {repo_url}")
+            # Create Git adapter using specified platform
+            base_url = GitFactory._extract_base_url(str(repo_url), platform)
+            git_adapter = GitFactory.create_adapter_by_platform(platform, user_id, base_url)
+            logger.info(f"Using platform '{platform}' with base_url '{base_url}' for URL: {repo_url}")
 
             # Extract organization and repository name from URL
             org, repo = git_adapter.extract_org_repo(str(repo_url))
@@ -419,9 +413,11 @@ class RepositoryProcessor:
                 logger.error(f"Repository not found for refresh: user_id={user_id}, repo_id={repo_id}")
                 return
             
-            # Auto-detect platform from URL
-            git_adapter = GitFactory.create_adapter(repo_url, user_id)
-            logger.info(f"Refreshing repository using platform '{git_adapter.get_git_name()}' for URL: {repo_url}")
+            # Use stored platform information instead of auto-detecting from URL
+            platform = repository.source.value  # Get platform from stored repository info
+            base_url = GitFactory._extract_base_url(str(repo_url), platform)
+            git_adapter = GitFactory.create_adapter_by_platform(platform, user_id, base_url)
+            logger.info(f"Refreshing repository using stored platform '{platform}' with base_url '{base_url}' for URL: {repo_url}")
 
             # Extract organization and repository name from URL
             org, repo = git_adapter.extract_org_repo(str(repo_url))

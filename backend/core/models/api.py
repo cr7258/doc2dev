@@ -45,40 +45,4 @@ class QueryResponse(BaseModel):
     summary: Optional[str] = None
 
 
-class PlatformConfigRequest(BaseModel):
-    """Request model for platform configuration validation"""
-    platform: str  # 'github' or 'gitlab'
-    url: Optional[str] = None  # Custom URL for enterprise/self-hosted instances
-    token: Optional[str] = None  # Platform token for validation
 
-
-class PlatformConfigResponse(BaseModel):
-    """Response model for platform configuration status"""
-    platform: str
-    configured: bool
-    valid: bool
-    base_url: str
-    api_url: str
-    issues: List[str] = []
-    warnings: List[str] = []
-
-
-class PlatformStatusResponse(BaseModel):
-    """Response model for all platforms status"""
-    platforms: dict  # platform_name -> PlatformConfigResponse
-    summary: dict  # Overall configuration summary
-
-
-class UrlValidationRequest(BaseModel):
-    """Request model for URL validation"""
-    url: HttpUrl
-
-
-class UrlValidationResponse(BaseModel):
-    """Response model for URL validation"""
-    valid: bool
-    platform: Optional[str] = None
-    org: Optional[str] = None
-    repo: Optional[str] = None
-    normalized_url: Optional[str] = None
-    issues: List[str] = []

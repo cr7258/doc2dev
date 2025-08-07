@@ -7,7 +7,7 @@ based on URL detection or explicit platform specification.
 """
 
 import logging
-from typing import Union, Optional
+from typing import Optional
 
 from core.git import GitPlatformAdapter
 from core.git.github import GitHubAdapter
@@ -19,34 +19,6 @@ logger = logging.getLogger(__name__)
 
 class GitFactory:
     """Factory class for creating Git platform adapters"""
-    
-    @staticmethod
-    def create_adapter(url: str, user_id: Optional[str] = None) -> GitPlatformAdapter:
-        """Create appropriate adapter based on URL detection
-
-        Args:
-            url: Repository URL to analyze
-            user_id: Optional user ID for user-specific configuration lookup
-
-        Returns:
-            GitPlatformAdapter: Appropriate platform adapter
-
-        Raises:
-            ValueError: If platform cannot be detected or is unsupported
-        """
-        try:
-            platform = PlatformDetector.detect_platform(url)
-            logger.info(f"Detected platform '{platform}' for URL: {url}")
-
-            # Extract base URL for enterprise instances
-            base_url = GitFactory._extract_base_url(url, platform)
-
-            return GitFactory.create_adapter_by_platform(platform, user_id, base_url)
-
-        except Exception as e:
-            logger.error(f"Failed to create adapter for URL {url}: {str(e)}")
-            raise ValueError(f"Failed to create Git adapter for URL: {url}") from e
-    
     @staticmethod
     def create_adapter_by_platform(platform: str, user_id: Optional[str] = None, base_url: Optional[str] = None) -> GitPlatformAdapter:
         """Create adapter for specific platform

@@ -11,7 +11,6 @@ from fastapi.middleware.cors import CORSMiddleware
 # Import route modules
 from routes import base_router, repository_router, query_router, websocket_router
 from routes.auth import router as auth_router
-from routes.platforms import router as platforms_router
 from routes.settings import router as settings_router
 from routes.mcp import router as mcp_router
 
@@ -78,7 +77,6 @@ app.include_router(auth_router)
 app.include_router(repository_router)
 app.include_router(query_router)
 app.include_router(websocket_router)
-app.include_router(platforms_router)
 app.include_router(settings_router)
 app.include_router(mcp_router)
 

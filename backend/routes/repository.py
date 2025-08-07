@@ -31,16 +31,10 @@ async def download_repository(
         JSON response with download status and embedding status
     """
     try:
-        # Create appropriate Git adapter based on URL or specified platform
-        if repo_request.platform:
-            # Use user-specified platform with base URL extraction
-            base_url = GitFactory._extract_base_url(str(repo_request.repo_url), repo_request.platform)
-            git_adapter = GitFactory.create_adapter_by_platform(repo_request.platform, current_user_id, base_url)
-            logger.info(f"Using specified platform '{repo_request.platform}' with base_url '{base_url}' for URL: {repo_request.repo_url}")
-        else:
-            # Auto-detect platform from URL
-            git_adapter = GitFactory.create_adapter(str(repo_request.repo_url), current_user_id)
-            logger.info(f"Auto-detected platform '{git_adapter.get_git_name()}' for URL: {repo_request.repo_url}")
+        # Create Git adapter using specified platform
+        base_url = GitFactory._extract_base_url(str(repo_request.repo_url), repo_request.platform)
+        git_adapter = GitFactory.create_adapter_by_platform(repo_request.platform, current_user_id, base_url)
+        logger.info(f"Using platform '{repo_request.platform}' with base_url '{base_url}' for URL: {repo_request.repo_url}")
 
         org, repo = git_adapter.extract_org_repo(str(repo_request.repo_url))
         

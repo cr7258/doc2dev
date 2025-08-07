@@ -6,7 +6,7 @@
 
 Doc2Dev provides real-time documentation querying for LLMs and AI programming assistants. Doc2Dev can index and query documentation from any GitHub/Gitlab repository and easily integrate with AI programming tools like Cursor and Windsurf through MCP.
 
-![](https://chengzw258.oss-cn-beijing.aliyuncs.com/Article/202508072302799.png)
+![](https://chengzw258.oss-cn-beijing.aliyuncs.com/Article/202508072316973.png)
 
 ## Core Advantages
 

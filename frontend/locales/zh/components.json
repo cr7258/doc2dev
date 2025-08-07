@@ -5,9 +5,9 @@
   },
   "repositoryCard": {
     "viewDocs": "查看文档",
-    "lastUpdated": "最后更新",
-    "tokens": "令牌数",
-    "snippets": "代码片段",
+    "lastUpdated": "最近更新时间",
+    "tokens": "Token 数",
+    "snippets": "代码片段数",
     "refresh": "刷新",
     "delete": "删除",
     "edit": "编辑",

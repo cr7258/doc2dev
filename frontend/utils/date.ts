@@ -12,9 +12,10 @@ import i18n from '@/lib/i18n';
 export function formatDateTime(dateString: string): string {
   if (!dateString) return '-';
 
-  // Parse backend returned time string as UTC time
-  // Add 'Z' to indicate this is UTC time
-  const utcDate = new Date(dateString + 'Z');
+  // Backend now returns UTC time, parse it directly
+  // If the string doesn't end with 'Z', add it to indicate UTC
+  const utcTimeString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+  const utcDate = new Date(utcTimeString);
 
   // Use browser's localization feature to automatically convert to user timezone
   return utcDate.toLocaleString('en-US', {
@@ -35,16 +36,17 @@ export function formatDateTime(dateString: string): string {
  */
 export function getRelativeTime(dateString: string): string {
   if (!dateString) return '-';
-  
-  // Parse backend returned time string as UTC time
-  // Add 'Z' to indicate this is UTC time
-  const utcDate = new Date(dateString + 'Z');
+
+  // Backend now returns UTC time, parse it directly
+  // If the string doesn't end with 'Z', add it to indicate UTC
+  const utcTimeString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+  const utcDate = new Date(utcTimeString);
   const now = new Date();
-  
+
   // Calculate time difference (milliseconds)
   const timeDiff = now.getTime() - utcDate.getTime();
   const secondsDiff = Math.floor(timeDiff / 1000);
-  
+
   // Convert to relative time
   if (secondsDiff < 60) {
     return 'just now';
@@ -68,9 +70,10 @@ export function getRelativeTime(dateString: string): string {
 export function getRelativeTimeI18n(dateString: string): string {
   if (!dateString) return '-';
 
-  // Parse backend returned time string as UTC time
-  // Add 'Z' to indicate this is UTC time
-  const utcDate = new Date(dateString + 'Z');
+  // Backend now returns UTC time, parse it directly
+  // If the string doesn't end with 'Z', add it to indicate UTC
+  const utcTimeString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+  const utcDate = new Date(utcTimeString);
   const now = new Date();
 
   // Calculate time difference (milliseconds)

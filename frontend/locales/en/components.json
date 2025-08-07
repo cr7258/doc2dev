@@ -6,8 +6,8 @@
   "repositoryCard": {
     "viewDocs": "View Docs",
     "lastUpdated": "Last Updated",
-    "tokens": "Tokens",
-    "snippets": "Snippets",
+    "tokens": "Token Count",
+    "snippets": "Snippet Count",
     "refresh": "Refresh",
     "delete": "Delete",
     "edit": "Edit",

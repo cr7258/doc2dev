@@ -6,8 +6,8 @@
     "addRepository": "Add Repository",
     "stats": {
       "indexedRepositories": "Indexed Repositories",
-      "totalTokens": "Total Tokens",
-      "totalSnippets": "Total Snippets"
+      "totalTokens": "Total Token Count",
+      "totalSnippets": "Total Snippet Count"
     },
     "loading": "Loading repository data...",
     "error": "Failed to load repository data",
@@ -16,8 +16,8 @@
     "table": {
       "name": "Name",
       "repository": "Repository",
-      "tokens": "Tokens",
-      "snippets": "Snippets",
+      "tokens": "Token Count",
+      "snippets": "Snippet Count",
       "lastUpdated": "Last Updated",
       "status": "Status",
       "actions": "Actions"
@@ -35,8 +35,8 @@
     "copyContent": "Copy Content",
     "viewOnGitHub": "View on GitHub",
     "lastUpdated": "Last Updated",
-    "tokens": "Tokens",
-    "snippets": "Snippets",
+    "tokens": "Token Count",
+    "snippets": "Snippet Count",
     "queryButton": "Query",
     "querying": "Querying...",
     "queryingDocuments": "Querying documents, please wait...",
@@ -55,9 +55,19 @@
     "usageInstructions": "Usage Instructions",
     "step1": "Enter the complete GitHub repository URL",
     "step2": "Click the \"Download & Index\" button",
-    "step3": "Wait for the system to download and process Markdown files in the repository",
-    "step4": "After processing is complete, you can view the newly added library on the homepage",
-    "step5": "Click on library cards or use the query page to search documentation"
+    "step3": "The system will automatically download and index the Markdown files in the background. You can safely close this page and proceed with other tasks",
+    "step4": "Once indexing is complete, you can perform searches on this repository",
+    "processingStarted": "Repository processing started in background. You can continue using the application while the repository is being processed.",
+    "downloadProgress": "Download Progress",
+    "downloadedFiles": "Downloaded {{count}} Markdown files",
+    "downloadComplete": "Download Complete",
+    "embeddingProgress": "Embedding Progress",
+    "embeddedDocuments": "Successfully embedded {{count}} documents to table {{table}}",
+    "embeddingComplete": "Embedding Complete",
+    "preparingDownload": "Preparing download...",
+    "waitingForEmbedding": "Waiting for embedding to start...",
+    "downloadError": "Download Error",
+    "embeddingError": "Embedding Error"
   },
   "settings": {
     "title": "Settings",

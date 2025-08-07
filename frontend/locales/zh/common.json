@@ -78,7 +78,19 @@
       "title": "确认操作",
       "description": "确定要执行此操作吗？",
       "warning": "请确认您的操作。"
+    },
+    "refreshRepository": {
+      "title": "刷新仓库？",
+      "description": "确定要刷新仓库 {{name}} 吗？",
+      "warning": "这将更新仓库数据，可能需要一些时间。"
     }
+  },
+  "tooltips": {
+    "saveChanges": "保存更改",
+    "cancelEditing": "取消编辑",
+    "editConfiguration": "编辑配置",
+    "deleteConfiguration": "删除配置",
+    "copyToClipboard": "复制到剪贴板"
   },
   "toast": {
     "refreshStarted": {
@@ -137,6 +149,14 @@
     "duplicateUrl": {
       "title": "Base URL 重复",
       "description": "Base URL \"{{url}}\" 已被配置。请使用不同的 URL。"
+    },
+    "queryError": {
+      "title": "查询出错",
+      "description": "查询出错: {{message}}\n\n请检查以下可能的问题:\n1. 表名格式是否正确\n2. 该仓库是否已成功索引\n3. 后端服务是否正常运行"
+    },
+    "queryRequestFailed": {
+      "title": "查询请求失败",
+      "description": "查询请求失败: {{message}}\n\n请检查网络连接和后端服务是否正常运行。"
     }
   }
 }

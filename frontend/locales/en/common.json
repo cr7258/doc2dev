@@ -78,7 +78,19 @@
       "title": "Confirm Action",
       "description": "Are you sure you want to perform this action?",
       "warning": "Please confirm your action."
+    },
+    "refreshRepository": {
+      "title": "Refresh Repository?",
+      "description": "Are you sure you want to refresh repository {{name}}?",
+      "warning": "This will update the repository data and may take some time."
     }
+  },
+  "tooltips": {
+    "saveChanges": "Save changes",
+    "cancelEditing": "Cancel editing",
+    "editConfiguration": "Edit configuration",
+    "deleteConfiguration": "Delete configuration",
+    "copyToClipboard": "Copy to clipboard"
   },
   "toast": {
     "refreshStarted": {
@@ -137,6 +149,14 @@
     "duplicateUrl": {
       "title": "Duplicate Base URL",
       "description": "The base URL \"{{url}}\" is already configured. Please use a different URL."
+    },
+    "queryError": {
+      "title": "Query Error",
+      "description": "Query error: {{message}}\n\nPlease check the following:\n1. Table name format is correct\n2. Repository has been successfully indexed\n3. Backend service is running normally"
+    },
+    "queryRequestFailed": {
+      "title": "Query Request Failed",
+      "description": "Query request failed: {{message}}\n\nPlease check network connection and backend service status."
     }
   }
 }

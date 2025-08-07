@@ -32,7 +32,27 @@ export default function DownloadPage() {
   const [embeddingMessage, setEmbeddingMessage] = useState("");
   
   const wsRef = useRef<WebSocket | null>(null);
-  
+
+  // Function to format download/embedding messages with i18n
+  const formatProgressMessage = (message: string): string => {
+    if (!message) return "";
+
+    // Handle "Downloaded X Markdown files" pattern
+    const downloadMatch = message.match(/Downloaded (\d+) Markdown files/);
+    if (downloadMatch) {
+      return t('pages:download.downloadedFiles', { count: parseInt(downloadMatch[1]) });
+    }
+
+    // Handle "Successfully embedded X documents to table Y" pattern
+    const embeddingMatch = message.match(/Successfully embedded (\d+) documents to table (.+)/);
+    if (embeddingMatch) {
+      return t('pages:download.embeddedDocuments', { count: parseInt(embeddingMatch[1]), table: embeddingMatch[2] });
+    }
+
+    // Return original message if no pattern matches
+    return message;
+  };
+
   // Generate random client ID
   useEffect(() => {
     const id = `client_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
@@ -145,7 +165,7 @@ export default function DownloadPage() {
         // Repository processing started in background, show blue notification
         setMessage({
           type: "processing",
-          content: data.message || "Repository processing has started in the background. You can continue using the application.",
+          content: data.message || t('pages:download.processingStarted'),
           queryUrl: "",
           repoPath: ""
         });
@@ -283,24 +303,24 @@ export default function DownloadPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-500" />
-                Download Progress
+                {t('pages:download.downloadProgress')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Progress value={downloadProgress} className="h-2" />
               <p className="text-sm text-muted-foreground">
-                {downloadMessage || "Preparing download..."}
+                {formatProgressMessage(downloadMessage) || t('pages:download.preparingDownload')}
               </p>
               {downloadStatus === "error" && (
                 <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
                   <AlertCircle className="h-3.5 w-3.5 mr-1" />
-                  Download Error
+                  {t('pages:download.downloadError')}
                 </Badge>
               )}
               {downloadStatus === "completed" && (
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                   <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                  Download Complete
+                  {t('pages:download.downloadComplete')}
                 </Badge>
               )}
             </CardContent>
@@ -313,24 +333,24 @@ export default function DownloadPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileJson className="h-5 w-5 text-purple-500" />
-                Embedding Progress
+                {t('pages:download.embeddingProgress')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Progress value={embeddingProgress} className="h-2" />
               <p className="text-sm text-muted-foreground">
-                {embeddingMessage || "Waiting for embedding to start..."}
+                {formatProgressMessage(embeddingMessage) || t('pages:download.waitingForEmbedding')}
               </p>
               {embeddingStatus === "error" && (
                 <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
                   <AlertCircle className="h-3.5 w-3.5 mr-1" />
-                  Embedding Error
+                  {t('pages:download.embeddingError')}
                 </Badge>
               )}
               {embeddingStatus === "completed" && (
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                   <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                  Embedding Complete
+                  {t('pages:download.embeddingComplete')}
                 </Badge>
               )}
             </CardContent>
@@ -368,7 +388,6 @@ export default function DownloadPage() {
               <li>{t('pages:download.step2')}</li>
               <li>{t('pages:download.step3')}</li>
               <li>{t('pages:download.step4')}</li>
-              <li>{t('pages:download.step5')}</li>
             </ol>
           </CardContent>
         </Card>

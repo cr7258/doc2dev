@@ -6,7 +6,7 @@
     "addRepository": "添加 Git 仓库",
     "stats": {
       "indexedRepositories": "已索引仓库",
-      "totalTokens": "总 token 数",
+      "totalTokens": "总 Token 数",
       "totalSnippets": "总代码片段数"
     },
     "loading": "正在加载仓库数据...",
@@ -18,7 +18,7 @@
       "repository": "仓库",
       "tokens": "Token 数",
       "snippets": "代码片段数",
-      "lastUpdated": "最后更新",
+      "lastUpdated": "最近更新时间",
       "status": "状态",
       "actions": "操作"
     }
@@ -34,9 +34,9 @@
     "summary": "智能摘要",
     "copyContent": "复制内容",
     "viewOnGitHub": "在 GitHub 上查看",
-    "lastUpdated": "最后更新",
-    "tokens": "令牌数",
-    "snippets": "代码片段",
+    "lastUpdated": "最近更新时间",
+    "tokens": "Token 数",
+    "snippets": "代码片段数",
     "queryButton": "查询",
     "querying": "查询中...",
     "queryingDocuments": "正在查询文档，请稍候...",
@@ -55,9 +55,19 @@
     "usageInstructions": "使用说明",
     "step1": "输入完整的 GitHub 仓库 URL",
     "step2": "点击\"下载并索引\"按钮",
-    "step3": "等待系统下载并处理仓库中的 Markdown 文件",
-    "step4": "处理完成后，您可以在首页查看新添加的库",
-    "step5": "点击库卡片或使用查询页面搜索文档"
+    "step3": "系统将在后台自动完成 Markdown 文件的下载和索引工作，您可随时关闭当前页面继续其他操作",
+    "step4": "索引完成后，您可以对该仓库进行查询",
+    "processingStarted": "仓库处理已在后台开始。您可以在仓库处理过程中继续使用应用程序。",
+    "downloadProgress": "下载进度",
+    "downloadedFiles": "已下载 {{count}} 个 Markdown 文件",
+    "downloadComplete": "下载完成",
+    "embeddingProgress": "嵌入进度",
+    "embeddedDocuments": "成功将 {{count}} 个文档嵌入到表 {{table}}",
+    "embeddingComplete": "嵌入完成",
+    "preparingDownload": "准备下载...",
+    "waitingForEmbedding": "等待嵌入开始...",
+    "downloadError": "下载错误",
+    "embeddingError": "嵌入错误"
   },
   "settings": {
     "title": "设置",

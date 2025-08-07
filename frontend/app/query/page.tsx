@@ -181,7 +181,7 @@ function QueryPageContent() {
         const data = await response.json();
         toast({
           title: t('toast.refreshStarted.title'),
-          description: data.message || t('toast.refreshStarted.description', { name: repoData.name }),
+          description: t('toast.refreshStarted.description', { name: repoData.name }),
           variant: "success",
           duration: 3000,
         });
@@ -220,7 +220,7 @@ function QueryPageContent() {
         const error = await response.json();
         toast({
           title: t('toast.refreshFailed.title'),
-          description: error.detail || t('toast.refreshFailed.description'),
+          description: t('toast.refreshFailed.description'),
           variant: "destructive",
           duration: 5000,
         });
@@ -229,7 +229,7 @@ function QueryPageContent() {
       console.error('Error refreshing repository:', error);
       toast({
         title: t('toast.refreshFailed.title'),
-        description: error instanceof Error ? error.message : t('toast.unknownError'),
+        description: t('toast.unknownError'),
         variant: "destructive",
         duration: 5000,
       });
@@ -275,12 +275,12 @@ function QueryPageContent() {
       } else {
         console.error("Error:", data.message);
         // 显示错误信息给用户
-        setSummary(`查询出错: ${data.message}\n\n请检查以下可能的问题:\n1. 表名格式是否正确\n2. 该仓库是否已成功索引\n3. 后端服务是否正常运行`);
+        setSummary(t('toast.queryError.description', { message: data.message }));
       }
     } catch (error) {
       console.error("Error querying:", error);
       // 显示错误信息给用户
-      setSummary(`查询请求失败: ${error instanceof Error ? error.message : String(error)}\n\n请检查网络连接和后端服务是否正常运行。`);
+      setSummary(t('toast.queryRequestFailed.description', { message: error instanceof Error ? error.message : String(error) }));
     } finally {
       setLoading(false);
     }
@@ -327,20 +327,20 @@ function QueryPageContent() {
           <CardContent className="pb-3">
             <div className="flex flex-wrap gap-3">
               {getStatusBadge()}
-              <Badge variant="outline" className="flex items-center gap-1.5 bg-blue-50 px-3 py-1 text-blue-700 border-blue-100">
+              <Badge variant="outline" className="flex items-center gap-1.5 bg-blue-50 px-3 py-1 text-blue-700 border-blue-100 text-xs">
                 <FileText className="h-3.5 w-3.5" />
-                <span>{documentItem.tokens} {t('pages:query.tokens')}</span>
+                <span>{t('pages:query.tokens')}: {documentItem.tokens}</span>
               </Badge>
-              <Badge variant="outline" className="flex items-center gap-1.5 bg-purple-50 px-3 py-1 text-purple-700 border-purple-100">
+              <Badge variant="outline" className="flex items-center gap-1.5 bg-purple-50 px-3 py-1 text-purple-700 border-purple-100 text-xs">
                 <FileJson className="h-3.5 w-3.5" />
-                <span>{documentItem.snippets} {t('pages:query.snippets')}</span>
+                <span>{t('pages:query.snippets')}: {documentItem.snippets}</span>
               </Badge>
-              <div className="flex items-center gap-1.5 bg-green-50 px-3 py-1 text-green-700 border border-green-100 rounded-md">
+              <div className="flex items-center gap-1.5 bg-green-50 px-3 py-1 text-green-700 border border-green-100 rounded-md text-xs">
                 <Clock className="h-3.5 w-3.5" />
-                <span>{t('pages:query.lastUpdated')} </span>
+                <span>{t('pages:query.lastUpdated')}: </span>
                 <RelativeTime
                   dateString={documentItem.updatedAt}
-                  className="bg-transparent border-none p-0 text-green-700"
+                  className="bg-transparent border-none p-0 text-green-700 text-xs"
                   showTooltip={true}
                 />
               </div>
@@ -452,7 +452,7 @@ function QueryPageContent() {
                     }, 2000);
                   }
                 }}
-                title="Copy to clipboard"
+                title={t('tooltips.copyToClipboard')}
                 id="copy-button"
               >
                 <Copy className="h-4 w-4" />

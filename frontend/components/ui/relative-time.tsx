@@ -16,16 +16,17 @@ export function RelativeTime({ dateString, className, showTooltip = true }: Rela
 
   const getRelativeTimeI18n = (dateString: string): string => {
     if (!dateString) return '-';
-    
-    // Parse backend returned time string as UTC time
-    // Add 'Z' to indicate this is UTC time
-    const utcDate = new Date(dateString + 'Z');
+
+    // Backend now returns UTC time, parse it directly
+    // If the string doesn't end with 'Z', add it to indicate UTC
+    const utcTimeString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+    const utcDate = new Date(utcTimeString);
     const now = new Date();
-    
+
     // Calculate time difference (milliseconds)
     const timeDiff = now.getTime() - utcDate.getTime();
     const secondsDiff = Math.floor(timeDiff / 1000);
-    
+
     // Convert to relative time with i18n support
     if (secondsDiff < 60) {
       return t('time.justNow');

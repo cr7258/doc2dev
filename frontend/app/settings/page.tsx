@@ -234,16 +234,9 @@ export default function SettingsPage() {
         // Reload configurations
         await loadConfigurations();
       } else {
-        let errorMessage = t('toast.configDeleteFailed.description');
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.detail || errorMessage;
-        } catch (e) {
-          console.error('Error parsing error response:', e);
-        }
         toast({
           title: t('toast.configDeleteFailed.title'),
-          description: errorMessage,
+          description: t('toast.configDeleteFailed.description'),
           variant: "destructive",
         });
       }
@@ -679,7 +672,7 @@ export default function SettingsPage() {
                                       onClick={() => saveInlineEdit(config.id!)}
                                       disabled={saving}
                                       className="h-8 w-8 p-0 cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
-                                      title="Save changes"
+                                      title={t('tooltips.saveChanges')}
                                     >
                                       <Save className="h-4 w-4" />
                                     </Button>
@@ -689,7 +682,7 @@ export default function SettingsPage() {
                                       onClick={cancelInlineEdit}
                                       disabled={saving}
                                       className="h-8 w-8 p-0 cursor-pointer text-gray-600 hover:text-gray-700 hover:bg-gray-50"
-                                      title="Cancel editing"
+                                      title={t('tooltips.cancelEditing')}
                                     >
                                       ✕
                                     </Button>
@@ -701,7 +694,7 @@ export default function SettingsPage() {
                                       size="sm"
                                       onClick={() => startInlineEdit(config)}
                                       className="h-8 w-8 p-0 cursor-pointer"
-                                      title="Edit configuration"
+                                      title={t('tooltips.editConfiguration')}
                                     >
                                       <Edit className="h-4 w-4" />
                                     </Button>
@@ -713,7 +706,7 @@ export default function SettingsPage() {
                                         setDeleteDialogOpen(true);
                                       }}
                                       className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
-                                      title="Delete configuration"
+                                      title={t('tooltips.deleteConfiguration')}
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>

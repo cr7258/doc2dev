@@ -128,7 +128,7 @@ export default function Home() {
         const data = await response.json();
         toast({
           title: t('toast.refreshStarted.title'),
-          description: data.message || t('toast.refreshStarted.description', { name: repo.name }),
+          description: t('toast.refreshStarted.description', { name: repo.name }),
           variant: "success",
           duration: 3000,
         });
@@ -138,7 +138,7 @@ export default function Home() {
         const error = await response.json();
         toast({
           title: t('toast.refreshFailed.title'),
-          description: error.detail || t('toast.refreshFailed.description'),
+          description: t('toast.refreshFailed.description'),
           variant: "destructive",
           duration: 5000,
         });
@@ -147,7 +147,7 @@ export default function Home() {
       console.error('Error refreshing repository:', error);
       toast({
         title: t('toast.refreshFailed.title'),
-        description: error instanceof Error ? error.message : t('toast.unknownError'),
+        description: t('toast.unknownError'),
         variant: "destructive",
         duration: 5000,
       });
@@ -171,7 +171,7 @@ export default function Home() {
         const data = await response.json();
         toast({
           title: t('toast.deleteSuccessful.title'),
-          description: data.message || t('toast.deleteSuccessful.description', { name: repoToDelete.name }),
+          description: t('toast.deleteSuccessful.description', { name: repoToDelete.name }),
           variant: "success",
           duration: 3000,
         });
@@ -181,7 +181,7 @@ export default function Home() {
         const error = await response.json();
         toast({
           title: t('toast.deleteFailed.title'),
-          description: error.detail || t('toast.unknownError'),
+          description: t('toast.deleteFailed.description'),
           variant: "destructive",
           duration: 5000,
         });

@@ -63,7 +63,7 @@ function AuthCallbackContent() {
     }
 
     handleCallback()
-  }, [searchParams, login, router])
+  }, [searchParams, login, router, t])
 
   if (status === 'loading') {
     return (

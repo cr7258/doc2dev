@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from 'react-i18next';
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TableRowDropdown } from "@/components/ui/dropdown";
@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
-import { formatDateTime, getRelativeTime, formatNumber } from "@/utils/date";
+import { formatNumber } from "@/utils/date";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,7 +125,6 @@ export default function Home() {
       });
 
       if (response.ok) {
-        const data = await response.json();
         toast({
           title: t('toast.refreshStarted.title'),
           description: t('toast.refreshStarted.description', { name: repo.name }),
@@ -135,7 +134,6 @@ export default function Home() {
         // Refresh page to show updated status
         setTimeout(() => window.location.reload(), 1000);
       } else {
-        const error = await response.json();
         toast({
           title: t('toast.refreshFailed.title'),
           description: t('toast.refreshFailed.description'),
@@ -168,7 +166,6 @@ export default function Home() {
       });
 
       if (response.ok) {
-        const data = await response.json();
         toast({
           title: t('toast.deleteSuccessful.title'),
           description: t('toast.deleteSuccessful.description', { name: repoToDelete.name }),
@@ -178,7 +175,6 @@ export default function Home() {
         // Refresh page to update repository list
         setTimeout(() => window.location.reload(), 1000);
       } else {
-        const error = await response.json();
         toast({
           title: t('toast.deleteFailed.title'),
           description: t('toast.deleteFailed.description'),

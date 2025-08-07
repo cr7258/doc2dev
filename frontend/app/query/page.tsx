@@ -4,8 +4,8 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from "next/navigation";
-import { Github, Clock, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Copy } from "lucide-react";
-import { getRelativeTime} from "@/utils/date";
+import { Clock, RefreshCw, ExternalLink, FileText, FileJson, FileCode, Copy } from "lucide-react";
+
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 import { useAuth } from "@/lib/auth";
@@ -178,7 +178,6 @@ function QueryPageContent() {
       });
 
       if (response.ok) {
-        const data = await response.json();
         toast({
           title: t('toast.refreshStarted.title'),
           description: t('toast.refreshStarted.description', { name: repoData.name }),
@@ -217,7 +216,6 @@ function QueryPageContent() {
         }, 1000);
         
       } else {
-        const error = await response.json();
         toast({
           title: t('toast.refreshFailed.title'),
           description: t('toast.refreshFailed.description'),
@@ -307,7 +305,7 @@ function QueryPageContent() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-sm text-blue-500 hover:text-blue-700 transition-colors"
               >
-                <Github className="h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
                 <span>{repoPath}</span>
                 <ExternalLink className="h-3 w-3" />
               </a>

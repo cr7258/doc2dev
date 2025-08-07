@@ -19,7 +19,7 @@ Doc2Dev provides real-time documentation querying for LLMs and AI programming as
 
 ## Environment Variables Setup
 
-Please create a `.env` file based on the `.env.example` file instructions and configure the corresponding environment variables.
+Please create a `.env` file based on the [.env.example](https://github.com/cr7258/doc2dev/blob/main/backend/.env.example) file instructions and configure the corresponding environment variables.
 
 ## Starting Services
 

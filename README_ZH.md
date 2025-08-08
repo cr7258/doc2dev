@@ -19,7 +19,7 @@ Doc2Dev 可以为 LLM 和 AI 编程助手提供实时的文档查询。Doc2Dev �
 
 ## 设置环境变量
 
-请根据 `.env.example` 文件的说明，创建 [.env](https://github.com/cr7258/doc2dev/blob/main/backend/.env.example) 文件并配置相应的环境变量。
+请根据 [backend/.env.example](https://github.com/cr7258/doc2dev/blob/main/backend/.env.example) 和 [frontend/.env.example](https://github.com/cr7258/doc2dev/blob/main/frontend/.env.example) 文件中的说明创建 `.env` 文件，并配置相应的环境变量。
 
 ## 启动服务
 

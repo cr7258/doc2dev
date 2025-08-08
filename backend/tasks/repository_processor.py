@@ -426,15 +426,15 @@ class RepositoryProcessor:
             # Generate table name from repository path
             table_name = repo_path.replace('/', '_').replace('-', '_')
 
-            # Delete existing vector table
+            # Delete existing vector table from user's database
             try:
-                vector_table_deleted = self.repository_service.delete_vector_table(table_name)
+                vector_table_deleted = self.repository_service.delete_user_vector_table(user_id, table_name)
                 if vector_table_deleted:
-                    logger.info(f"Deleted existing vector table: {table_name}")
+                    logger.info(f"Deleted existing vector table from user {user_id} database: {table_name}")
                 else:
-                    logger.warning(f"Failed to delete existing vector table: {table_name}")
+                    logger.warning(f"Failed to delete existing vector table from user {user_id} database: {table_name}")
             except Exception as e:
-                logger.error(f"Error deleting existing vector table: {str(e)}")
+                logger.error(f"Error deleting existing vector table from user {user_id} database: {str(e)}")
             
             # Create temporary directory
             temp_dir = tempfile.mkdtemp()

@@ -303,15 +303,15 @@ async def delete_repository_endpoint(repo_id: int, current_user_id: str = Depend
         # Generate table name
         table_name = repo_path.replace('/', '_').replace('-', '_')
         
-        # Delete vector table using RepositoryService
+        # Delete vector table from user's database using RepositoryService
         try:
-            vector_table_deleted = repository_service.delete_vector_table(table_name)
+            vector_table_deleted = repository_service.delete_user_vector_table(current_user_id, table_name)
             if vector_table_deleted:
-                logger.info(f"Deleted vector table: {table_name}")
+                logger.info(f"Deleted vector table from user {current_user_id} database: {table_name}")
             else:
-                logger.warning(f"Failed to delete vector table: {table_name}")
+                logger.warning(f"Failed to delete vector table from user {current_user_id} database: {table_name}")
         except Exception as e:
-            logger.error(f"Failed to delete vector table: {str(e)}")
+            logger.error(f"Failed to delete vector table from user {current_user_id} database: {str(e)}")
             # Even if deleting vector table fails, we still try to delete database record
         
         # Delete database record using RepositoryService from user's database

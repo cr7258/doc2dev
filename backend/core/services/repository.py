@@ -9,6 +9,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
 
 from core.models.repository import Repository, RepositoryStatus, RepositorySource
 
@@ -573,29 +574,64 @@ class RepositoryService:
     
     def delete_vector_table(self, table_name: str) -> bool:
         """
-        Delete vector table from the database.
-        
+        Delete vector table from the public database.
+
         Args:
             table_name: Name of the vector table to delete
-            
+
         Returns:
             bool: True if deletion was successful, False otherwise
         """
         try:
             # Sanitize table name by replacing hyphens with underscores to avoid SQL syntax errors
             safe_table_name = table_name.replace('-', '_')
-            
-            # Use existing SQLAlchemy session to execute raw SQL
-            sql = f"DROP TABLE IF EXISTS {safe_table_name}"
+
+            # Use existing SQLAlchemy session to execute raw SQL with explicit text() declaration
+            sql = text(f"DROP TABLE IF EXISTS {safe_table_name}")
             self._db_session.execute(sql)
             self._db_session.commit()
-            
-            print(f"✅ Successfully deleted vector table: {safe_table_name}")
+
+            print(f"✅ Successfully deleted vector table from public database: {safe_table_name}")
             return True
-            
+
         except Exception as e:
             self._db_session.rollback()
-            print(f"❌ Failed to delete vector table '{table_name}': {str(e)}")
+            print(f"❌ Failed to delete vector table from public database '{table_name}': {str(e)}")
+            return False
+
+    def delete_user_vector_table(self, user_id: str, table_name: str) -> bool:
+        """
+        Delete vector table from user's private database.
+
+        Args:
+            user_id: User ID
+            table_name: Name of the vector table to delete
+
+        Returns:
+            bool: True if deletion was successful, False otherwise
+        """
+        try:
+            # Get user-specific database session
+            user_session = self.db_router.get_session(user_id)
+
+            # Sanitize table name by replacing hyphens with underscores to avoid SQL syntax errors
+            safe_table_name = table_name.replace('-', '_')
+
+            # Use user session to execute raw SQL with explicit text() declaration
+            sql = text(f"DROP TABLE IF EXISTS {safe_table_name}")
+            user_session.execute(sql)
+            user_session.commit()
+
+            print(f"✅ Successfully deleted vector table from user {user_id} database: {safe_table_name}")
+            return True
+
+        except Exception as e:
+            try:
+                user_session = self.db_router.get_session(user_id)
+                user_session.rollback()
+            except:
+                pass
+            print(f"❌ Failed to delete vector table from user {user_id} database '{table_name}': {str(e)}")
             return False
     
     def close(self):

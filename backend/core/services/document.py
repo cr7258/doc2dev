@@ -62,7 +62,7 @@ class DocumentService:
                 user_id=user_id,
                 db_router=self.db_router
             )
-            print("✅ Vector store initialized successfully")
+            print(f"✅ Vector store initialized successfully for table: {table_name}")
     
     def _initialize_summary_service(self):
         """Initialize summary service if not already initialized"""
@@ -70,99 +70,6 @@ class DocumentService:
             print("Initializing summary service...")
             self._summary_service = SummaryService(self.settings)
             print("✅ Summary service initialized successfully")
-    
-    def load_documents(self, path_or_paths: Union[str, List[str]]) -> List[Document]:
-        """
-        Load documents from files or directories.
-        
-        Args:
-            path_or_paths: Single file path, directory path, or list of file paths
-            
-        Returns:
-            List of loaded Document objects
-        """
-        print(f"Loading documents from: {path_or_paths}")
-        
-        documents = []
-        files = self._get_supported_files(path_or_paths)
-        
-        if not files:
-            print("❌ No supported files found")
-            return documents
-        
-        print(f"Found {len(files)} supported files")
-        
-        for file_path in files:
-            try:
-                file_ext = Path(file_path).suffix.lower().lstrip('.')
-                
-                # Get LangChain DocumentLoader class
-                loader_class = DocumentLoaderFactory.get_loader(file_ext)
-                
-                # Instantiate and load document
-                loader = loader_class(file_path)
-                docs = loader.load()
-                
-                # Add file type metadata
-                for doc in docs:
-                    doc.metadata.update({
-                        'file_type': file_ext,
-                        'source_file': file_path,
-                        'file_name': Path(file_path).name
-                    })
-                
-                documents.extend(docs)
-                print(f"✅ Loaded {len(docs)} documents from {Path(file_path).name}")
-                
-            except Exception as e:
-                print(f"❌ Failed to load {file_path}: {e}")
-                continue
-        
-        print(f"✅ Successfully loaded {len(documents)} documents total")
-        return documents
-    
-    def split_documents(self, documents: List[Document]) -> List[Document]:
-        """
-        Split documents into chunks based on file type.
-        
-        Args:
-            documents: List of documents to split
-            
-        Returns:
-            List of document chunks
-        """
-        if not documents:
-            return []
-        
-        print(f"Splitting {len(documents)} documents...")
-        
-        split_docs = []
-        
-        for doc in documents:
-            file_type = doc.metadata.get('file_type', 'text')
-            
-            try:
-                # Get appropriate splitter
-                splitter = DocumentSplitterFactory.get_splitter(file_type)
-                chunks = splitter.split_documents([doc])
-                
-                # Add chunk metadata
-                for i, chunk in enumerate(chunks):
-                    chunk.metadata.update({
-                        'chunk_index': i,
-                        'total_chunks': len(chunks)
-                    })
-                
-                split_docs.extend(chunks)
-                print(f"✅ Split {doc.metadata.get('file_name', 'document')} into {len(chunks)} chunks")
-                
-            except Exception as e:
-                print(f"❌ Failed to split document {doc.metadata.get('file_name', 'unknown')}: {e}")
-                # If splitting fails, keep original document
-                split_docs.append(doc)
-        
-        print(f"✅ Total chunks created: {len(split_docs)}")
-        return split_docs
     
     def embed_and_store(self, documents: List[Document], table_name: str, drop_old: bool = False, user_id: Optional[str] = None) -> bool:
         """
@@ -293,77 +200,3 @@ class DocumentService:
                 "summary": error_msg,
                 "document_count": 0
             }
-    
-    def process_documents(
-        self, 
-        path_or_paths: Union[str, List[str]], 
-        drop_old: bool = False
-    ) -> bool:
-        """
-        Complete document processing pipeline: load -> split -> embed -> store.
-        
-        Args:
-            path_or_paths: Single file path, directory path, or list of file paths
-            drop_old: Whether to drop existing data before storing
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        print("=== Starting document processing pipeline ===")
-        
-        try:
-            # Step 1: Load documents
-            documents = self.load_documents(path_or_paths)
-            if not documents:
-                return False
-            
-            # Step 2: Split documents
-            split_docs = self.split_documents(documents)
-            if not split_docs:
-                return False
-            
-            # Step 3: Embed and store
-            success = self.embed_and_store(split_docs, drop_old=drop_old)
-            
-            if success:
-                print("=== Document processing pipeline completed successfully ===")
-            else:
-                print("=== Document processing pipeline failed ===")
-            
-            return success
-            
-        except Exception as e:
-            print(f"❌ Document processing pipeline failed: {e}")
-            return False
-    
-
-    
-    def _get_supported_files(self, path_or_paths: Union[str, List[str]]) -> List[str]:
-        """Get all supported files from input paths"""
-        supported_extensions = DocumentLoaderFactory.get_supported_extensions()
-        files = []
-        
-        if isinstance(path_or_paths, list):
-            # List of file paths
-            files = path_or_paths
-        elif os.path.isdir(path_or_paths):
-            # Directory - scan for supported files
-            print(f"Scanning directory: {path_or_paths}")
-            for ext in supported_extensions:
-                pattern = os.path.join(path_or_paths, f"**/*{ext}")
-                files.extend(glob.glob(pattern, recursive=True))
-        else:
-            # Single file path
-            files = [path_or_paths]
-        
-        # Filter to keep only supported file types
-        supported_files = [
-            f for f in files 
-            if Path(f).suffix.lower() in supported_extensions and os.path.isfile(f)
-        ]
-        
-        return supported_files
-    
-    def get_supported_file_types(self) -> List[str]:
-        """Get list of supported file types"""
-        return ["md", "txt", "pdf"]

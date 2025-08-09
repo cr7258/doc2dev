@@ -8,6 +8,7 @@ from core.models.api import RepositoryRequest, DownloadResponse
 from core.factories.git import GitFactory
 from core.services.repository import RepositoryService
 from api.auth import get_current_user_required, get_current_user_optional
+from core.models.repository import RepositoryStatus
 import logging
 
 logger = logging.getLogger(__name__)
@@ -247,9 +248,9 @@ async def refresh_repository_endpoint(
         
         # Update repository status to in_progress
         if current_user_id:
-            repository_service.update_user_repository_status(current_user_id, repo_id, "in_progress")
+            repository_service.update_user_repository_status(current_user_id, repo_id, RepositoryStatus.in_progress)
         else:
-            repository_service.update_repository_status(repo_id, "in_progress")
+            repository_service.update_repository_status(repo_id, RepositoryStatus.in_progress)
         
         # Process repository refresh in background task
         # Import global repository_processor from main module

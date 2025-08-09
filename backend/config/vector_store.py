@@ -22,8 +22,7 @@ class ChromaVectorConfig(BaseSettings):
     """Chroma vector database specific configuration"""
     type: Literal["chroma"] = "chroma"
     persist_directory: str = "./chroma_db"
-    collection_name: str = "doc2dev"
-    
+
     model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_CHROMA_')
 
 
@@ -36,8 +35,8 @@ class PGVectorConfig(BaseSettings):
     user: str = "postgres"
     password: str = "postgres"
     schema_name: str = "public"
-    table_name: str = "langchain_vectors"
-    
+    distance_strategy: str = "COSINE"
+
     model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_PGVECTOR_')
 
 
@@ -45,19 +44,19 @@ class QdrantVectorConfig(BaseSettings):
     """Qdrant vector database specific configuration"""
     type: Literal["qdrant"] = "qdrant"
     url: str = "http://localhost:6333"
-    collection_name: str = "doc2dev"
-    
+    api_key: Optional[str] = None
+    distance_strategy: str = "Cosine"
+
     model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_QDRANT_')
 
 
 class ElasticsearchVectorConfig(BaseSettings):
     """Elasticsearch vector database specific configuration"""
     type: Literal["elasticsearch"] = "elasticsearch"
-    es_url: str = "http://localhost:9200"
-    es_user: Optional[str] = None
-    es_password: Optional[str] = None
-    index_name: str = "doc2dev"
-    
+    url: str = "http://localhost:9200"
+    username: Optional[str] = None
+    password: Optional[str] = None
+
     model_config = SettingsConfigDict(env_prefix='VECTOR_STORE_ELASTICSEARCH_')
 
 

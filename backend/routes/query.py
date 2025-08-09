@@ -34,9 +34,9 @@ async def query_vector_database(
         document_service = DocumentService(settings, db_router)
         
         # Create filter for table name (if provided)
-        filter_dict = None
-        if query_request.table_name:
-            filter_dict = {"table_name": query_request.table_name}
+        filter_dict = {}
+        # if query_request.table_name:
+        #     filter_dict = {"table_name": query_request.table_name}
         
         if query_request.summarize:
             # Use search_with_summary for summarized results

@@ -9,7 +9,9 @@ from langchain.embeddings.base import Embeddings
 # Vector store imports
 from langchain_community.vectorstores import Chroma
 from langchain_community.vectorstores.pgvector import PGVector
-from langchain_community.vectorstores import Qdrant
+from langchain_qdrant import QdrantVectorStore
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import Distance, VectorParams
 from langchain_community.vectorstores import ElasticsearchStore
 
 from config.vector_store import VectorStoreConfig
@@ -74,34 +76,66 @@ class VectorStoreFactory:
                     )
             
             case "chroma":
+                # Determine collection name with optional db_name prefix
+                collection_name = table_name.replace('-', '_')
+                if user_id and db_router:
+                    # Use user-specific database for authenticated users
+                    db_name = db_router.get_user_db_name(user_id)
+                    collection_name = f"{db_name}_{collection_name}"
+
                 return Chroma(
                     embedding_function=embeddings,
                     persist_directory=vector_store_config.config.persist_directory,
-                    collection_name=vector_store_config.config.collection_name,
+                    collection_name=collection_name,
                 )
-            
+
             case "pgvector":
+                # Build connection string from individual components
+                connection_string = (
+                    f"postgresql+psycopg2://{vector_store_config.config.user}:{vector_store_config.config.password}"
+                    f"@{vector_store_config.config.host}:{vector_store_config.config.port}/{vector_store_config.config.database}"
+                )
                 return PGVector(
                     embedding_function=embeddings,
-                    connection_string=vector_store_config.config.connection_string,
-                    collection_name=vector_store_config.config.collection_name,
+                    connection_string=connection_string,
+                    collection_name=table_name.replace('-', '_'),  # Use dynamic table_name
                     distance_strategy=vector_store_config.config.distance_strategy,
                 )
             
             case "qdrant":
-                return Qdrant(
-                    client=None,  # Will be created from config
-                    collection_name=vector_store_config.config.collection_name,
-                    embeddings=embeddings,
+                # Create Qdrant client with configuration
+                client = QdrantClient(
                     url=vector_store_config.config.url,
                     api_key=vector_store_config.config.api_key,
-                    distance_strategy=vector_store_config.config.distance_strategy,
+                )
+
+                # Determine collection name with optional db_name prefix
+                collection_name = table_name.replace('-', '_')
+                if user_id and db_router:
+                    # Use user-specific database for authenticated users
+                    db_name = db_router.get_user_db_name(user_id)
+                    collection_name = f"{db_name}_{collection_name}"
+
+
+                try:
+                    client.create_collection(
+                        collection_name=collection_name,
+                        vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+                    )
+                except Exception as e:
+                    print(f"Collection {collection_name} already exists: {e}")
+
+                return QdrantVectorStore(
+                    client=client,
+                    collection_name=collection_name,
+                    embedding=embeddings,
+                    distance=vector_store_config.config.distance_strategy,
                 )
             
             case "elasticsearch":
                 return ElasticsearchStore(
                     es_url=vector_store_config.config.url,
-                    index_name=vector_store_config.config.index_name,
+                    index_name=table_name.replace('-', '_'),  # Use dynamic table_name
                     embedding=embeddings,
                     es_user=vector_store_config.config.username,
                     es_password=vector_store_config.config.password,

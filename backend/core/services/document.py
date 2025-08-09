@@ -53,16 +53,16 @@ class DocumentService:
             table_name: Table name for the vector store
             user_id: Optional user ID for user-specific database selection
         """
-        if self._vector_store is None:
-            print("Initializing vector store...")
-            self._vector_store = ServiceFactory.create_vector_store(
-                self.settings.embedding,
-                self.settings.vector_store,
-                table_name,
-                user_id=user_id,
-                db_router=self.db_router
-            )
-            print(f"✅ Vector store initialized successfully for table: {table_name}")
+        # if self._vector_store is None:
+        print("Initializing vector store...")
+        self._vector_store = ServiceFactory.create_vector_store(
+            self.settings.embedding,
+            self.settings.vector_store,
+            table_name,
+            user_id=user_id,
+            db_router=self.db_router
+        )
+        print(f"✅ Vector store initialized successfully for table: {table_name}")
     
     def _initialize_summary_service(self):
         """Initialize summary service if not already initialized"""

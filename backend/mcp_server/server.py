@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 class UserMCPServer:
     """User-specific MCP server that provides access to user's repositories"""
 
-    def __init__(self, user_id: str):
+    def __init__(self, user_id: str = None):
         self.user_id = user_id
-        self.mcp = FastMCP("Doc2Dev User Server")
+        server_name = "Doc2Dev Public Server" if user_id is None else "Doc2Dev User Server"
+        self.mcp = FastMCP(server_name)
         self.tools = {}
         self.setup_tools()
 
@@ -34,13 +35,24 @@ class UserMCPServer:
                 Dictionary containing matching library IDs and their descriptions
             """
             try:
-                repositories = await self.get_user_repositories()       
+                repositories = await self.get_user_repositories()
+                logger.info(f"Found {len(repositories)} total repositories for search")
+
+                # Log first few repositories for debugging
+                if repositories:
+                    for i, repo in enumerate(repositories[:3]):
+                        logger.info(f"Repo {i}: name='{repo.get('name', '')}', repo='{repo.get('repo', '')}', status='{repo.get('repo_status', '')}'")
+
                 # Filter repositories based on library name (search both name and repo fields)
+                # Only include completed repositories
                 filtered_repos = [
                     repo for repo in repositories
-                    if libraryName.lower() in repo.get("name", "").lower() or 
-                       libraryName.lower() in repo.get("repo", "").lower()
+                    if (libraryName.lower() in repo.get("name", "").lower() or
+                        libraryName.lower() in repo.get("repo", "").lower()) and
+                       repo.get("repo_status") == "completed"
                 ]
+
+                logger.info(f"Filtered to {len(filtered_repos)} repositories matching '{libraryName}'")
                 
                 # Format the results
                 libraries = []
@@ -58,9 +70,10 @@ class UserMCPServer:
                         "snippets": repo.get("snippets", 0)
                     })
                 
+                access_type = "public access" if self.user_id is None else f"user {self.user_id}"
                 return {
                     "status": "success",
-                    "message": f"Found {len(libraries)} libraries matching '{libraryName}' for user {self.user_id}",
+                    "message": f"Found {len(libraries)} libraries matching '{libraryName}' for {access_type}",
                     "libraries": libraries
                 }
 
@@ -99,19 +112,26 @@ class UserMCPServer:
     async def get_user_repositories(self) -> List[Dict[str, Any]]:
         """
         Get repositories accessible to this user.
-        
-        Returns user-specific repositories from their private database.
-        
+
+        For authenticated users: Returns user-specific repositories from their private database.
+        For public access (user_id=None): Returns public repositories.
+
         Returns:
-            List of repository dictionaries for this user
+            List of repository dictionaries for this user or public repositories
         """
         try:
             # Import here to avoid circular imports
             from main import repository_service
-            
-            # Get user-specific repositories from their private database
-            repositories = repository_service.get_user_repositories(self.user_id)
-            
+
+            if self.user_id is None:
+                # Public access: get public repositories
+                repositories = repository_service.get_all_repositories()
+                access_type = "public"
+            else:
+                # User-specific access: get user's private repositories
+                repositories = repository_service.get_user_repositories(self.user_id)
+                access_type = f"user {self.user_id}"
+
             # Convert to dictionary format
             repo_list = []
             for repo in repositories:
@@ -127,12 +147,12 @@ class UserMCPServer:
                     "created_at": repo.created_at.isoformat() if repo.created_at else None,
                     "updated_at": repo.updated_at.isoformat() if repo.updated_at else None
                 })
-            
-            logger.info(f"Retrieved {len(repo_list)} repositories for user {self.user_id}")
+
+            logger.info(f"Retrieved {len(repo_list)} repositories for {access_type}")
             return repo_list
-            
+
         except Exception as e:
-            logger.error(f"Error getting user repositories for user {self.user_id}: {e}")
+            logger.error(f"Error getting repositories for {self.user_id or 'public'}: {e}")
             return []
     
     async def query_user_library(self, library_id: str, question: str) -> Dict[str, Any]:
@@ -168,9 +188,10 @@ class UserMCPServer:
                     "content": doc_data.get("content", "")
                 })
 
+            access_type = "public access" if self.user_id is None else f"user {self.user_id}"
             return {
                 "status": "success",
-                "message": f"Retrieved documentation from table '{library_id}' for user {self.user_id}",
+                "message": f"Retrieved documentation from table '{library_id}' for {access_type}",
                 "documentation": result.get("summary", "No summary available"),
                 "results": formatted_results
             }
@@ -183,9 +204,17 @@ class UserMCPServer:
             }
     
     def get_server_info(self) -> Dict[str, Any]:
-        """Get server information for this user's MCP server"""
+        """Get server information for this MCP server"""
+        if self.user_id is None:
+            server_name = "Doc2Dev Public MCP Server"
+            description = "Public access to Doc2Dev documentation repositories"
+        else:
+            server_name = f"Doc2Dev MCP Server for {self.user_id}"
+            description = f"User-specific access to Doc2Dev repositories for {self.user_id}"
+
         return {
-            "name": f"Doc2Dev MCP Server for {self.user_id}",
+            "name": server_name,
+            "description": description,
             "version": "1.0.0",
             "protocol_version": "2025-03-26",
             "transport": "streamable-http",
@@ -232,3 +261,31 @@ class UserMCPServer:
                 }
             }
         ]
+
+    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Call a tool with the given arguments.
+
+        Args:
+            tool_name: Name of the tool to call
+            arguments: Arguments to pass to the tool
+
+        Returns:
+            Result from the tool execution
+        """
+        if tool_name not in self.tools:
+            return {
+                "error": "Tool not found",
+                "message": f"Tool '{tool_name}' is not available"
+            }
+
+        try:
+            tool_function = self.tools[tool_name]
+            result = await tool_function(**arguments)
+            return result
+        except Exception as e:
+            logger.error(f"Error calling tool {tool_name}: {e}")
+            return {
+                "error": "Tool execution failed",
+                "message": str(e)
+            }

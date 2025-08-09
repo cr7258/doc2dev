@@ -18,6 +18,8 @@ router = APIRouter(prefix="/mcp", tags=["MCP Streamable HTTP"])
 
 # Cache for user MCP server instances
 user_servers: Dict[str, UserMCPServer] = {}
+# Public MCP server instance (for non-authenticated users)
+public_server: UserMCPServer = None
 
 
 def get_user_server(user_id: str) -> UserMCPServer:
@@ -26,6 +28,15 @@ def get_user_server(user_id: str) -> UserMCPServer:
         logger.info(f"Creating new MCP server instance for user {user_id}")
         user_servers[user_id] = UserMCPServer(user_id)
     return user_servers[user_id]
+
+
+def get_public_server() -> UserMCPServer:
+    """Get or create public MCP server instance"""
+    global public_server
+    if public_server is None:
+        logger.info("Creating new public MCP server instance")
+        public_server = UserMCPServer(None)  # None user_id for public access
+    return public_server
 
 
 @router.get("/health")
@@ -40,9 +51,127 @@ async def mcp_health():
     return {
         "status": "healthy",
         "service": "MCP Streamable HTTP",
-        "active_servers": len(user_servers),
+        "active_user_servers": len(user_servers),
+        "public_server_active": public_server is not None,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
+
+
+@router.api_route("/public", methods=["GET", "POST"])
+async def mcp_public_endpoint(request: Request):
+    """
+    Public MCP Streamable HTTP endpoint for non-authenticated users.
+
+    - GET: Returns server information and capabilities
+    - POST: Processes MCP protocol messages for public repositories
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        JSON response following MCP protocol
+    """
+    try:
+        server = get_public_server()
+
+        if request.method == "GET":
+            # Return MCP server information
+            logger.info("GET request for public MCP server info")
+            return JSONResponse(content=server.get_server_info())
+
+        elif request.method == "POST":
+            # Process MCP protocol message
+            try:
+                body = await request.json()
+            except Exception as e:
+                logger.error(f"Failed to parse JSON body: {e}")
+                raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+
+            logger.info(f"POST request for public MCP: {body.get('method', 'unknown')}")
+
+            # Validate MCP message structure
+            if "method" not in body:
+                raise HTTPException(status_code=400, detail="Missing 'method' field in MCP message")
+
+            method = body["method"]
+            params = body.get("params", {})
+            message_id = body.get("id")
+
+            # Handle different MCP methods
+            if method == "initialize":
+                return JSONResponse(content={
+                    "jsonrpc": "2.0",
+                    "id": message_id,
+                    "result": {
+                        "protocolVersion": "2025-03-26",
+                        "capabilities": {
+                            "tools": {"listChanged": False}
+                        },
+                        "serverInfo": {
+                            "name": "Doc2Dev Public",
+                            "version": "1.0.0"
+                        }
+                    }
+                })
+
+            elif method == "tools/list":
+                tools = server.get_tools_list()
+                return JSONResponse(content={
+                    "jsonrpc": "2.0",
+                    "id": message_id,
+                    "result": {"tools": tools}
+                })
+
+            elif method == "notifications/initialized":
+                # Handle the initialized notification
+                logger.info("Client initialized notification received for public MCP")
+                return JSONResponse(content={})
+
+            elif method == "tools/call":
+                # Handle tool calls
+                tool_name = params.get("name")
+                tool_arguments = params.get("arguments", {})
+
+                logger.info(f"Tool call for public MCP: {tool_name} with args: {tool_arguments}")
+
+                # Call the tool through the server
+                result = await server.call_tool(tool_name, tool_arguments)
+
+                # Format the response according to MCP protocol
+                return JSONResponse(content={
+                    "jsonrpc": "2.0",
+                    "id": message_id,
+                    "result": {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": json.dumps(result, indent=2, ensure_ascii=False)
+                            }
+                        ]
+                    }
+                })
+
+            else:
+                raise HTTPException(status_code=400, detail=f"Unknown method: {method}")
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in public MCP endpoint: {e}")
+
+        # Return MCP error response
+        return JSONResponse(
+            status_code=500,
+            content={
+                "jsonrpc": "2.0",
+                "id": body.get("id") if 'body' in locals() else None,
+                "error": {
+                    "code": -32000,
+                    "message": f"Internal server error: {str(e)}"
+                }
+            }
+        )
 
 
 @router.api_route("/{user_id}", methods=["GET", "POST"])
@@ -209,7 +338,18 @@ async def mcp_info():
         "protocol_version": "2025-03-26",
         "description": "User-specific MCP endpoints for accessing Doc2Dev documentation",
         "usage": {
-            "endpoint_pattern": "/mcp/{user_id}",
+            "endpoints": {
+                "public": {
+                    "pattern": "/mcp/public",
+                    "description": "Public MCP endpoint for accessing public repositories",
+                    "authentication": "None required"
+                },
+                "user_specific": {
+                    "pattern": "/mcp/{user_id}",
+                    "description": "User-specific MCP endpoint for accessing user's repositories",
+                    "authentication": "User ID required"
+                }
+            },
             "methods": ["GET", "POST"],
             "get_description": "Returns server information and capabilities",
             "post_description": "Processes MCP protocol messages"
